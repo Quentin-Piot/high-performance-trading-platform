@@ -52,6 +52,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=trading_db
+LOG_LEVEL=INFO
+LOG_FORMAT=console
 ```
 
 ## Lancer en Docker (API + PostgreSQL)
@@ -68,6 +70,11 @@ API disponible sur `http://localhost:8000`.
 poetry install
 poetry run uvicorn api.main:app --reload --app-dir src
 ```
+
+### Format des logs
+
+- Dev (humain): définir `LOG_FORMAT=console` pour une sortie lisible en console.
+- Prod (classique JSON): définir `LOG_FORMAT=json` pour des logs structurés.
 
 ## Endpoints principaux
 

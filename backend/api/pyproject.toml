@@ -19,7 +19,10 @@ dependencies = [
     "python-jose[cryptography] (>=3.3.0,<4.0.0)",
     "passlib[bcrypt] (>=1.7.4,<2.0.0)",
     "python-multipart (>=0.0.9,<0.0.10)",
-    "email-validator (>=2.0.0,<3.0.0)"
+    "email-validator (>=2.0.0,<3.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "pydantic-settings (>=2.4.0,<3.0.0)",
+    "alembic (>=1.13.2,<2.0.0)"
 ]
 
 [tool.poetry]
@@ -27,6 +30,11 @@ packages = [{include = "api", from = "src"}]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0,<9.0"
+hypothesis = ">=6.92,<7.0"
+
+[tool.poetry.dependencies]
+pydantic-settings = ">=2.4.0,<3.0.0"
+alembic = ">=1.13.2,<2.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

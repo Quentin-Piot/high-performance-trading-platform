@@ -28,3 +28,6 @@ Thumbs.db
 .mypy_cache/
 
 .DS_Store
+.hypothesis
+.pytest_cache
+.env
