@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSimulationStore } from '@/stores/simulation'
