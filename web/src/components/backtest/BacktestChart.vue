@@ -1,75 +1,87 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { createChart, type ISeriesApi, type LineData, type Time, ColorType } from 'lightweight-charts'
+// @ts-ignore - use runtime imports; types provided by tooling
+import { onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
+// @ts-ignore - rely on runtime, avoid type-only imports
+import { createChart, ColorType } from 'lightweight-charts'
 
-const props = defineProps<{ timestamps: string[]; equity_curve: number[] }>()
+type LinePoint = { time: number; value: number }
+const props = defineProps<{ series: LinePoint[] }>()
 
 const el = ref<HTMLDivElement | null>(null)
-let series: ISeriesApi<'Line'> | null = null
-let chart: ReturnType<typeof createChart> | null = null
+let series: any = null
+let chart: any = null
 
-function parseToTime(s: string): Time {
-  const m = s.match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})(?:$|T)/)
-  if (m) {
-    const year = Number(m[1])
-    const month = Number(m[2]) - 1
-    const day = Number(m[3])
-    const ts = Math.floor(Date.UTC(year, month, day) / 1000)
-    return ts as unknown as Time
-  }
-  const ms = Date.parse(s)
-  if (!Number.isNaN(ms)) return Math.floor(ms / 1000) as unknown as Time
-  return Math.floor(Date.now() / 1000) as unknown as Time
+function setSeries(data?: LinePoint[]) {
+  if (!series || !data) return
+  series.setData(data)
 }
 
-function setData(times?: string[], values?: number[]) {
-  if (!series || !times || !values) return
+function cssVar(name: string): string {
+  const elRef = el.value
+  const root = elRef ? getComputedStyle(elRef) : getComputedStyle(document.documentElement)
+  return root.getPropertyValue(name).trim() || ''
+}
 
-  const zipped = times
-    .map((t: string, i) => {
-      const v = values[i]
-      if (v === undefined || v === null) return null
-      const time = parseToTime(t) as unknown as number
-      if (Number.isNaN(time)) return null
-      return { time, value: v }
-    })
-    .filter((d): d is { time: number; value: number } => d !== null)
-    .sort((a, b) => a.time - b.time)
-
-  const dedup: LineData<Time>[] = []
-  let prev: number | undefined
-  for (const p of zipped) {
-    if (prev !== undefined && p.time <= prev) continue
-    dedup.push({ time: p.time as unknown as Time, value: p.value })
-    prev = p.time
+function toRgbColor(input: string, fallback: string): string {
+  if (!input) return fallback
+  const lower = input.toLowerCase()
+  // Lightweight Charts ne supporte pas oklch/oklab, forcer un fallback
+  if (lower.includes('oklch') || lower.includes('oklab')) return fallback
+  const tmp = document.createElement('span')
+  tmp.style.color = input
+  document.body.appendChild(tmp)
+  const resolved = getComputedStyle(tmp).color
+  document.body.removeChild(tmp)
+  if (!resolved || resolved === '' || resolved.toLowerCase().includes('oklch') || resolved === input) {
+    return fallback
   }
-
-  series.setData(dedup)
+  return resolved
 }
 
 onMounted(() => {
   if (!el.value) return
+  const width = Math.max(320, el.value.clientWidth || el.value.getBoundingClientRect().width || 600)
+  const textColor = toRgbColor(cssVar('--muted-foreground'), '#cbd5e1')
+  // Évite l'utilisation d'une couleur oklch par le widget d'attribution
+  el.value.style.color = textColor
   chart = createChart(el.value, {
-    layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: '#cbd5e1' },
-    width: el.value.clientWidth,
+    layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor },
+    width,
     height: 360,
     rightPriceScale: { borderVisible: false },
     timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
-    grid: { vertLines: { color: '#0b1220' }, horzLines: { color: '#0b1220' }},
+    grid: { vertLines: { color: toRgbColor(cssVar('--border'), '#0b1220') }, horzLines: { color: toRgbColor(cssVar('--border'), '#0b1220') }},
   })
-  series = chart.addLineSeries({ color: '#10b981', lineWidth: 2 })
-  setData(props.timestamps, props.equity_curve)
+  series = chart.addLineSeries({ color: toRgbColor(cssVar('--chart-1'), '#10b981'), lineWidth: 2 })
+  setSeries(props.series)
+
+  // Handle resize so chart always has width
+  const ro = new ResizeObserver(() => {
+    if (el.value && chart) {
+      const w = Math.max(320, el.value.clientWidth || el.value.getBoundingClientRect().width || 600)
+      chart.applyOptions({ width: w })
+    }
+  })
+  ro.observe(el.value)
+  ;(chart as any)._ro = ro
 })
 
 onUnmounted(() => {
   chart?.remove()
+  // Cleanup resize listener if present
+  const ro = (chart as any)?._ro as ResizeObserver | undefined
+  if (ro && el.value) ro.unobserve(el.value)
   chart = null
   series = null
 })
 
-// Observe changes on timestamps and equity_curve without tuple type issues
-watch([() => props.timestamps, () => props.equity_curve], () => {
-  setData(props.timestamps, props.equity_curve)
+// Observe changes to prebuilt series data
+// React to data changes and also run once
+watch(() => props.series, (data: LinePoint[]) => setSeries(data), { deep: true })
+watchEffect(() => {
+  if (series && props.series && props.series.length) {
+    series.setData(props.series)
+  }
 })
 </script>
 

@@ -29,7 +29,7 @@ const loading = computed(() => store.status === 'loading')
         <div class="rounded-md border p-4">
           <h2 class="text-base font-medium mb-3">Results</h2>
           <div v-if="loading" class="h-[360px] w-full animate-pulse rounded-md bg-muted"></div>
-          <BacktestChart v-else :timestamps="store.timestamps" :equity_curve="store.equityCurve" />
+          <BacktestChart v-else :series="store.equitySeries" />
         </div>
         <div class="grid grid-cols-3 gap-3">
           <MetricsCard label="P&L" :value="store.pnl" percentage />

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { postFormData, type BacktestResponse } from '@/services/apiClient'
+import { buildEquityPoints, toLineData } from '@/composables/useEquitySeries'
 
 export type BacktestStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -13,6 +14,12 @@ export const useBacktestStore = defineStore('backtest', {
     sharpe: null as number | null,
     error: null as string | null,
   }),
+  getters: {
+    equitySeries(state) {
+      const points = buildEquityPoints(state.timestamps, state.equityCurve)
+      return toLineData(points)
+    },
+  },
   actions: {
     reset() {
       this.status = 'idle'

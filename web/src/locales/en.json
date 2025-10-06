@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "home": "Home",
+    "simulate": "Simulate",
+    "legacy": "Legacy",
+    "login": "Login",
+    "register": "Register"
+  },
+  "landing": {
+    "title": "High-Performance Trading Platform",
+    "subtitle": "A modern Vue + TypeScript frontend integrated with a FastAPI backend. Run backtests with CSV upload, configure Simple Moving Averages (SMA), and visualize your equity curve, PnL, and drawdown with Lightweight Charts.",
+    "cta": {
+      "startBacktest": "Start Backtest",
+      "login": "Login",
+      "register": "Register"
+    },
+    "legacy": {
+      "text": "Prefer the previous dashboard? Visit the legacy homepage.",
+      "open": "Open Legacy Dashboard"
+    },
+    "sections": {
+      "simulation": {
+        "title": "Backtest Simulation",
+        "text": "Upload your CSV price data, set SMA parameters, and run a server-powered backtest. Results show equity curve, PnL, and max drawdown with robust error handling and responsive UI."
+      },
+      "auth": {
+        "title": "Authentication",
+        "text": "Register and login to store tokens in Pinia. Requests use an authenticated API client. For testing, the simulate page can be accessed without login."
+      },
+      "visualization": {
+        "title": "Visualization",
+        "text": "Equity curve rendered with Lightweight Charts. Metrics for PnL and drawdown with clear, minimal design."
+      }
+    }
+  }
+}

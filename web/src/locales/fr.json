@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "simulate": "Simulation",
+    "legacy": "Ancien",
+    "login": "Connexion",
+    "register": "Inscription"
+  },
+  "landing": {
+    "title": "Plateforme de Trading Haute Performance",
+    "subtitle": "Frontend moderne Vue + TypeScript avec backend FastAPI. Lancez des backtests via import CSV, configurez les moyennes mobiles (SMA) et visualisez la courbe d'équité, le PnL et le drawdown avec Lightweight Charts.",
+    "cta": {
+      "startBacktest": "Démarrer le Backtest",
+      "login": "Connexion",
+      "register": "Inscription"
+    },
+    "legacy": {
+      "text": "Vous préférez l'ancien tableau de bord ? Visitez la page héritée.",
+      "open": "Ouvrir le tableau de bord hérité"
+    },
+    "sections": {
+      "simulation": {
+        "title": "Simulation de Backtest",
+        "text": "Importez votre CSV de prix, définissez les paramètres SMA et lancez un backtest côté serveur. Résultats avec courbe d'équité, PnL et drawdown, UI robuste et responsive."
+      },
+      "auth": {
+        "title": "Authentification",
+        "text": "Inscrivez-vous et connectez-vous pour stocker le token dans Pinia. Les requêtes utilisent un client API authentifié. Pour tester, la page de simulation est accessible sans connexion."
+      },
+      "visualization": {
+        "title": "Visualisation",
+        "text": "Courbe d'équité rendue avec Lightweight Charts. Mesures de PnL et drawdown dans un design clair et minimal."
+      }
+    }
+  }
+}
