@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Request
+from fastapi import responses
+from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
@@ -8,7 +10,7 @@ from contextlib import asynccontextmanager
 
 from api.routers.auth import router as auth_router
 from api.routers.backtest import router as backtest_router
-from infrastructure.db import init_db
+from infrastructure.db import init_db, engine
 
 
 setup_logging()
@@ -17,7 +19,7 @@ setup_logging()
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
     logging.getLogger("app").info("Startup")
-    init_db()
+    await init_db()
     yield
     logging.getLogger("app").info("Shutdown")
 
@@ -99,6 +101,29 @@ async def request_logging_middleware(request: Request, call_next):
 async def root():
     return {"message": "OK", "service": "Trading Backtest API"}
 
+# Health endpoints
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
 
+
+@app.get("/health")
+async def health_alias():
+    return {"status": "ok"}
+
+
+@app.get("/readyz")
+async def readyz():
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"ready": True}
+    except Exception:
+        return responses.JSONResponse(status_code=503, content={"ready": False})
+
+
+# Include routers with versioned prefix for API v1 and keep legacy paths for compatibility
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(backtest_router, prefix="/api/v1")
 app.include_router(auth_router)
 app.include_router(backtest_router)

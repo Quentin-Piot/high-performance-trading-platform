@@ -78,8 +78,8 @@ export function createSimulator(initialPrice = 100, params: SimulationParams) {
 
   const triggerTrade = (side: "BUY" | "SELL", qty: number) => {
     const px = price
-    const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-      ? (crypto as any).randomUUID()
+    const id = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+      ? crypto.randomUUID()
       : Math.random().toString(36).slice(2) + Date.now().toString(36)
 
     // Prepare realized PnL for SELL against current position

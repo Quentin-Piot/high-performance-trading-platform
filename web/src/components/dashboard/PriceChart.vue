@@ -38,7 +38,7 @@ const option = computed(() => {
           symbolSize: 8,
           data: [{ coord: latest, value: latest[1] }],
           itemStyle: { color: '#10b981' },
-          label: { formatter: (p: any) => String(p.value), color: '#10b981' }
+          label: { formatter: (p: { value?: number | string }) => String(p?.value ?? ''), color: '#10b981' }
         } : undefined,
       }
     ]

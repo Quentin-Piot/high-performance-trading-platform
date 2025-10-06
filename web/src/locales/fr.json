@@ -33,4 +33,25 @@
       }
     }
   }
+  ,
+  "simulate": {
+    "header": {
+      "title": "Simulation de Backtest",
+      "subtitle": "Importez un CSV et lancez un backtest SMA."
+    },
+    "form": {
+      "title": "Formulaire de Stratégie"
+    },
+    "results": {
+      "title": "Résultats"
+    },
+    "metrics": {
+      "pnl": "P&L",
+      "drawdown": "Drawdown Max",
+      "sharpe": "Ratio de Sharpe"
+    },
+    "errors": {
+      "backtest": "Erreur lors du backtest"
+    }
+  }
 }

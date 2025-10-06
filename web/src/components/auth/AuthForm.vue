@@ -29,8 +29,8 @@ async function onSubmit() {
     if (props.mode === 'login') await auth.login({ email: email.value, password: password.value })
     else await auth.register({ email: email.value, password: password.value })
     navigate('/simulate')
-  } catch (e: any) {
-    error.value = e?.message || 'Authentication failed'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Authentication failed'
   } finally {
     loading.value = false
   }
@@ -50,7 +50,7 @@ async function onSubmit() {
         <Input v-model="password" type="password" />
         <p class="text-xs text-muted-foreground mt-1">Minimum 6 characters.</p>
       </div>
-      <Button :disabled="loading || !valid" @click="onSubmit" class="w-full h-10">
+      <Button :disabled="loading || !valid" class="w-full h-10" @click="onSubmit">
         {{ loading ? '...' : (props.mode === 'login' ? 'Login' : 'Register') }}
       </Button>
       <p v-if="error" class="text-sm text-red-600">{{ error }}</p>

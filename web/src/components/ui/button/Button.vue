@@ -14,10 +14,13 @@ interface Props extends PrimitiveProps {
 
 const props = withDefaults(defineProps<Props>(), {
   as: "button",
+  variant: "default",
+  size: "default",
+  class: undefined,
 })
 
 // Ensure listeners/attrs like @click are forwarded to the underlying element
-defineOptions({ inheritAttrs: false })
+defineOptions({ name: 'UiButton', inheritAttrs: false })
 </script>
 
 <template>
@@ -26,7 +29,7 @@ defineOptions({ inheritAttrs: false })
     :as="as"
     :as-child="asChild"
     v-bind="$attrs"
-    :class="cn(buttonVariants({ variant, size }), props.class)"
+    :class="cn('cursor-pointer', buttonVariants({ variant, size }), props.class)"
   >
     <slot />
   </Primitive>

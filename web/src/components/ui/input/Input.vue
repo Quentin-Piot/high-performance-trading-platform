@@ -17,6 +17,7 @@ const modelValue = useVModel(props, "modelValue", emits, {
   passive: true,
   defaultValue: props.defaultValue,
 })
+defineOptions({ name: 'UiInput' })
 </script>
 
 <template>

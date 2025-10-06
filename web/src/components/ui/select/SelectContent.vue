@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { SelectScrollDownButton, SelectScrollUpButton } from "."
 
 defineOptions({
+  name: 'UiSelectContent',
   inheritAttrs: false,
 })
 
@@ -20,6 +21,7 @@ const props = withDefaults(
   defineProps<SelectContentProps & { class?: HTMLAttributes["class"] }>(),
   {
     position: "popper",
+    class: undefined,
   },
 )
 const emits = defineEmits<SelectContentEmits>()

@@ -42,7 +42,7 @@ export const useBacktestStore = defineStore('backtest', {
         const fd = new FormData()
         fd.append('csv', file)
         const qs = `?sma_short=${encodeURIComponent(smaShort)}&sma_long=${encodeURIComponent(smaLong)}`
-        const resp = await postFormData<BacktestResponse>(`/backtest${qs}`, fd)
+        const resp = await postFormData<BacktestResponse>(`/api/v1/backtest${qs}`, fd)
 
         const curve = resp.equity_curve || []
         const base = curve.length ? curve[0] : 1
@@ -54,8 +54,8 @@ export const useBacktestStore = defineStore('backtest', {
         this.drawdown = resp.drawdown
         this.sharpe = resp.sharpe
         this.status = 'success'
-      } catch (e: any) {
-        this.error = e?.message || 'Erreur lors du backtest'
+      } catch (e: unknown) {
+        this.error = e instanceof Error ? e.message : 'Erreur lors du backtest'
         this.status = 'error'
       }
     },

@@ -87,7 +87,8 @@ const filteredRows = computed(() => {
             <div class="px-3 py-2 tabular-nums text-muted-foreground">{{ new Date(t.time).toLocaleTimeString() }}</div>
             <div class="px-3 py-2">{{ t.symbol }}</div>
             <div class="px-3 py-2">
-              <span :class="[
+              <span
+:class="[
                 'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
                 t.side === 'BUY' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
               ]">{{ t.side }}</span>

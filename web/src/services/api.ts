@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import axios from "axios"
 
 // Placeholder API client setup for future backend integration
@@ -23,13 +24,13 @@ export type Trade = {
 export type Position = { symbol: string; qty: number; avgPrice: number }
 
 export const endpoints = {
-  prices: "/prices", // GET: fetch latest prices
-  trades: "/trades", // GET: fetch trade history
-  triggerTrade: "/trade", // POST: execute a trade
+  prices: "/api/v1/prices", // GET: fetch latest prices
+  trades: "/api/v1/trades", // GET: fetch trade history
+  triggerTrade: "/api/v1/trade", // POST: execute a trade
 }
 
 // Example placeholder functions. Replace implementations with real API calls later.
-export async function fetchPrices(symbol: string): Promise<PriceTick[]> {
+export async function fetchPrices(): Promise<PriceTick[]> {
   // const { data } = await api.get(`${endpoints.prices}?symbol=${symbol}`)
   // return data
   return []

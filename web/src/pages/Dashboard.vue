@@ -10,6 +10,7 @@ import { useSimulationStore } from '@/stores/simulation'
 
 const store = useSimulationStore()
 store.init()
+defineOptions({ name: 'DashboardPage' })
 </script>
 
 <template>

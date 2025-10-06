@@ -20,6 +20,7 @@ defineExpose({
   scrollNext,
   scrollPrev,
 })
+defineOptions({ name: 'UiCarousel' })
 
 function onKeyDown(event: KeyboardEvent) {
   const prevKey = props.orientation === "vertical" ? "ArrowUp" : "ArrowLeft"

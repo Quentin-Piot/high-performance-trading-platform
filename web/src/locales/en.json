@@ -33,4 +33,25 @@
       }
     }
   }
+  ,
+  "simulate": {
+    "header": {
+      "title": "Backtest Simulation",
+      "subtitle": "Upload a CSV and run an SMA backtest."
+    },
+    "form": {
+      "title": "Strategy Form"
+    },
+    "results": {
+      "title": "Results"
+    },
+    "metrics": {
+      "pnl": "P&L",
+      "drawdown": "Max Drawdown",
+      "sharpe": "Sharpe Ratio"
+    },
+    "errors": {
+      "backtest": "Error during backtest"
+    }
+  }
 }
