@@ -14,9 +14,6 @@ logger = logging.getLogger("services.backtest")
 
 
 def _read_csv_to_series(file_obj: Union[io.BytesIO, bytes]) -> pd.Series:
-    """
-    Lit un CSV et retourne une pd.Series des prix.
-    """
     if isinstance(file_obj, (bytes, bytearray)):
         buffer = io.BytesIO(file_obj)
         df = pd.read_csv(buffer)
@@ -25,14 +22,12 @@ def _read_csv_to_series(file_obj: Union[io.BytesIO, bytes]) -> pd.Series:
 
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # Détection colonne prix
     price_col = next(
         (c for c in ["close", "adj close", "adj_close"] if c in df.columns), None
     )
     if not price_col:
         raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
 
-    # Tri par date si présent
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df.sort_values("date")
@@ -44,10 +39,6 @@ def _read_csv_to_series(file_obj: Union[io.BytesIO, bytes]) -> pd.Series:
 
 
 class CsvBytesPriceSeriesSource(PriceSeriesSource):
-    """
-    Source de prix à partir de CSV (bytes ou BinaryIO)
-    """
-
     def __init__(self, data: Union[bytes, io.BytesIO]):
         self._data = data
 
@@ -56,10 +47,6 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
 
 
 class SmaCrossoverStrategy(StrategyInterface):
-    """
-    Stratégie SMA Crossover implémentée comme StrategyInterface
-    """
-
     def __init__(self, short_window: int, long_window: int):
         if short_window <= 0 or long_window <= 0 or short_window >= long_window:
             raise ValueError("Paramètres SMA invalides: short>0, long>0 et short<long")
@@ -96,6 +83,7 @@ class SmaCrossoverStrategy(StrategyInterface):
             sharpe_ratio=sharpe,
         )
 
+
 class RsiStrategy(StrategyInterface):
     def __init__(self, period: int, overbought: float, oversold: float):
         self.period = period
@@ -112,7 +100,9 @@ class RsiStrategy(StrategyInterface):
         rs = avg_gain / avg_loss
         rsi = 100 - (100 / (1 + rs))
 
-        position = rsi.apply(lambda x: 1 if x < self.oversold else (-1 if x > self.overbought else 0))
+        position = rsi.apply(
+            lambda x: 1 if x < self.oversold else (-1 if x > self.overbought else 0)
+        )
         returns = prices.pct_change().fillna(0.0)
         strat_returns = (position.shift(1).fillna(0) * returns).astype(float)
 
@@ -125,34 +115,36 @@ class RsiStrategy(StrategyInterface):
         sharpe = float((mean_ret / std_ret) * np.sqrt(252)) if std_ret > 0 else 0.0
 
         return BacktestResult(
-            equity=equity,
-            pnl=pnl,
-            max_drawdown=max_dd,
-            sharpe_ratio=sharpe
+            equity=equity, pnl=pnl, max_drawdown=max_dd, sharpe_ratio=sharpe
         )
 
 
-# --- Service-level orchestration helpers ---
-
 @dataclass
 class ServiceBacktestResult:
-    """
-    Thin wrapper tailored for API/consumer expectations.
-    Mirrors BacktestResult but exposes drawdown/sharpe naming.
-    """
     equity: pd.Series
     pnl: float
     drawdown: float
     sharpe: float
 
 
-def run_sma_crossover(source: PriceSeriesSource, sma_short: int, sma_long: int) -> ServiceBacktestResult:
-    """Run SMA crossover using the shared StrategyInterface and return API-friendly result."""
-    logger.info("Run SMA crossover", extra={"sma_short": sma_short, "sma_long": sma_long})
+def _default_date_bounds():
+    """Return sane date bounds to avoid pandas min/max nanosecond warnings."""
+    start = pd.Timestamp("1970-01-01").to_pydatetime()
+    end = pd.Timestamp("2100-01-01").to_pydatetime()
+    return start, end
+
+
+def run_sma_crossover(
+    source: PriceSeriesSource, sma_short: int, sma_long: int
+) -> ServiceBacktestResult:
+    logger.info(
+        "Run SMA crossover", extra={"sma_short": sma_short, "sma_long": sma_long}
+    )
     strat = SmaCrossoverStrategy(short_window=sma_short, long_window=sma_long)
+    start_date, end_date = _default_date_bounds()
     params = BacktestParams(
-        start_date=pd.Timestamp.min.to_pydatetime(),
-        end_date=pd.Timestamp.max.to_pydatetime(),
+        start_date=start_date,
+        end_date=end_date,
         strategy_params={"short_window": sma_short, "long_window": sma_long},
         symbol="unknown",
     )
@@ -165,21 +157,32 @@ def run_sma_crossover(source: PriceSeriesSource, sma_short: int, sma_long: int) 
     )
 
 
-def sma_crossover_backtest(file_obj: Union[io.BytesIO, bytes], sma_short: int, sma_long: int):
-    """
-    Compatibility helper used by tests:
-    Reads CSV, runs SMA crossover, returns tuple: (equity, pnl, drawdown, sharpe).
-    """
+def sma_crossover_backtest(
+    file_obj: Union[io.BytesIO, bytes], sma_short: int, sma_long: int
+):
     source = CsvBytesPriceSeriesSource(file_obj)
     result = run_sma_crossover(source, sma_short, sma_long)
-    return result.equity, float(result.pnl), float(result.drawdown), float(result.sharpe)
+    return (
+        result.equity,
+        float(result.pnl),
+        float(result.drawdown),
+        float(result.sharpe),
+    )
 
-def run_rsi(source: PriceSeriesSource, period: int, overbought: float, oversold: float) -> ServiceBacktestResult:
+
+def run_rsi(
+    source: PriceSeriesSource, period: int, overbought: float, oversold: float
+) -> ServiceBacktestResult:
     strat = RsiStrategy(period=period, overbought=overbought, oversold=oversold)
+    start_date, end_date = _default_date_bounds()
     params = BacktestParams(
-        start_date=pd.Timestamp.min.to_pydatetime(),
-        end_date=pd.Timestamp.max.to_pydatetime(),
-        strategy_params={"period": period, "overbought": overbought, "oversold": oversold},
+        start_date=start_date,
+        end_date=end_date,
+        strategy_params={
+            "period": period,
+            "overbought": overbought,
+            "oversold": oversold,
+        },
         symbol="unknown",
     )
     res: BacktestResult = strat.run(source, params)
@@ -187,5 +190,5 @@ def run_rsi(source: PriceSeriesSource, period: int, overbought: float, oversold:
         equity=res.equity,
         pnl=res.pnl,
         drawdown=res.max_drawdown,
-        sharpe=res.sharpe_ratio
+        sharpe=res.sharpe_ratio,
     )

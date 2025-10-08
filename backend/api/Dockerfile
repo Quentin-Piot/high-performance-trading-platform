@@ -1,24 +1,23 @@
+FROM python:3.13-slim AS builder
+
+WORKDIR /app
+
+# Installer Poetry uniquement pour la phase de build
+RUN pip install --no-cache-dir "poetry>=1.7,<2.0"
+
+# Installer les dépendances (groupe principal) dans le site-packages global
+ENV POETRY_VIRTUALENVS_CREATE=false
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-root --only main
+
 FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
-RUN pip install --no-cache-dir \
-    fastapi==0.118.* \
-    uvicorn==0.37.* \
-    pydantic>=2.6,<3.0 \
-    pydantic-settings>=2.4,<3.0 \
-    python-dotenv>=1.0,<2.0 \
-    sqlalchemy>=2.0,<3.0 \
-    psycopg[binary]>=3.1,<4.0 \
-    asyncpg>=0.30,<1.0 \
-    pandas>=2.2,<3.0 \
-    numpy>=1.26,<3.0 \
-    python-jose[cryptography]>=3.3,<4.0 \
-    passlib[bcrypt]>=1.7,<2.0 \
-    python-multipart>=0.0.9,<0.0.10 \
-    alembic>=1.13,<2.0
+# Copier les dépendances installées depuis le builder
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 
+# Copier le code de l'application
 COPY src ./src
 COPY alembic.ini ./
 COPY scripts ./scripts

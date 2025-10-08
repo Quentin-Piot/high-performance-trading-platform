@@ -26,17 +26,16 @@ async def app_lifespan(app: FastAPI):
 
 app = FastAPI(title="Trading Backtest API", version="0.1.0", lifespan=app_lifespan)
 
-# CORS for local frontend development (Vite/Next/Vue CLI, etc.)
+allowed_origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten to your frontend origin in production
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# Map service ValueError to HTTP 400 for clear client errors
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
     logging.getLogger("http").warning(
@@ -55,10 +54,12 @@ async def value_error_handler(request: Request, exc: ValueError):
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     logger = logging.getLogger("http")
-    # Correlate logs via request_id (use incoming header if present)
-    req_id = request.headers.get("x-request-id") or request.headers.get("x-correlation-id")
+    req_id = request.headers.get("x-request-id") or request.headers.get(
+        "x-correlation-id"
+    )
     if not req_id:
         import uuid
+
         req_id = uuid.uuid4().hex
     token = REQUEST_ID.set(req_id)
     start = time.monotonic()
@@ -94,14 +95,11 @@ async def request_logging_middleware(request: Request, call_next):
     return response
 
 
-# Startup handled via lifespan; no on_event usage
-
-
 @app.get("/")
 async def root():
     return {"message": "OK", "service": "Trading Backtest API"}
 
-# Health endpoints
+
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
@@ -122,7 +120,6 @@ async def readyz():
         return responses.JSONResponse(status_code=503, content={"ready": False})
 
 
-# Include routers with versioned prefix for API v1 and keep legacy paths for compatibility
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")
 app.include_router(auth_router)

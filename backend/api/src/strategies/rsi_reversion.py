@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 from pydantic import Field
 
-from ..domain.models import BacktestResult
-from ._base import Strategy, StrategyParams
-from ._metrics import (
+from ..domain.backtest import BacktestResult
+from .base import Strategy, StrategyParams
+from .metrics import (
     sharpe_ratio,
     max_drawdown,
     total_return,
@@ -28,12 +28,11 @@ class RSIReversionStrategy(Strategy):
         delta = series.diff()
         up = delta.clip(lower=0.0)
         down = -delta.clip(upper=0.0)
-        # Use simple moving average of gains/losses (Wilder EMA might be better)
         roll_up = up.rolling(window=window, min_periods=1).mean()
         roll_down = down.rolling(window=window, min_periods=1).mean()
         rs = roll_up / (roll_down.replace(0, np.nan))
         rsi = 100 - (100 / (1 + rs))
-        rsi = rsi.fillna(50)  # neutral where undefined
+        rsi = rsi.fillna(50)
         return rsi
 
     def run(self, df: pd.DataFrame, params: RSIParams) -> BacktestResult:
@@ -52,7 +51,6 @@ class RSIReversionStrategy(Strategy):
         close = data["close"].astype(float)
         rsi = self._rsi(close, window=params.window)
 
-        # signal: buy when RSI < rsi_low; exit when RSI > rsi_high (simple reversion)
         raw_signal = (rsi < params.rsi_low).astype(int)
         position = raw_signal.shift(1).fillna(0).astype(int) * params.position_size
 
@@ -66,12 +64,12 @@ class RSIReversionStrategy(Strategy):
         if equity.isna().all():
             equity = pd.Series(params.initial_capital, index=close.index)
 
+        total_ret = total_return(equity)
+        sharpe_val = sharpe_ratio(strategy_returns, annualization=params.annualization)
+        mdd_val = max_drawdown(equity)
+
         metrics = {
-            "total_return": total_return(equity),
-            "sharpe": sharpe_ratio(
-                strategy_returns, annualization=params.annualization
-            ),
-            "max_drawdown": max_drawdown(equity),
+            "total_return": total_ret,
             "n_trades": int(trade_events.sum()),
         }
 
@@ -79,6 +77,9 @@ class RSIReversionStrategy(Strategy):
 
         return BacktestResult(
             equity=equity,
+            pnl=total_ret,
+            max_drawdown=mdd_val,
+            sharpe_ratio=sharpe_val,
             returns=strategy_returns,
             metrics=metrics,
             signals=position,

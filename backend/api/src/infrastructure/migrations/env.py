@@ -6,23 +6,17 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+from infrastructure.db import Base
+
 config = context.config
 
-# Interpret the config file for Python logging.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set SQLAlchemy URL from environment if provided
 db_url = os.getenv("DATABASE_URL")
 if db_url:
     config.set_main_option("sqlalchemy.url", db_url)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-from infrastructure.db import Base  # noqa: E402
-from infrastructure import models  # noqa: F401,E402
 
 target_metadata = Base.metadata
 

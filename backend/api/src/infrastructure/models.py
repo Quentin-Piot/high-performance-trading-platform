@@ -30,12 +30,9 @@ class Strategy(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    type: Mapped[str] = mapped_column(
-        String(50), nullable=False
-    )  # ex: "MovingAverage", "RSIReversion"
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
-    # Paramètres spécifiques à la stratégie (JSON pour flexibilité)
     params: Mapped[str] = mapped_column(String(1000), nullable=True)
 
     owner: Mapped[User] = relationship(back_populates="strategies")

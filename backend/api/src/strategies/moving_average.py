@@ -1,12 +1,11 @@
 from __future__ import annotations
 import pandas as pd
-import numpy as np
 from typing import Optional
 from pydantic import Field
 
-from ..domain.models import BacktestResult
-from ._base import Strategy, StrategyParams
-from ._metrics import (
+from ..domain.backtest import BacktestResult
+from .base import Strategy, StrategyParams
+from .metrics import (
     sharpe_ratio,
     max_drawdown,
     total_return,
@@ -73,12 +72,14 @@ class MovingAverageStrategy(Strategy):
         if equity.isna().all():
             equity = pd.Series(params.initial_capital, index=close.index)
 
+        # Compute canonical top-level metrics
+        total_ret = total_return(equity)
+        sharpe_val = sharpe_ratio(strategy_returns, annualization=params.annualization)
+        mdd_val = max_drawdown(equity)
+
+        # Auxiliary metrics (no duplication of top-level values)
         metrics = {
-            "total_return": total_return(equity),
-            "sharpe": sharpe_ratio(
-                strategy_returns, annualization=params.annualization
-            ),
-            "max_drawdown": max_drawdown(equity),
+            "total_return": total_ret,
             "n_trades": int(trade_events.sum()),
         }
 
@@ -86,6 +87,9 @@ class MovingAverageStrategy(Strategy):
 
         return BacktestResult(
             equity=equity,
+            pnl=total_ret,
+            max_drawdown=mdd_val,
+            sharpe_ratio=sharpe_val,
             returns=strategy_returns,
             metrics=metrics,
             signals=position,
