@@ -54,4 +54,17 @@
       "backtest": "Error during backtest"
     }
   }
+  ,
+  "errors": {
+    "invalid_csv": "The file must be a CSV",
+    "csv_too_large": "The file must be ≤ 5MB",
+    "invalid_sma_params": "SMA parameters are invalid",
+    "invalid_rsi_params": "RSI parameters are invalid",
+    "backtest_failed": "Backtest failed",
+    "auth_login_failed": "Login failed",
+    "auth_register_failed": "Registration failed",
+    "network_error": "Network error",
+    "request_timeout": "Request timed out",
+    "retrying": "Retrying…"
+  }
 }

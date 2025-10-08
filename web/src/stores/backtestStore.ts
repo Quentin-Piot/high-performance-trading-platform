@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
-import { postFormData, type BacktestResponse } from '@/services/apiClient'
+import { BacktestValidationError, runBacktest as runBacktestSvc } from '@/services/backtestService'
+import type { BacktestResponse, BacktestRequest } from '@/services/backtestService'
+import { useErrorStore } from '@/stores/errorStore'
 import { buildEquityPoints, toLineData } from '@/composables/useEquitySeries'
 
 export type BacktestStatus = 'idle' | 'loading' | 'success' | 'error'
@@ -12,7 +14,10 @@ export const useBacktestStore = defineStore('backtest', {
     pnl: null as number | null,
     drawdown: null as number | null,
     sharpe: null as number | null,
-    error: null as string | null,
+    errorCode: null as string | null,
+    errorMessage: null as string | null,
+    lastFile: null as File | null,
+    lastRequest: null as BacktestRequest | null,
   }),
   getters: {
     equitySeries(state) {
@@ -28,21 +33,17 @@ export const useBacktestStore = defineStore('backtest', {
       this.pnl = null
       this.drawdown = null
       this.sharpe = null
-      this.error = null
+      this.errorCode = null
+      this.errorMessage = null
+      this.lastFile = null
+      this.lastRequest = null
     },
-    async runBacktest(file: File, smaShort: number, smaLong: number) {
+    async runBacktest(file: File, req: BacktestRequest) {
       this.status = 'loading'
-      this.error = null
+      this.errorCode = null
+      this.errorMessage = null
       try {
-        // client-side validation
-        if (!file || file.type !== 'text/csv') throw new Error('Le fichier doit être au format .csv')
-        if (file.size > 5 * 1024 * 1024) throw new Error('Le fichier doit être ≤ 5MB')
-        if (!(smaShort > 0 && smaLong > 0 && smaShort < smaLong)) throw new Error('Paramètres SMA invalides')
-
-        const fd = new FormData()
-        fd.append('csv', file)
-        const qs = `?sma_short=${encodeURIComponent(smaShort)}&sma_long=${encodeURIComponent(smaLong)}`
-        const resp = await postFormData<BacktestResponse>(`/api/v1/backtest${qs}`, fd)
+        const resp: BacktestResponse = await runBacktestSvc(file, req)
 
         const curve = resp.equity_curve || []
         const base = curve.length ? curve[0] : 1
@@ -53,11 +54,24 @@ export const useBacktestStore = defineStore('backtest', {
         this.pnl = resp.pnl
         this.drawdown = resp.drawdown
         this.sharpe = resp.sharpe
+        this.lastFile = file
+        this.lastRequest = req
         this.status = 'success'
       } catch (e: unknown) {
-        this.error = e instanceof Error ? e.message : 'Erreur lors du backtest'
+        const msg = e instanceof Error ? e.message : String(e)
+        let code: string = 'error.backtest_failed'
+        if (e instanceof BacktestValidationError) {
+          code = e.code
+        }
+        this.errorCode = code
+        this.errorMessage = msg
+        useErrorStore().log(code, msg, req)
         this.status = 'error'
       }
+    },
+    async retryLast() {
+      if (!this.lastFile || !this.lastRequest) return
+      await this.runBacktest(this.lastFile, this.lastRequest)
     },
   },
 })

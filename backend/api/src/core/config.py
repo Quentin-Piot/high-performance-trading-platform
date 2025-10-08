@@ -4,9 +4,9 @@ from pydantic import Field, AliasChoices
 
 class Settings(BaseSettings):
     env: str = "development"
-    # Default to SQLite (async) for local/dev to avoid startup failures without Postgres
+    # Postgres obligatoire par défaut (psycopg pour Alembic, converti en asyncpg pour l'ORM)
     db_url: str = Field(
-        default="sqlite+aiosqlite:///./app.db",
+        default="postgresql+psycopg://postgres:postgres@pg:5432/trading_db",
         validation_alias=AliasChoices("DATABASE_URL", "DB_URL"),
     )
     jwt_secret: str = "changeme-dev-secret"

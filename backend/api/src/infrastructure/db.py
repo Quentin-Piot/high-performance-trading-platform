@@ -13,13 +13,11 @@ class Base(DeclarativeBase):
 
 
 def _to_async_url(url: str) -> str:
-    # Convert common sync URLs to async driver equivalents when needed
+    # Convert Postgres sync URLs to async driver equivalents when needed
     parsed = urlparse(url)
     if parsed.scheme.startswith("postgresql") and "+asyncpg" not in parsed.scheme:
         # Replace scheme to use asyncpg
         return url.replace("postgresql+psycopg", "postgresql+asyncpg").replace("postgresql://", "postgresql+asyncpg://")
-    if parsed.scheme.startswith("sqlite") and "+aiosqlite" not in parsed.scheme:
-        return url.replace("sqlite://", "sqlite+aiosqlite://")
     return url
 
 ASYNC_DB_URL = _to_async_url(settings.db_url)
@@ -36,9 +34,7 @@ SessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=F
 async def init_db() -> None:
     # Import des modèles pour que metadata soit au courant
     from infrastructure.models import User, Strategy, Backtest  # noqa: F401
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Pas de create_all ici; les migrations Alembic pilotent le schéma.
 
 async def get_session():
     async with SessionLocal() as session:

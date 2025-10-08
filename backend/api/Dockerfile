@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir \
     python-dotenv>=1.0,<2.0 \
     sqlalchemy>=2.0,<3.0 \
     psycopg[binary]>=3.1,<4.0 \
+    asyncpg>=0.30,<1.0 \
     pandas>=2.2,<3.0 \
     numpy>=1.26,<3.0 \
     python-jose[cryptography]>=3.3,<4.0 \
@@ -19,7 +20,9 @@ RUN pip install --no-cache-dir \
     alembic>=1.13,<2.0
 
 COPY src ./src
+COPY alembic.ini ./
+COPY scripts ./scripts
 
 EXPOSE 8000
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--app-dir", "src"]
+CMD ["python", "scripts/bootstrap.py"]
