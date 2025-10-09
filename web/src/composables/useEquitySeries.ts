@@ -1,5 +1,7 @@
 import type { EquityPoint } from "../types/backtest"
-import type { LineData, Time } from "lightweight-charts"
+
+// Utiliser des types locaux pour éviter la dépendance aux exports TS de lightweight-charts
+export type LinePoint = { time: number; value: number }
 
 export function toUtcTimestamp(ts: string): number {
   const m = ts.match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})(?:$|T)/)
@@ -29,6 +31,6 @@ export function buildEquityPoints(timestamps: string[], equity: number[]): Equit
   return dedup
 }
 
-export function toLineData(points: EquityPoint[]): LineData<Time>[] {
-  return points.map(p => ({ time: p.time as unknown as Time, value: p.value }))
+export function toLineData(points: EquityPoint[]): LinePoint[] {
+  return points.map(p => ({ time: p.time, value: p.value }))
 }

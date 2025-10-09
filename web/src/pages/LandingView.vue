@@ -3,7 +3,7 @@ import { useRouter } from '@/router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useI18n } from 'vue-i18n'
-import { LineChart, ShieldCheck, Zap, BarChart3 } from 'lucide-vue-next'
+import { LineChart, ShieldCheck, BarChart3 } from 'lucide-vue-next'
 import TopNav from '@/components/common/TopNav.vue'
 import { ref, watch } from 'vue'
 
@@ -23,128 +23,218 @@ function go(path: string) {
 </script>
 
 <template>
-  <main class="container mx-auto px-6 py-10 space-y-10">
+  <main class="container mx-auto px-6 py-10 space-y-10 animate-fade-in">
     <!-- Top nav -->
     <TopNav />
 
-    <!-- Hero -->
-    <section class="relative overflow-hidden rounded-xl border bg-secondary/50 p-10 text-center shadow-sm">
-      <div class="absolute inset-0 -z-10 opacity-30 " aria-hidden="true"></div>
-      <h1 class="text-4xl font-bold tracking-tight">{{ t('landing.title') }}</h1>
-      <p class="text-muted-foreground max-w-2xl mx-auto mt-3">{{ t('landing.subtitle') }}</p>
-      <div class="flex justify-center gap-3 mt-6">
-        <Button size="lg" @click="go('/simulate')" class="  transition-transform hover:scale-[1.02]">
-          {{ t('landing.cta.startBacktest') }}
-        </Button>
+    <!-- Hero Section avec dégradé et animations -->
+    <section class="relative overflow-hidden rounded-2xl border gradient-hero px-8 py-16 text-center shadow-strong hover-lift transition-smooth">
+      <!-- Éléments décoratifs flottants -->
+      <div class="absolute top-8 left-8 w-20 h-20 bg-trading-blue/20 rounded-full animate-float"></div>
+      <div class="absolute top-16 right-12 w-12 h-12 bg-trading-purple/30 rounded-full animate-float" style="animation-delay: -2s;"></div>
+      <div class="absolute bottom-12 left-16 w-16 h-16 bg-trading-cyan/25 rounded-full animate-float" style="animation-delay: -4s;"></div>
+      
+      <!-- Contenu principal -->
+      <div class="relative z-10 animate-slide-up space-y-6">
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary via-trading-purple to-trading-cyan bg-clip-text leading-tight">
+          {{ t('landing.title') }}
+        </h1>
+        <p class="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">{{ t('landing.subtitle') }}</p>
+        <div class="flex justify-center gap-4 pt-4">
+          <Button 
+            size="lg" 
+            @click="go('/simulate')" 
+            class="gradient-primary text-white font-semibold px-8 py-4 rounded-xl shadow-medium hover-glow hover-scale transition-bounce"
+          >
+            <BarChart3 class="mr-2 h-5 w-5" />
+            {{ t('landing.cta.startBacktest') }}
+          </Button>
+        </div>
       </div>
+      
+      <!-- Effet de brillance -->
+      <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 animate-pulse-glow opacity-30"></div>
     </section>
 
-    <!-- Features grid -->
-    <section class="grid md:grid-cols-3 gap-6">
-      <Card class="transition-all hover:shadow-lg group">
-        <CardHeader>
-          <div class="flex items-center gap-3">
-            <div class="rounded-full bg-primary/10 p-2 text-primary">
-              <LineChart class="size-5" />
+    <!-- Features grid avec animations échelonnées -->
+    <section class="grid md:grid-cols-3 gap-8">
+      <Card class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30">
+        <div class="absolute inset-0 bg-gradient-to-br from-trading-blue/5 to-trading-purple/5 opacity-0 group-hover:opacity-100 transition-smooth"></div>
+        <CardHeader class="relative z-10">
+          <div class="flex items-center gap-4">
+            <div class="rounded-2xl bg-trading-blue/10 p-4 text-trading-blue group-hover:bg-trading-blue/20 transition-smooth shadow-soft">
+              <LineChart class="size-6" />
             </div>
             <div>
-              <CardTitle>{{ t('landing.sections.simulation.title') }}</CardTitle>
-              <CardDescription>Backtests rapides, paramètres clairs, résultats fiables.</CardDescription>
+              <CardTitle class="text-xl font-semibold">{{ t('landing.sections.simulation.title') }}</CardTitle>
+              <CardDescription class="text-muted-foreground mt-1">Backtests rapides, paramètres clairs, résultats fiables.</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <p class="text-sm text-muted-foreground">{{ t('landing.sections.simulation.text') }}</p>
+        <CardContent class="relative z-10">
+          <p class="text-sm text-muted-foreground leading-relaxed">{{ t('landing.sections.simulation.text') }}</p>
         </CardContent>
       </Card>
-      <Card class="transition-all hover:shadow-lg group">
-        <CardHeader>
-          <div class="flex items-center gap-3">
-            <div class="rounded-full bg-primary/10 p-2 text-primary">
-              <ShieldCheck class="size-5" />
+
+      <Card class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30" style="animation-delay: 0.1s;">
+        <div class="absolute inset-0 bg-gradient-to-br from-trading-green/5 to-trading-cyan/5 opacity-0 group-hover:opacity-100 transition-smooth"></div>
+        <CardHeader class="relative z-10">
+          <div class="flex items-center gap-4">
+            <div class="rounded-2xl bg-trading-green/10 p-4 text-trading-green group-hover:bg-trading-green/20 transition-smooth shadow-soft">
+              <ShieldCheck class="size-6" />
             </div>
             <div>
-              <CardTitle>{{ t('landing.sections.auth.title') }}</CardTitle>
-              <CardDescription>Flux d’authentification simplifié et sécurisé.</CardDescription>
+              <CardTitle class="text-xl font-semibold">{{ t('landing.sections.auth.title') }}</CardTitle>
+              <CardDescription class="text-muted-foreground mt-1">Flux d'authentification simplifié et sécurisé.</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <p class="text-sm text-muted-foreground">{{ t('landing.sections.auth.text') }}</p>
+        <CardContent class="relative z-10">
+          <p class="text-sm text-muted-foreground leading-relaxed">{{ t('landing.sections.auth.text') }}</p>
         </CardContent>
       </Card>
-      <Card class="transition-all hover:shadow-lg group">
-        <CardHeader>
-          <div class="flex items-center gap-3">
-            <div class="rounded-full bg-primary/10 p-2 text-primary">
-              <BarChart3 class="size-5" />
+
+      <Card class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30" style="animation-delay: 0.2s;">
+        <div class="absolute inset-0 bg-gradient-to-br from-trading-orange/5 to-trading-red/5 opacity-0 group-hover:opacity-100 transition-smooth"></div>
+        <CardHeader class="relative z-10">
+          <div class="flex items-center gap-4">
+            <div class="rounded-2xl bg-trading-orange/10 p-4 text-trading-orange group-hover:bg-trading-orange/20 transition-smooth shadow-soft">
+              <BarChart3 class="size-6" />
             </div>
             <div>
-              <CardTitle>{{ t('landing.sections.visualization.title') }}</CardTitle>
-              <CardDescription>Visualisations nettes, thèmes lisibles, détails pertinents.</CardDescription>
+              <CardTitle class="text-xl font-semibold">{{ t('landing.sections.visualization.title') }}</CardTitle>
+              <CardDescription class="text-muted-foreground mt-1">Visualisations nettes, thèmes lisibles, détails pertinents.</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <p class="text-sm text-muted-foreground">{{ t('landing.sections.visualization.text') }}</p>
+        <CardContent class="relative z-10">
+          <p class="text-sm text-muted-foreground leading-relaxed">{{ t('landing.sections.visualization.text') }}</p>
         </CardContent>
       </Card>
-    </section>
-
-    <!-- How it works / steps -->
-    <section class="grid md:grid-cols-3 gap-6">
-      <Card class="transition-all hover:shadow-lg">
-        <CardHeader>
-          <CardTitle>1. Importez vos données</CardTitle>
-          <CardDescription>CSV propre, champs standards, lecture fiable.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p class="text-sm text-muted-foreground">Chargez un fichier CSV depuis l’interface de simulation puis
-            définissez vos paramètres SMA.</p>
-        </CardContent>
-      </Card>
-      <Card class="transition-all hover:shadow-lg">
-        <CardHeader>
-          <CardTitle>2. Lancez le backtest</CardTitle>
-          <CardDescription>Calcul rapide, carte lisible, métriques clés.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p class="text-sm text-muted-foreground">Suivez l’équity curve et les KPI principaux avec un rendu inspiré de
-            TradingView.</p>
-        </CardContent>
-      </Card>
-      <Card class="transition-all hover:shadow-lg">
-        <CardHeader>
-          <CardTitle>3. Analysez et itérez</CardTitle>
-          <CardDescription>Paramétrage fluide, comparaisons simples.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p class="text-sm text-muted-foreground">Ajustez vos paramètres et améliorez les performances de vos
-            stratégies.</p>
-        </CardContent>
-      </Card>
-    </section>
-
-    <!-- Final CTA -->
-    <section class="text-center">
-      <div class="inline-flex items-center gap-2 rounded-xl border bg-secondary/40 px-6 py-4">
-        <Zap class="size-5 text-primary" />
-        <span class="text-sm text-muted-foreground">Prêt à démarrer ?</span>
-        <Button size="sm" class="ml-2" @click="go('/simulate')">Lancer une simulation</Button>
-      </div>
     </section>
   </main>
 </template>
 
 <style scoped>
-/* Accent discret derrière le hero (placeholder sans image) */
-section.relative::before {
+/* Effets visuels avancés pour la landing page */
+.hero-glow {
+  position: relative;
+}
+
+.hero-glow::before {
   content: "";
   position: absolute;
-  inset: -40% -10% auto -10%;
-  height: 140%;
-  border-radius: 50%;
-  background: radial-gradient(1200px 400px at 50% 30%, rgba(16, 185, 129, 0.15), transparent 60%);
-  pointer-events: none;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, 
+    var(--trading-blue), 
+    var(--trading-purple), 
+    var(--trading-cyan), 
+    var(--trading-green)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  opacity: 0.6;
+}
+
+/* Animation de particules flottantes */
+@keyframes particle-float {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg); 
+    opacity: 0.7;
+  }
+  33% { 
+    transform: translateY(-20px) rotate(120deg); 
+    opacity: 1;
+  }
+  66% { 
+    transform: translateY(-10px) rotate(240deg); 
+    opacity: 0.8;
+  }
+}
+
+.particle {
+  animation: particle-float 8s ease-in-out infinite;
+}
+
+/* Effet de brillance sur les cartes */
+.card-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-shine::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: rotate(45deg) translate(-100%, -100%);
+  transition: transform 0.6s ease;
+}
+
+.card-shine:hover::after {
+  transform: rotate(45deg) translate(100%, 100%);
+}
+
+/* Gradient animé pour le texte du titre */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(
+    270deg,
+    var(--primary),
+    var(--trading-purple),
+    var(--trading-cyan),
+    var(--trading-blue),
+    var(--primary)
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 4s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Effet de pulsation pour les éléments interactifs */
+.pulse-ring {
+  position: relative;
+}
+
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: var(--gradient-primary);
+  opacity: 0;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
 }
 </style>

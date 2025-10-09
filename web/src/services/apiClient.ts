@@ -28,8 +28,20 @@ export async function postFormData<T>(path: string, formData: FormData): Promise
   const headers: HeadersInit = { ...authHeader() } // do NOT set Content-Type; browser sets boundary
   const res = await fetch(url, { method: 'POST', headers, body: formData })
   if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(text || `HTTP ${res.status}`)
+    // Try to surface backend JSON error detail when available
+    let message = `HTTP ${res.status}`
+    try {
+      const data = await res.json()
+      if (data && typeof data === 'object') {
+        // FastAPI-style error: { detail: string | object }
+        if (typeof data.detail === 'string') message = data.detail
+        else if (data.detail && typeof data.detail === 'object') message = JSON.stringify(data.detail)
+      }
+    } catch {
+      const text = await res.text().catch(() => '')
+      if (text) message = text
+    }
+    throw new Error(message)
   }
   return res.json() as Promise<T>
 }

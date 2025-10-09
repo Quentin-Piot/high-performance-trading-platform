@@ -24,9 +24,9 @@ export type Trade = {
 export type Position = { symbol: string; qty: number; avgPrice: number }
 
 export const endpoints = {
-  prices: "/api/v1/prices", // GET: fetch latest prices
-  trades: "/api/v1/trades", // GET: fetch trade history
-  triggerTrade: "/api/v1/trade", // POST: execute a trade
+  prices: "/prices", // GET: fetch latest prices
+  trades: "/trades", // GET: fetch trade history
+  triggerTrade: "/trade", // POST: execute a trade
 }
 
 // Example placeholder functions. Replace implementations with real API calls later.

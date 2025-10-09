@@ -1,5 +1,7 @@
 {
   "nav": {
+    "title": "High Performance",
+    "subtitle": "Trading Platform",
     "home": "Home",
     "simulate": "Simulate",
     "legacy": "Legacy",
@@ -31,16 +33,52 @@
         "title": "Visualization",
         "text": "Equity curve rendered with Lightweight Charts. Metrics for PnL and drawdown with clear, minimal design."
       }
+    },
+    "final": {
+      "ready": "Ready to start?",
+      "startSimulation": "Start a simulation"
     }
   }
   ,
+  
   "simulate": {
     "header": {
       "title": "Backtest Simulation",
       "subtitle": "Upload a CSV and run an SMA backtest."
     },
     "form": {
-      "title": "Strategy Form"
+      "title": "Strategy Form",
+      "labels": {
+        "csv_file": "CSV File",
+        "strategy": "Strategy",
+        "start_date_optional": "Start Date (optional)",
+        "end_date_optional": "End Date (optional)"
+      },
+      "buttons": {
+        "run": "Run",
+        "reset": "Reset"
+      },
+      "csv": {
+        "drop_hint": "Drag and drop your file or click to select.",
+        "selected_file": "Selected file: {name}"
+      },
+      "strategy": {
+        "names": {
+          "sma_crossover": "SMA Crossover",
+          "rsi": "RSI Strategy"
+        },
+        "params": {
+          "sma_crossover": {
+            "sma_short": "Short SMA",
+            "sma_long": "Long SMA"
+          },
+          "rsi": {
+            "period": "RSI Period",
+            "overbought": "Overbought",
+            "oversold": "Oversold"
+          }
+        }
+      }
     },
     "results": {
       "title": "Results"
@@ -52,11 +90,39 @@
     },
     "errors": {
       "backtest": "Error during backtest"
+    },
+    "chart": {
+      "title": "Equity Curve",
+      "subtitle": "Strategy Performance",
+      "trend": {
+        "positive": "Positive trend",
+        "negative": "Negative trend"
+      },
+      "empty": {
+        "title": "No data available",
+        "subtitle": "Run a backtest to see results"
+      },
+      "legend": "Equity",
+      "resolution": {
+        "1m": "1m",
+        "5m": "5m",
+        "1h": "1h",
+        "1d": "1d"
+      },
+      "range": {
+        "1W": "1W",
+        "1M": "1M",
+        "YTD": "YTD",
+        "All": "All"
+      }
     }
   }
   ,
+  
   "errors": {
     "invalid_csv": "The file must be a CSV",
+    "no_csv_file": "Please select a CSV file",
+    "invalid_params": "Invalid parameters",
     "csv_too_large": "The file must be ≤ 5MB",
     "invalid_sma_params": "SMA parameters are invalid",
     "invalid_rsi_params": "RSI parameters are invalid",

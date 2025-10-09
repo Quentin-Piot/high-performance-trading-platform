@@ -1,9 +1,9 @@
 export interface BacktestResponse {
   timestamps: string[]
   equity_curve: number[]
-  pnl?: number
-  max_drawdown?: number
-  sharpe?: number
+  pnl: number
+  drawdown: number
+  sharpe: number
 }
 
 export interface EquityPoint {
@@ -11,8 +11,3 @@ export interface EquityPoint {
   value: number
 }
 
-export interface Metrics {
-  pnl: number
-  maxDrawdown: number
-  sharpe: number
-}
