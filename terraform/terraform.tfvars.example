@@ -1,0 +1,32 @@
+# Région AWS
+aws_region = "eu-west-3"  # Paris
+
+# Nom du projet (préfixe utilisé pour nommer les ressources)
+project_name = "trading-platform"
+
+# Nom de domaine (optionnel, si tu veux associer ton propre domaine CloudFront)
+domain_name = ""  # ex: "qube-trading.me" ou vide pour générer un CloudFront par défaut
+
+# ------------- FRONTEND -------------
+frontend_bucket_name = "trading-platform-frontend"  # S3 bucket pour le front (doit être unique globalement)
+frontend_build_path  = "./web/dist"  # chemin local du build frontend
+
+# ------------- BACKEND -------------
+backend_image = "ghcr.io/quentinpiot/trading-backend:latest" # ou ton image ECR une fois pushée
+backend_container_port = 8000
+
+# ------------- DATABASE -------------
+db_username = "postgres"
+db_password = "postgres123"     # ou mets une variable d’environnement GitHub Actions pour la sécurité
+db_name     = "tradingdb"
+
+# ------------- NETWORKING -------------
+vpc_cidr = "10.0.0.0/16"
+public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnets = ["10.0.3.0/24", "10.0.4.0/24"]
+
+# ------------- EFS -------------
+efs_encrypted = true
+
+# ------------- CloudFront -------------
+cloudfront_price_class = "PriceClass_100" # Europe + US, plus économique
