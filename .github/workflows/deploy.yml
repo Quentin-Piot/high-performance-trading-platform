@@ -38,12 +38,14 @@ jobs:
           docker build -t "$REPO:latest" .
           docker tag "$REPO:latest" "$REPO:$(date +%s)"
           docker push "$REPO:latest"
+      - name: Install pnpm
+        run: npm install -g pnpm
 
-      - name: Build frontend (Vite / Vue)
+      - name: Install frontend dependencies & build (Vite / Vue)
         working-directory: ./web
         run: |
-          npm ci
-          npm run build
+         pnpm install --frozen-lockfile
+         pnpm run build 
 
       - name: Sync frontend to S3
         run: |
