@@ -1,0 +1,136 @@
+{
+  "nav": {
+    "title": "Haute Performance",
+    "subtitle": "Plateforme de Trading",
+    "home": "Accueil",
+    "simulate": "Simuler",
+    "legacy": "Ancien",
+    "login": "Connexion",
+    "register": "S'inscrire"
+  },
+  "landing": {
+    "title": "Plateforme de Trading Haute Performance",
+    "subtitle": "Frontend moderne Vue + TypeScript avec backend FastAPI. Lancez des backtests via import CSV, configurez les moyennes mobiles (SMA) et visualisez la courbe d'équité, le PnL et le drawdown avec Lightweight Charts.",
+    "cta": {
+      "startBacktest": "Démarrer le Backtest",
+      "login": "Connexion",
+      "register": "Inscription"
+    },
+    "legacy": {
+      "text": "Vous préférez l'ancien tableau de bord ? Visitez la page héritée.",
+      "open": "Ouvrir le tableau de bord hérité"
+    },
+    "sections": {
+      "simulation": {
+        "title": "Simulation de Backtest",
+        "text": "Importez votre CSV de prix, définissez les paramètres SMA et lancez un backtest côté serveur. Résultats avec courbe d'équité, PnL et drawdown, UI robuste et responsive."
+      },
+      "auth": {
+        "title": "Authentification",
+        "text": "Inscrivez-vous et connectez-vous pour stocker le token dans Pinia. Les requêtes utilisent un client API authentifié. Pour tester, la page de simulation est accessible sans connexion."
+      },
+      "visualization": {
+        "title": "Visualisation",
+        "text": "Courbe d'équité rendue avec Lightweight Charts. Mesures de PnL et drawdown dans un design clair et minimal."
+      }
+    },
+    "final": {
+      "ready": "Prêt à démarrer ?",
+      "startSimulation": "Lancer une simulation"
+    }
+  }
+  ,
+  
+  "simulate": {
+    "header": {
+      "title": "Simulation de Backtest",
+      "subtitle": "Importez un CSV et lancez un backtest SMA."
+    },
+    "form": {
+      "title": "Formulaire de Stratégie",
+      "labels": {
+        "csv_file": "Fichier CSV",
+        "strategy": "Stratégie",
+        "start_date_optional": "Date de début (optionnel)",
+        "end_date_optional": "Date de fin (optionnel)"
+      },
+      "buttons": {
+        "run": "Lancer",
+        "reset": "Réinitialiser"
+      },
+      "csv": {
+        "drop_hint": "Glissez-déposez votre fichier ou cliquez pour sélectionner.",
+        "selected_file": "Fichier sélectionné : {name}"
+      },
+      "strategy": {
+        "names": {
+          "sma_crossover": "Croisement SMA",
+          "rsi": "Stratégie RSI"
+        },
+        "params": {
+          "sma_crossover": {
+            "sma_short": "SMA courte",
+            "sma_long": "SMA longue"
+          },
+          "rsi": {
+            "period": "Période RSI",
+            "overbought": "Surachat",
+            "oversold": "Survente"
+          }
+        }
+      }
+    },
+    "results": {
+      "title": "Résultats"
+    },
+    "metrics": {
+      "pnl": "P&L",
+      "drawdown": "Drawdown Max",
+      "sharpe": "Ratio de Sharpe"
+    },
+    "errors": {
+      "backtest": "Erreur lors du backtest"
+    },
+    "chart": {
+      "title": "Courbe d'équité",
+      "subtitle": "Performance de la stratégie",
+      "trend": {
+        "positive": "Tendance positive",
+        "negative": "Tendance négative"
+      },
+      "empty": {
+        "title": "Aucune donnée disponible",
+        "subtitle": "Lancez un backtest pour voir les résultats"
+      },
+      "legend": "Équité",
+      "resolution": {
+        "1m": "1m",
+        "5m": "5m",
+        "1h": "1h",
+        "1d": "1j"
+      },
+      "range": {
+        "1W": "1 semaine",
+        "1M": "1 mois",
+        "YTD": "YTD",
+        "All": "Tout"
+      }
+    }
+  }
+  ,
+  
+  "errors": {
+    "invalid_csv": "Le fichier doit être au format CSV",
+    "no_csv_file": "Veuillez sélectionner un fichier CSV",
+    "invalid_params": "Paramètres invalides",
+    "csv_too_large": "Le fichier doit être ≤ 5MB",
+    "invalid_sma_params": "Paramètres SMA invalides",
+    "invalid_rsi_params": "Paramètres RSI invalides",
+    "backtest_failed": "Échec du backtest",
+    "auth_login_failed": "Échec de la connexion",
+    "auth_register_failed": "Échec de l'inscription",
+    "network_error": "Erreur réseau",
+    "request_timeout": "Délai de la requête dépassé",
+    "retrying": "Nouvelle tentative…"
+  }
+}
