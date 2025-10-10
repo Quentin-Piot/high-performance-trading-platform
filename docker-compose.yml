@@ -6,7 +6,7 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: "http://trading_backend:8000"
+        VITE_API_BASE_URL: "http://trading-platform-alb-2074234892.eu-west-3.elb.amazonaws.com/api/v1"
     image: trading-platform_frontend
     container_name: trading_frontend
     ports:
