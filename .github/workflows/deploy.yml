@@ -32,7 +32,7 @@ jobs:
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
       - name: Build & push backend image
-        working-directory: ./backend
+        working-directory: ./backend/api
         run: |
           REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
           docker build -t "$REPO:latest" .
