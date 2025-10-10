@@ -52,7 +52,13 @@ jobs:
       - name: Invalidate CloudFront cache (optional)
         if: secrets.CLOUDFRONT_DIST_ID != ''
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
+          if [ -n "${{ secrets.CLOUDFRONT_DIST_ID }}" ]; then
+            aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
+            --paths "/*"
+          else
+             echo "CLOUDFRONT_DIST_ID not set. Skipping invalidation."
+          fi
 
       - name: Force new deployment on ECS
         run: |
