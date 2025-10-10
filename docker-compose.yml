@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: "http://trading_backend:8000"
+    image: trading-platform_frontend
+    container_name: trading_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    env_file:
+      - ./web/.env
+    networks:
+      - trading_network
+
+  backend:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    image: trading-platform_backend
+    container_name: trading_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/api/.env
+    depends_on:
+      pg:
+        condition: service_healthy
+    networks:
+      - trading_network
+
+  pg:
+    image: postgres:16
+    container_name: trading_pg
+    env_file:
+      - ./backend/api/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - trading_network
+
+volumes:
+  postgres_data:
+
+networks:
+  trading_network:
+    driver: bridge
