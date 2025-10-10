@@ -1,0 +1,59 @@
+name: CI/CD - build & deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: eu-west-3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR repo exists
+        run: |
+          ECR_REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
+          aws ecr describe-repositories --repository-names "trading-platform_backend" >/dev/null 2>&1 || \
+            aws ecr create-repository --repository-name "trading-platform_backend"
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+      - name: Build & push backend image
+        working-directory: ./backend
+        run: |
+          REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
+          docker build -t "$REPO:latest" .
+          docker tag "$REPO:latest" "$REPO:$(date +%s)"
+          docker push "$REPO:latest"
+
+      - name: Build frontend (Vite / Vue)
+        working-directory: ./web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Sync frontend to S3
+        run: |
+          aws s3 sync ./web/dist s3://${{ secrets.S3_BUCKET }} --delete
+
+      - name: Invalidate CloudFront cache (optional)
+        if: ${{ secrets.CLOUDFRONT_DIST_ID != '' }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
+
+      - name: Force new deployment on ECS
+        run: |
+          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER_NAME }} --service ${{ secrets.ECS_SERVICE_NAME }} --force-new-deployment
