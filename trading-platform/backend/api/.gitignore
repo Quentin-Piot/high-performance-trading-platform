@@ -1,0 +1,33 @@
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Virtual environment
+.venv/
+venv/
+env/
+.env/
+
+# Editor files and directories
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Database files (if using SQLite)
+*.sqlite3
+*.db
+
+# FastAPI specific
+.mypy_cache/
+
+.DS_Store
+.hypothesis
+.pytest_cache
+.env
