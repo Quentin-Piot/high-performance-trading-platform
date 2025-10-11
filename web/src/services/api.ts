@@ -4,8 +4,7 @@ import axios from "axios";
 // Placeholder API client setup for future backend integration
 // Base URL can be replaced with real endpoint later.
 export const api = axios.create({
-  baseURL:
-    "http://trading-platform-alb-2074234892.eu-west-3.elb.amazonaws.com/api/v1",
+  baseURL: "/api/v1",
   timeout: 10000,
 });
 
