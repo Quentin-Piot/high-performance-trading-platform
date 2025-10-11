@@ -32,6 +32,35 @@ const error = ref<string | null>(null)
 const dragActive = ref(false)
 const inputEl = ref<HTMLInputElement | null>(null)
 
+function formatDateToDisplay(isoDate: string): string {
+  if (!isoDate) return ''
+  const [year, month, day] = isoDate.split('-')
+  return `${day}/${month}/${year}`
+}
+
+function formatDateToISO(displayDate: string): string {
+  if (!displayDate) return ''
+  const parts = displayDate.split('/')
+  if (parts.length !== 3) return ''
+  const [day, month, year] = parts
+  if (!day || !month || !year) return ''
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+}
+
+const startDateDisplay = computed({
+  get: () => formatDateToDisplay(startDate.value),
+  set: (value: string) => {
+    startDate.value = formatDateToISO(value)
+  }
+})
+
+const endDateDisplay = computed({
+  get: () => formatDateToDisplay(endDate.value),
+  set: (value: string) => {
+    endDate.value = formatDateToISO(value)
+  }
+})
+
 const currentCfg = computed(() => BACKTEST_STRATEGIES[strategy.value])
 function initParams() {
   const cfg = currentCfg.value
@@ -116,9 +145,9 @@ function onReset() {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <!-- File Upload Section avec design premium -->
-    <div class="space-y-3">
+    <div class="space-y-2">
       <Label class="text-sm font-medium flex items-center gap-2">
         <div class="rounded-lg bg-trading-blue/10 p-1.5 text-trading-blue">
           <Upload class="size-3.5" />
@@ -126,7 +155,7 @@ function onReset() {
         {{ t('simulate.form.labels.csv_file') }}
       </Label>
       <div
-        class="group relative overflow-hidden rounded-xl border-2 border-dashed p-6 text-sm transition-all duration-300 cursor-pointer"
+        class="group relative overflow-hidden rounded-xl border-2 border-dashed p-4 text-sm transition-all duration-300 cursor-pointer"
         :class="[
           dragActive 
             ? 'border-trading-blue bg-gradient-to-br from-trading-blue/5 via-trading-blue/10 to-trading-purple/5 shadow-soft' 
@@ -160,7 +189,7 @@ function onReset() {
     </div>
 
     <!-- Strategy Selection avec style moderne -->
-    <div class="space-y-3">
+    <div class="space-y-2">
       <Label class="text-sm font-medium flex items-center gap-2">
         <div class="rounded-lg bg-trading-purple/10 p-1.5 text-trading-purple">
           <TrendingUp class="size-3.5" />
@@ -170,7 +199,7 @@ function onReset() {
       <div class="relative">
         <select 
           v-model="strategy" 
-          class="w-full h-11 rounded-xl border-0 bg-gradient-to-r from-secondary/50 to-accent/30 px-4 text-sm font-medium shadow-soft hover:shadow-medium transition-all duration-300 focus:ring-2 focus:ring-trading-blue/50 focus:outline-none"
+          class="w-full h-11 rounded-xl border-0 bg-gradient-to-r from-secondary/50 to-accent/30 px-4 pr-10 text-sm font-medium shadow-soft hover:shadow-medium transition-all duration-300 focus:ring-2 focus:ring-trading-blue/50 focus:outline-none appearance-none"
         >
           <option v-for="id in Object.keys(BACKTEST_STRATEGIES)" :key="id" :value="id" class="bg-background">
             {{ t('simulate.form.strategy.names.' + (id as string)) }}
@@ -181,7 +210,7 @@ function onReset() {
     </div>
 
     <!-- Parameters Grid avec animations -->
-    <div class="space-y-3">
+    <div class="space-y-2">
       <Label class="text-sm font-medium flex items-center gap-2">
         <div class="rounded-lg bg-trading-green/10 p-1.5 text-trading-green">
           <Settings class="size-3.5" />
@@ -208,7 +237,7 @@ function onReset() {
     </div>
 
     <!-- Date Range avec design élégant -->
-    <div class="space-y-3">
+    <div class="space-y-2">
       <Label class="text-sm font-medium flex items-center gap-2">
         <div class="rounded-lg bg-trading-cyan/10 p-1.5 text-trading-cyan">
           <Calendar class="size-3.5" />
@@ -221,8 +250,10 @@ function onReset() {
             {{ t('simulate.form.labels.start_date_optional') }}
           </Label>
           <Input 
-            v-model="startDate" 
-            type="date" 
+            v-model="startDateDisplay" 
+            type="text"
+            placeholder="dd/mm/yyyy"
+            pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
             class="h-10 border-0 bg-gradient-to-r from-secondary/30 to-accent/20 shadow-soft hover:shadow-medium focus:shadow-strong transition-all duration-300 focus:ring-2 focus:ring-trading-cyan/50"
           />
         </div>
@@ -231,8 +262,10 @@ function onReset() {
             {{ t('simulate.form.labels.end_date_optional') }}
           </Label>
           <Input 
-            v-model="endDate" 
-            type="date" 
+            v-model="endDateDisplay" 
+            type="text"
+            placeholder="dd/mm/yyyy"
+            pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
             class="h-10 border-0 bg-gradient-to-r from-secondary/30 to-accent/20 shadow-soft hover:shadow-medium focus:shadow-strong transition-all duration-300 focus:ring-2 focus:ring-trading-cyan/50"
           />
         </div>

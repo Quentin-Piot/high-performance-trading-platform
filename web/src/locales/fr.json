@@ -10,7 +10,7 @@
   },
   "landing": {
     "title": "Plateforme de Trading Haute Performance",
-    "subtitle": "Frontend moderne Vue + TypeScript avec backend FastAPI. Lancez des backtests via import CSV, configurez les moyennes mobiles (SMA) et visualisez la courbe d'équité, le PnL et le drawdown avec Lightweight Charts.",
+    "subtitle": "Transformez vos stratégies de trading en résultats concrets. Notre plateforme moderne combine Vue.js et FastAPI pour des backtests ultra-rapides, une analyse approfondie des performances et des visualisations interactives de vos courbes d'équité.",
     "cta": {
       "startBacktest": "Démarrer le Backtest",
       "login": "Connexion",
@@ -23,14 +23,17 @@
     "sections": {
       "simulation": {
         "title": "Simulation de Backtest",
+        "description": "Backtests rapides, paramètres clairs, résultats fiables.",
         "text": "Importez votre CSV de prix, définissez les paramètres SMA et lancez un backtest côté serveur. Résultats avec courbe d'équité, PnL et drawdown, UI robuste et responsive."
       },
       "auth": {
         "title": "Authentification",
+        "description": "Flux d'authentification simplifié et sécurisé.",
         "text": "Inscrivez-vous et connectez-vous pour stocker le token dans Pinia. Les requêtes utilisent un client API authentifié. Pour tester, la page de simulation est accessible sans connexion."
       },
       "visualization": {
         "title": "Visualisation",
+        "description": "Visualisations nettes, thèmes lisibles, détails pertinents.",
         "text": "Courbe d'équité rendue avec Lightweight Charts. Mesures de PnL et drawdown dans un design clair et minimal."
       }
     },
@@ -38,9 +41,7 @@
       "ready": "Prêt à démarrer ?",
       "startSimulation": "Lancer une simulation"
     }
-  }
-  ,
-  
+  },
   "simulate": {
     "header": {
       "title": "Simulation de Backtest",
@@ -83,6 +84,7 @@
     "results": {
       "title": "Résultats"
     },
+    "loading": "Chargement...",
     "metrics": {
       "pnl": "P&L",
       "drawdown": "Drawdown Max",
@@ -116,9 +118,7 @@
         "All": "Tout"
       }
     }
-  }
-  ,
-  
+  },
   "errors": {
     "invalid_csv": "Le fichier doit être au format CSV",
     "no_csv_file": "Veuillez sélectionner un fichier CSV",
