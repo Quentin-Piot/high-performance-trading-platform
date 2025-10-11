@@ -1,3 +1,17 @@
-.idea
-terraform/terraform.tfvars
-terraform/.terraform
+# --- IDE ---
+.idea/
+.vscode/
+
+
+# Logs ou fichiers temporaires
+*.log
+*.tmp
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfplan
+terraform/*.tfvars
+terraform/*.tfvars.json
+terraform/*.log
+terraform/*.tmp

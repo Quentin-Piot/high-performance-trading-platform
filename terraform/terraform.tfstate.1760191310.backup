@@ -1,15 +1,15 @@
 {
   "version": 4,
   "terraform_version": "1.5.7",
-  "serial": 142,
+  "serial": 63,
   "lineage": "c03bc1fa-afa1-06a1-b6cb-8ec18ebced4b",
   "outputs": {
     "alb_dns": {
-      "value": "trading-platform-alb-1363873398.eu-west-3.elb.amazonaws.com",
+      "value": "trading-platform-alb-2074234892.eu-west-3.elb.amazonaws.com",
       "type": "string"
     },
     "cloudfront_domain": {
-      "value": "d3fuf6uze8k9xy.cloudfront.net",
+      "value": "du3mldorkgwc8.cloudfront.net",
       "type": "string"
     },
     "ecr_repo_url": {
@@ -136,9 +136,9 @@
         {
           "schema_version": 1,
           "attributes": {
-            "aliases": null,
-            "arn": "arn:aws:cloudfront::491085385866:distribution/E2NC88FK3S24J0",
-            "caller_reference": "terraform-20251011143525265600000007",
+            "aliases": [],
+            "arn": "arn:aws:cloudfront::491085385866:distribution/E23T7CYXTCHZYJ",
+            "caller_reference": "terraform-20251011123555659700000001",
             "comment": null,
             "continuous_deployment_policy_id": "",
             "custom_error_response": [],
@@ -190,15 +190,15 @@
               }
             ],
             "default_root_object": "index.html",
-            "domain_name": "d3fuf6uze8k9xy.cloudfront.net",
+            "domain_name": "du3mldorkgwc8.cloudfront.net",
             "enabled": true,
-            "etag": "E6KEDWREU106K",
+            "etag": "EOY8IUWP81IM5",
             "hosted_zone_id": "Z2FDTNDATAQYW2",
             "http_version": "http2",
-            "id": "E2NC88FK3S24J0",
+            "id": "E23T7CYXTCHZYJ",
             "in_progress_validation_batches": 0,
             "is_ipv6_enabled": false,
-            "last_modified_time": "2025-10-11 14:35:26.052 +0000 UTC",
+            "last_modified_time": "2025-10-11 12:35:58.101 +0000 UTC",
             "logging_config": [],
             "ordered_cache_behavior": [
               {
@@ -224,7 +224,7 @@
                     "cookies": [
                       {
                         "forward": "all",
-                        "whitelisted_names": null
+                        "whitelisted_names": []
                       }
                     ],
                     "headers": [
@@ -251,8 +251,8 @@
                 "response_headers_policy_id": "",
                 "smooth_streaming": false,
                 "target_origin_id": "API-Backend",
-                "trusted_key_groups": null,
-                "trusted_signers": null,
+                "trusted_key_groups": [],
+                "trusted_signers": [],
                 "viewer_protocol_policy": "redirect-to-https"
               }
             ],
@@ -273,7 +273,7 @@
                     ]
                   }
                 ],
-                "domain_name": "trading-platform-alb-1363873398.eu-west-3.elb.amazonaws.com",
+                "domain_name": "trading-platform-alb-2074234892.eu-west-3.elb.amazonaws.com",
                 "origin_access_control_id": "",
                 "origin_id": "API-Backend",
                 "origin_path": "",
@@ -293,7 +293,7 @@
                 "origin_shield": [],
                 "s3_origin_config": [
                   {
-                    "origin_access_identity": "origin-access-identity/cloudfront/E3DE32QWHXNYG2"
+                    "origin_access_identity": "origin-access-identity/cloudfront/E366HRHQ4TJ0LZ"
                   }
                 ],
                 "vpc_origin_config": []
@@ -368,14 +368,14 @@
         {
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:cloudfront::491085385866:origin-access-identity/E3DE32QWHXNYG2",
-            "caller_reference": "terraform-20251011143205929000000005",
-            "cloudfront_access_identity_path": "origin-access-identity/cloudfront/E3DE32QWHXNYG2",
+            "arn": "arn:aws:cloudfront::491085385866:origin-access-identity/E366HRHQ4TJ0LZ",
+            "caller_reference": "terraform-20251010131725675100000001",
+            "cloudfront_access_identity_path": "origin-access-identity/cloudfront/E366HRHQ4TJ0LZ",
             "comment": "OAI for trading-platform-frontend-491085385866",
             "etag": "E3UN6WX5RRO2AG",
-            "iam_arn": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity E3DE32QWHXNYG2",
-            "id": "E3DE32QWHXNYG2",
-            "s3_canonical_user_id": "8cbd9f2dfdd45a992e5e02b4505b985d8a2287b7962101bf427b377c3babf4d894ee66623111451277c2c8f25590a042"
+            "iam_arn": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity E366HRHQ4TJ0LZ",
+            "id": "E366HRHQ4TJ0LZ",
+            "s3_canonical_user_id": "c3da32ff9d0c5178b9546392afcd17e43f27628cbb5fc91d70921aaf331f4ecc87a97875251fa5e66d4fe809ed342746"
           },
           "sensitive_attributes": [],
           "private": "bnVsbA==",
@@ -403,7 +403,7 @@
             "name_prefix": "",
             "retention_in_days": 14,
             "skip_destroy": false,
-            "tags": null,
+            "tags": {},
             "tags_all": {}
           },
           "sensitive_attributes": [],
@@ -471,7 +471,7 @@
                 "value": "disabled"
               }
             ],
-            "tags": null,
+            "tags": {},
             "tags_all": {}
           },
           "sensitive_attributes": [],
@@ -519,7 +519,7 @@
                 "container_name": "backend",
                 "container_port": 8000,
                 "elb_name": "",
-                "target_group_arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/59e713fc3508ba27"
+                "target_group_arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/b2141f0cef62b062"
               }
             ],
             "name": "trading-platform-backend-svc",
@@ -527,11 +527,11 @@
               {
                 "assign_public_ip": true,
                 "security_groups": [
-                  "sg-0109b380d6a4a8d74"
+                  "sg-0fb3750f035cd1c0f"
                 ],
                 "subnets": [
-                  "subnet-0558345ca2deb397b",
-                  "subnet-07a3f747ab38e6729"
+                  "subnet-0680d9e6b327182ac",
+                  "subnet-0cfc5e1b03b0973b1"
                 ]
               }
             ],
@@ -548,7 +548,7 @@
             "tags_all": {
               "Name": "trading-platform-backend-svc"
             },
-            "task_definition": "arn:aws:ecs:eu-west-3:491085385866:task-definition/trading-platform-backend-task:3",
+            "task_definition": "arn:aws:ecs:eu-west-3:491085385866:task-definition/trading-platform-backend-task:2",
             "timeouts": null,
             "triggers": {},
             "volume_configuration": [],
@@ -564,15 +564,10 @@
             "aws_ecs_task_definition.backend_task",
             "aws_efs_file_system.postgres",
             "aws_iam_role.ecs_task_execution_role",
-            "aws_lb.alb",
             "aws_lb_listener.listener",
             "aws_lb_target_group.tg",
-            "aws_security_group.alb_sg",
             "aws_security_group.ecs_sg",
-            "aws_subnet.public",
-            "aws_vpc.main",
-            "data.aws_availability_zones.azs",
-            "data.aws_iam_policy_document.ecs_task_assume_role"
+            "aws_subnet.public"
           ]
         }
       ]
@@ -586,9 +581,9 @@
         {
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ecs:eu-west-3:491085385866:task-definition/trading-platform-backend-task:3",
+            "arn": "arn:aws:ecs:eu-west-3:491085385866:task-definition/trading-platform-backend-task:2",
             "arn_without_revision": "arn:aws:ecs:eu-west-3:491085385866:task-definition/trading-platform-backend-task",
-            "container_definitions": "[{\"dependsOn\":[{\"condition\":\"START\",\"containerName\":\"postgres\"}],\"environment\":[{\"name\":\"DATABASE_HOST\",\"value\":\"localhost\"},{\"name\":\"DATABASE_NAME\",\"value\":\"trading_db\"},{\"name\":\"DATABASE_PASSWORD\",\"value\":\"postgres\"},{\"name\":\"DATABASE_PORT\",\"value\":\"5432\"},{\"name\":\"DATABASE_USER\",\"value\":\"postgres\"}],\"essential\":true,\"image\":\"491085385866.dkr.ecr.eu-west-3.amazonaws.com/trading-platform_backend:latest\",\"logConfiguration\":{\"logDriver\":\"awslogs\",\"options\":{\"awslogs-stream-prefix\":\"backend\",\"awslogs-group\":\"/ecs/trading-platform\",\"awslogs-region\":\"eu-west-3\"}},\"mountPoints\":[],\"name\":\"backend\",\"portMappings\":[{\"containerPort\":8000,\"hostPort\":8000,\"protocol\":\"tcp\"}],\"systemControls\":[],\"volumesFrom\":[]},{\"environment\":[{\"name\":\"POSTGRES_DB\",\"value\":\"trading_db\"},{\"name\":\"POSTGRES_PASSWORD\",\"value\":\"postgres\"},{\"name\":\"POSTGRES_USER\",\"value\":\"postgres\"}],\"essential\":true,\"image\":\"postgres:16\",\"logConfiguration\":{\"logDriver\":\"awslogs\",\"options\":{\"awslogs-group\":\"/ecs/trading-platform\",\"awslogs-region\":\"eu-west-3\",\"awslogs-stream-prefix\":\"postgres\"}},\"mountPoints\":[{\"containerPath\":\"/var/lib/postgresql/data\",\"readOnly\":false,\"sourceVolume\":\"postgres-data\"}],\"name\":\"postgres\",\"portMappings\":[],\"systemControls\":[],\"volumesFrom\":[]}]",
+            "container_definitions": "[{\"dependsOn\":[{\"condition\":\"START\",\"containerName\":\"postgres\"}],\"environment\":[{\"name\":\"DATABASE_HOST\",\"value\":\"localhost\"},{\"name\":\"DATABASE_NAME\",\"value\":\"trading_db\"},{\"name\":\"DATABASE_PASSWORD\",\"value\":\"postgres\"},{\"name\":\"DATABASE_PORT\",\"value\":\"5432\"},{\"name\":\"DATABASE_USER\",\"value\":\"postgres\"}],\"essential\":true,\"image\":\"491085385866.dkr.ecr.eu-west-3.amazonaws.com/trading-platform_backend:latest\",\"logConfiguration\":{\"logDriver\":\"awslogs\",\"options\":{\"awslogs-region\":\"eu-west-3\",\"awslogs-stream-prefix\":\"backend\",\"awslogs-group\":\"/ecs/trading-platform\"}},\"mountPoints\":[],\"name\":\"backend\",\"portMappings\":[{\"containerPort\":8000,\"hostPort\":8000,\"protocol\":\"tcp\"}],\"systemControls\":[],\"volumesFrom\":[]},{\"environment\":[{\"name\":\"POSTGRES_DB\",\"value\":\"trading_db\"},{\"name\":\"POSTGRES_PASSWORD\",\"value\":\"postgres\"},{\"name\":\"POSTGRES_USER\",\"value\":\"postgres\"}],\"essential\":true,\"image\":\"postgres:16\",\"logConfiguration\":{\"logDriver\":\"awslogs\",\"options\":{\"awslogs-region\":\"eu-west-3\",\"awslogs-stream-prefix\":\"postgres\",\"awslogs-group\":\"/ecs/trading-platform\"}},\"mountPoints\":[{\"containerPath\":\"/var/lib/postgresql/data\",\"readOnly\":false,\"sourceVolume\":\"postgres-data\"}],\"name\":\"postgres\",\"portMappings\":[],\"systemControls\":[],\"volumesFrom\":[]}]",
             "cpu": "512",
             "enable_fault_injection": false,
             "ephemeral_storage": [],
@@ -605,7 +600,7 @@
             "requires_compatibilities": [
               "FARGATE"
             ],
-            "revision": 3,
+            "revision": 2,
             "runtime_platform": [],
             "skip_destroy": false,
             "tags": null,
@@ -619,7 +614,7 @@
                 "efs_volume_configuration": [
                   {
                     "authorization_config": [],
-                    "file_system_id": "fs-02a862820a911216a",
+                    "file_system_id": "fs-01192bc6d06704e5b",
                     "root_directory": "/",
                     "transit_encryption": "ENABLED",
                     "transit_encryption_port": 0
@@ -637,8 +632,7 @@
             "aws_cloudwatch_log_group.ecs",
             "aws_ecr_repository.backend",
             "aws_efs_file_system.postgres",
-            "aws_iam_role.ecs_task_execution_role",
-            "data.aws_iam_policy_document.ecs_task_assume_role"
+            "aws_iam_role.ecs_task_execution_role"
           ]
         }
       ]
@@ -652,17 +646,17 @@
         {
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:elasticfilesystem:eu-west-3:491085385866:file-system/fs-02a862820a911216a",
+            "arn": "arn:aws:elasticfilesystem:eu-west-3:491085385866:file-system/fs-01192bc6d06704e5b",
             "availability_zone_id": "",
             "availability_zone_name": "",
-            "creation_token": "terraform-20251011143158578800000001",
-            "dns_name": "fs-02a862820a911216a.efs.eu-west-3.amazonaws.com",
+            "creation_token": "terraform-20251010131725687400000002",
+            "dns_name": "fs-01192bc6d06704e5b.efs.eu-west-3.amazonaws.com",
             "encrypted": true,
-            "id": "fs-02a862820a911216a",
+            "id": "fs-01192bc6d06704e5b",
             "kms_key_id": "arn:aws:kms:eu-west-3:491085385866:key/13a0f6e7-844b-46d3-88c8-2dcb30280419",
             "lifecycle_policy": [],
             "name": "trading-platform-efs",
-            "number_of_mount_targets": 0,
+            "number_of_mount_targets": 2,
             "owner_id": "491085385866",
             "performance_mode": "generalPurpose",
             "protection": [
@@ -673,9 +667,9 @@
             "provisioned_throughput_in_mibps": 0,
             "size_in_bytes": [
               {
-                "value": 6144,
+                "value": 51593216,
                 "value_in_ia": 0,
-                "value_in_standard": 6144
+                "value_in_standard": 51593216
               }
             ],
             "tags": {
@@ -703,18 +697,18 @@
           "attributes": {
             "availability_zone_id": "euw3-az1",
             "availability_zone_name": "eu-west-3a",
-            "dns_name": "fs-02a862820a911216a.efs.eu-west-3.amazonaws.com",
-            "file_system_arn": "arn:aws:elasticfilesystem:eu-west-3:491085385866:file-system/fs-02a862820a911216a",
-            "file_system_id": "fs-02a862820a911216a",
-            "id": "fsmt-02b53d360aa155094",
-            "ip_address": "10.100.0.221",
-            "mount_target_dns_name": "eu-west-3a.fs-02a862820a911216a.efs.eu-west-3.amazonaws.com",
-            "network_interface_id": "eni-0f2f5aed2c30af146",
+            "dns_name": "fs-01192bc6d06704e5b.efs.eu-west-3.amazonaws.com",
+            "file_system_arn": "arn:aws:elasticfilesystem:eu-west-3:491085385866:file-system/fs-01192bc6d06704e5b",
+            "file_system_id": "fs-01192bc6d06704e5b",
+            "id": "fsmt-0c9745d5d81b0f009",
+            "ip_address": "10.0.0.62",
+            "mount_target_dns_name": "eu-west-3a.fs-01192bc6d06704e5b.efs.eu-west-3.amazonaws.com",
+            "network_interface_id": "eni-08c37dcc2789af2ca",
             "owner_id": "491085385866",
             "security_groups": [
-              "sg-097e2e5b320e0e76b"
+              "sg-0c3602591cedba490"
             ],
-            "subnet_id": "subnet-07a3f747ab38e6729",
+            "subnet_id": "subnet-0cfc5e1b03b0973b1",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -735,18 +729,18 @@
           "attributes": {
             "availability_zone_id": "euw3-az2",
             "availability_zone_name": "eu-west-3b",
-            "dns_name": "fs-02a862820a911216a.efs.eu-west-3.amazonaws.com",
-            "file_system_arn": "arn:aws:elasticfilesystem:eu-west-3:491085385866:file-system/fs-02a862820a911216a",
-            "file_system_id": "fs-02a862820a911216a",
-            "id": "fsmt-0c6df11a6b2e386ba",
-            "ip_address": "10.100.1.154",
-            "mount_target_dns_name": "eu-west-3b.fs-02a862820a911216a.efs.eu-west-3.amazonaws.com",
-            "network_interface_id": "eni-07d683f6ab76fc493",
+            "dns_name": "fs-01192bc6d06704e5b.efs.eu-west-3.amazonaws.com",
+            "file_system_arn": "arn:aws:elasticfilesystem:eu-west-3:491085385866:file-system/fs-01192bc6d06704e5b",
+            "file_system_id": "fs-01192bc6d06704e5b",
+            "id": "fsmt-0d64b82cc4b9b5111",
+            "ip_address": "10.0.1.27",
+            "mount_target_dns_name": "eu-west-3b.fs-01192bc6d06704e5b.efs.eu-west-3.amazonaws.com",
+            "network_interface_id": "eni-0f32016c728bdc5e6",
             "owner_id": "491085385866",
             "security_groups": [
-              "sg-097e2e5b320e0e76b"
+              "sg-0c3602591cedba490"
             ],
-            "subnet_id": "subnet-0558345ca2deb397b",
+            "subnet_id": "subnet-0680d9e6b327182ac",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -774,20 +768,24 @@
           "attributes": {
             "arn": "arn:aws:iam::491085385866:role/trading-platform-ecs-task-exec-role",
             "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}],\"Version\":\"2012-10-17\"}",
-            "create_date": "2025-10-11T14:31:59Z",
+            "create_date": "2025-10-10T13:17:26Z",
             "description": "",
             "force_detach_policies": false,
             "id": "trading-platform-ecs-task-exec-role",
             "inline_policy": [],
-            "managed_policy_arns": [],
+            "managed_policy_arns": [
+              "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+              "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess",
+              "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+            ],
             "max_session_duration": 3600,
             "name": "trading-platform-ecs-task-exec-role",
             "name_prefix": "",
             "path": "/",
             "permissions_boundary": "",
-            "tags": null,
+            "tags": {},
             "tags_all": {},
-            "unique_id": "AROAXEVXYKCFLLLSEYEZ3"
+            "unique_id": "AROAXEVXYKCFLZYKGU7VJ"
           },
           "sensitive_attributes": [],
           "private": "bnVsbA==",
@@ -806,7 +804,7 @@
         {
           "schema_version": 0,
           "attributes": {
-            "id": "trading-platform-ecs-task-exec-role-20251011143200652400000004",
+            "id": "trading-platform-ecs-task-exec-role-20251010131727209700000004",
             "policy_arn": "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
             "role": "trading-platform-ecs-task-exec-role"
           },
@@ -828,7 +826,7 @@
         {
           "schema_version": 0,
           "attributes": {
-            "id": "trading-platform-ecs-task-exec-role-20251011143200030300000002",
+            "id": "trading-platform-ecs-task-exec-role-20251010131727432200000005",
             "policy_arn": "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess",
             "role": "trading-platform-ecs-task-exec-role"
           },
@@ -850,7 +848,7 @@
         {
           "schema_version": 0,
           "attributes": {
-            "id": "trading-platform-ecs-task-exec-role-20251011143200264500000003",
+            "id": "trading-platform-ecs-task-exec-role-20251010131727646200000006",
             "policy_arn": "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
             "role": "trading-platform-ecs-task-exec-role"
           },
@@ -872,8 +870,8 @@
         {
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:internet-gateway/igw-0b24540311a85e05d",
-            "id": "igw-0b24540311a85e05d",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:internet-gateway/igw-0cb82979fabf9c76a",
+            "id": "igw-0cb82979fabf9c76a",
             "owner_id": "491085385866",
             "tags": {
               "Name": "trading-platform-igw"
@@ -882,7 +880,7 @@
               "Name": "trading-platform-igw"
             },
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxMjAwMDAwMDAwMDAwLCJkZWxldGUiOjEyMDAwMDAwMDAwMDAsInVwZGF0ZSI6MTIwMDAwMDAwMDAwMH19",
@@ -908,8 +906,8 @@
                 "prefix": ""
               }
             ],
-            "arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:loadbalancer/app/trading-platform-alb/80e105a74977e8b3",
-            "arn_suffix": "app/trading-platform-alb/80e105a74977e8b3",
+            "arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:loadbalancer/app/trading-platform-alb/59d929b559c0db04",
+            "arn_suffix": "app/trading-platform-alb/59d929b559c0db04",
             "client_keep_alive": 3600,
             "connection_logs": [
               {
@@ -920,7 +918,7 @@
             ],
             "customer_owned_ipv4_pool": "",
             "desync_mitigation_mode": "defensive",
-            "dns_name": "trading-platform-alb-1363873398.eu-west-3.elb.amazonaws.com",
+            "dns_name": "trading-platform-alb-2074234892.eu-west-3.elb.amazonaws.com",
             "dns_record_client_routing_policy": null,
             "drop_invalid_header_fields": false,
             "enable_cross_zone_load_balancing": true,
@@ -931,7 +929,7 @@
             "enable_xff_client_port": false,
             "enable_zonal_shift": false,
             "enforce_security_group_inbound_rules_on_private_link_traffic": "",
-            "id": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:loadbalancer/app/trading-platform-alb/80e105a74977e8b3",
+            "id": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:loadbalancer/app/trading-platform-alb/59d929b559c0db04",
             "idle_timeout": 60,
             "internal": false,
             "ip_address_type": "ipv4",
@@ -942,7 +940,7 @@
             "name_prefix": "",
             "preserve_host_header": false,
             "security_groups": [
-              "sg-06a2bde34840a945b"
+              "sg-072930d7204749fdb"
             ],
             "subnet_mapping": [
               {
@@ -950,19 +948,19 @@
                 "ipv6_address": "",
                 "outpost_id": "",
                 "private_ipv4_address": "",
-                "subnet_id": "subnet-0558345ca2deb397b"
+                "subnet_id": "subnet-0680d9e6b327182ac"
               },
               {
                 "allocation_id": "",
                 "ipv6_address": "",
                 "outpost_id": "",
                 "private_ipv4_address": "",
-                "subnet_id": "subnet-07a3f747ab38e6729"
+                "subnet_id": "subnet-0cfc5e1b03b0973b1"
               }
             ],
             "subnets": [
-              "subnet-0558345ca2deb397b",
-              "subnet-07a3f747ab38e6729"
+              "subnet-0680d9e6b327182ac",
+              "subnet-0cfc5e1b03b0973b1"
             ],
             "tags": {
               "Name": "trading-platform-alb"
@@ -971,7 +969,7 @@
               "Name": "trading-platform-alb"
             },
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd",
+            "vpc_id": "vpc-0f394fa8fbd2ccd68",
             "xff_header_processing_mode": "append",
             "zone_id": "Z3Q77PNBQS71R4"
           },
@@ -996,7 +994,7 @@
           "schema_version": 0,
           "attributes": {
             "alpn_policy": null,
-            "arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:listener/app/trading-platform-alb/80e105a74977e8b3/89ce3e95883be7a7",
+            "arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:listener/app/trading-platform-alb/59d929b559c0db04/52c5495786142b60",
             "certificate_arn": null,
             "default_action": [
               {
@@ -1006,12 +1004,12 @@
                 "forward": [],
                 "order": 1,
                 "redirect": [],
-                "target_group_arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/59e713fc3508ba27",
+                "target_group_arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/b2141f0cef62b062",
                 "type": "forward"
               }
             ],
-            "id": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:listener/app/trading-platform-alb/80e105a74977e8b3/89ce3e95883be7a7",
-            "load_balancer_arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:loadbalancer/app/trading-platform-alb/80e105a74977e8b3",
+            "id": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:listener/app/trading-platform-alb/59d929b559c0db04/52c5495786142b60",
+            "load_balancer_arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:loadbalancer/app/trading-platform-alb/59d929b559c0db04",
             "mutual_authentication": [],
             "port": 80,
             "protocol": "HTTP",
@@ -1035,7 +1033,7 @@
             "routing_http_response_x_content_type_options_header_value": "",
             "routing_http_response_x_frame_options_header_value": "",
             "ssl_policy": "",
-            "tags": null,
+            "tags": {},
             "tags_all": {},
             "tcp_idle_timeout_seconds": null,
             "timeouts": null
@@ -1062,8 +1060,8 @@
         {
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/59e713fc3508ba27",
-            "arn_suffix": "targetgroup/trading-platform-tg/59e713fc3508ba27",
+            "arn": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/b2141f0cef62b062",
+            "arn_suffix": "targetgroup/trading-platform-tg/b2141f0cef62b062",
             "connection_termination": null,
             "deregistration_delay": "300",
             "health_check": [
@@ -1079,10 +1077,12 @@
                 "unhealthy_threshold": 3
               }
             ],
-            "id": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/59e713fc3508ba27",
+            "id": "arn:aws:elasticloadbalancing:eu-west-3:491085385866:targetgroup/trading-platform-tg/b2141f0cef62b062",
             "ip_address_type": "ipv4",
             "lambda_multi_value_headers_enabled": false,
-            "load_balancer_arns": [],
+            "load_balancer_arns": [
+              "arn:aws:elasticloadbalancing:eu-west-3:491085385866:loadbalancer/app/trading-platform-alb/59d929b559c0db04"
+            ],
             "load_balancing_algorithm_type": "round_robin",
             "load_balancing_anomaly_mitigation": "off",
             "load_balancing_cross_zone_enabled": "use_load_balancer_configuration",
@@ -1137,7 +1137,7 @@
               }
             ],
             "target_type": "ip",
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "bnVsbA==",
@@ -1156,8 +1156,8 @@
         {
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:route-table/rtb-0bf7d8c574a065559",
-            "id": "rtb-0bf7d8c574a065559",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:route-table/rtb-0cafc61e0143330ec",
+            "id": "rtb-0cafc61e0143330ec",
             "owner_id": "491085385866",
             "propagating_vgws": [],
             "route": [
@@ -1167,7 +1167,7 @@
                 "core_network_arn": "",
                 "destination_prefix_list_id": "",
                 "egress_only_gateway_id": "",
-                "gateway_id": "igw-0b24540311a85e05d",
+                "gateway_id": "igw-0cb82979fabf9c76a",
                 "ipv6_cidr_block": "",
                 "local_gateway_id": "",
                 "nat_gateway_id": "",
@@ -1184,7 +1184,7 @@
               "Name": "trading-platform-public-rt"
             },
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozMDAwMDAwMDAwMDAsImRlbGV0ZSI6MzAwMDAwMDAwMDAwLCJ1cGRhdGUiOjEyMDAwMDAwMDAwMH19",
@@ -1206,9 +1206,9 @@
           "schema_version": 0,
           "attributes": {
             "gateway_id": "",
-            "id": "rtbassoc-0c6a86ec583ccf03e",
-            "route_table_id": "rtb-0bf7d8c574a065559",
-            "subnet_id": "subnet-07a3f747ab38e6729",
+            "id": "rtbassoc-0230b54b497734cbd",
+            "route_table_id": "rtb-0cafc61e0143330ec",
+            "subnet_id": "subnet-0cfc5e1b03b0973b1",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -1226,9 +1226,9 @@
           "schema_version": 0,
           "attributes": {
             "gateway_id": "",
-            "id": "rtbassoc-08edf529a154e334b",
-            "route_table_id": "rtb-0bf7d8c574a065559",
-            "subnet_id": "subnet-0558345ca2deb397b",
+            "id": "rtbassoc-0ede9a76ef29b7e2a",
+            "route_table_id": "rtb-0cafc61e0143330ec",
+            "subnet_id": "subnet-0680d9e6b327182ac",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -1277,7 +1277,7 @@
             "logging": [],
             "object_lock_configuration": [],
             "object_lock_enabled": false,
-            "policy": "",
+            "policy": "{\"Statement\":[{\"Action\":\"s3:GetObject\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity E366HRHQ4TJ0LZ\"},\"Resource\":\"arn:aws:s3:::trading-platform-frontend-491085385866/*\",\"Sid\":\"AllowCloudFrontServicePrincipalReadOnly\"}],\"Version\":\"2012-10-17\"}",
             "region": "eu-west-3",
             "replication_configuration": [],
             "request_payer": "BucketOwner",
@@ -1332,14 +1332,13 @@
           "attributes": {
             "bucket": "trading-platform-frontend-491085385866",
             "id": "trading-platform-frontend-491085385866",
-            "policy": "{\"Statement\":[{\"Action\":\"s3:GetObject\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"AIDAJCNYJRK26LJAMAAEW\"},\"Resource\":\"arn:aws:s3:::trading-platform-frontend-491085385866/*\",\"Sid\":\"AllowCloudFrontServicePrincipalReadOnly\"}],\"Version\":\"2012-10-17\"}"
+            "policy": "{\"Statement\":[{\"Action\":\"s3:GetObject\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity E366HRHQ4TJ0LZ\"},\"Resource\":\"arn:aws:s3:::trading-platform-frontend-491085385866/*\",\"Sid\":\"AllowCloudFrontServicePrincipalReadOnly\"}],\"Version\":\"2012-10-17\"}"
           },
           "sensitive_attributes": [],
           "private": "bnVsbA==",
           "dependencies": [
             "aws_cloudfront_origin_access_identity.oai",
-            "aws_s3_bucket.frontend_bucket",
-            "data.aws_caller_identity.current"
+            "aws_s3_bucket.frontend_bucket"
           ]
         }
       ]
@@ -1353,7 +1352,7 @@
         {
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:security-group/sg-06a2bde34840a945b",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:security-group/sg-072930d7204749fdb",
             "description": "Security group for Application Load Balancer",
             "egress": [
               {
@@ -1370,7 +1369,7 @@
                 "to_port": 0
               }
             ],
-            "id": "sg-06a2bde34840a945b",
+            "id": "sg-072930d7204749fdb",
             "ingress": [
               {
                 "cidr_blocks": [
@@ -1390,10 +1389,10 @@
             "name_prefix": "",
             "owner_id": "491085385866",
             "revoke_rules_on_delete": false,
-            "tags": null,
+            "tags": {},
             "tags_all": {},
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
@@ -1412,7 +1411,7 @@
         {
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:security-group/sg-0109b380d6a4a8d74",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:security-group/sg-0fb3750f035cd1c0f",
             "description": "ECS tasks SG - allow traffic from ALB on app port",
             "egress": [
               {
@@ -1429,7 +1428,7 @@
                 "to_port": 0
               }
             ],
-            "id": "sg-0109b380d6a4a8d74",
+            "id": "sg-0fb3750f035cd1c0f",
             "ingress": [
               {
                 "cidr_blocks": [],
@@ -1439,7 +1438,7 @@
                 "prefix_list_ids": [],
                 "protocol": "tcp",
                 "security_groups": [
-                  "sg-06a2bde34840a945b"
+                  "sg-072930d7204749fdb"
                 ],
                 "self": false,
                 "to_port": 8000
@@ -1456,7 +1455,7 @@
               "Name": "trading-platform-ecs-sg"
             },
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
@@ -1476,7 +1475,7 @@
         {
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:security-group/sg-097e2e5b320e0e76b",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:security-group/sg-0c3602591cedba490",
             "description": "EFS SG - allow NFS from ECS tasks",
             "egress": [
               {
@@ -1493,7 +1492,7 @@
                 "to_port": 0
               }
             ],
-            "id": "sg-097e2e5b320e0e76b",
+            "id": "sg-0c3602591cedba490",
             "ingress": [
               {
                 "cidr_blocks": [],
@@ -1503,7 +1502,7 @@
                 "prefix_list_ids": [],
                 "protocol": "tcp",
                 "security_groups": [
-                  "sg-0109b380d6a4a8d74"
+                  "sg-0fb3750f035cd1c0f"
                 ],
                 "self": false,
                 "to_port": 2049
@@ -1520,7 +1519,7 @@
               "Name": "trading-platform-efs-sg"
             },
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
@@ -1542,17 +1541,17 @@
           "index_key": 0,
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:subnet/subnet-07a3f747ab38e6729",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:subnet/subnet-0cfc5e1b03b0973b1",
             "assign_ipv6_address_on_creation": false,
             "availability_zone": "eu-west-3a",
             "availability_zone_id": "euw3-az1",
-            "cidr_block": "10.100.0.0/24",
+            "cidr_block": "10.0.0.0/24",
             "customer_owned_ipv4_pool": "",
             "enable_dns64": false,
             "enable_lni_at_device_index": 0,
             "enable_resource_name_dns_a_record_on_launch": false,
             "enable_resource_name_dns_aaaa_record_on_launch": false,
-            "id": "subnet-07a3f747ab38e6729",
+            "id": "subnet-0cfc5e1b03b0973b1",
             "ipv6_cidr_block": "",
             "ipv6_cidr_block_association_id": "",
             "ipv6_native": false,
@@ -1568,7 +1567,7 @@
               "Name": "trading-platform-public-0"
             },
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6MTIwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9",
@@ -1581,17 +1580,17 @@
           "index_key": 1,
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:subnet/subnet-0558345ca2deb397b",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:subnet/subnet-0680d9e6b327182ac",
             "assign_ipv6_address_on_creation": false,
             "availability_zone": "eu-west-3b",
             "availability_zone_id": "euw3-az2",
-            "cidr_block": "10.100.1.0/24",
+            "cidr_block": "10.0.1.0/24",
             "customer_owned_ipv4_pool": "",
             "enable_dns64": false,
             "enable_lni_at_device_index": 0,
             "enable_resource_name_dns_a_record_on_launch": false,
             "enable_resource_name_dns_aaaa_record_on_launch": false,
-            "id": "subnet-0558345ca2deb397b",
+            "id": "subnet-0680d9e6b327182ac",
             "ipv6_cidr_block": "",
             "ipv6_cidr_block_association_id": "",
             "ipv6_native": false,
@@ -1607,7 +1606,7 @@
               "Name": "trading-platform-public-1"
             },
             "timeouts": null,
-            "vpc_id": "vpc-077a9d87e90b699fd"
+            "vpc_id": "vpc-0f394fa8fbd2ccd68"
           },
           "sensitive_attributes": [],
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6MTIwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9",
@@ -1627,17 +1626,17 @@
         {
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:eu-west-3:491085385866:vpc/vpc-077a9d87e90b699fd",
+            "arn": "arn:aws:ec2:eu-west-3:491085385866:vpc/vpc-0f394fa8fbd2ccd68",
             "assign_generated_ipv6_cidr_block": false,
-            "cidr_block": "10.100.0.0/16",
-            "default_network_acl_id": "acl-0ef5d5fd64ae36692",
-            "default_route_table_id": "rtb-0b17989780e085c96",
-            "default_security_group_id": "sg-0677176725e3e7a0d",
+            "cidr_block": "10.0.0.0/16",
+            "default_network_acl_id": "acl-0c0932a491d7a8edd",
+            "default_route_table_id": "rtb-01ba28dea9fb79fbc",
+            "default_security_group_id": "sg-0b9eb5b89ca0891a1",
             "dhcp_options_id": "dopt-032cefe438a8b155f",
             "enable_dns_hostnames": true,
             "enable_dns_support": true,
             "enable_network_address_usage_metrics": false,
-            "id": "vpc-077a9d87e90b699fd",
+            "id": "vpc-0f394fa8fbd2ccd68",
             "instance_tenancy": "default",
             "ipv4_ipam_pool_id": null,
             "ipv4_netmask_length": null,
@@ -1646,7 +1645,7 @@
             "ipv6_cidr_block_network_border_group": "",
             "ipv6_ipam_pool_id": "",
             "ipv6_netmask_length": 0,
-            "main_route_table_id": "rtb-0b17989780e085c96",
+            "main_route_table_id": "rtb-01ba28dea9fb79fbc",
             "owner_id": "491085385866",
             "tags": {
               "Name": "trading-platform-vpc-staging"

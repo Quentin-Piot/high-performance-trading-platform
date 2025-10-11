@@ -27,12 +27,13 @@ function go(path: string) {
     <!-- Top nav -->
     <TopNav />
 
-    <!-- Hero Section avec dégradé et animations - optimisé mobile -->
-    <section class="relative overflow-hidden rounded-xl sm:rounded-2xl border gradient-hero px-4 sm:px-8 py-8 sm:py-16 text-center shadow-strong hover-lift transition-smooth">
-      <!-- Éléments décoratifs flottants - adaptés mobile -->
-      <div class="absolute top-4 sm:top-8 left-4 sm:left-8 w-12 sm:w-20 h-12 sm:h-20 bg-trading-blue/20 rounded-full animate-float"></div>
-      <div class="absolute top-8 sm:top-16 right-6 sm:right-12 w-8 sm:w-12 h-8 sm:h-12 bg-trading-purple/30 rounded-full animate-float" style="animation-delay: -2s;"></div>
-      <div class="absolute bottom-6 sm:bottom-12 left-8 sm:left-16 w-10 sm:w-16 h-10 sm:h-16 bg-trading-cyan/25 rounded-full animate-float" style="animation-delay: -4s;"></div>
+    <!-- Hero Section avec nouvelle animation colorée synchronisée -->
+    <section class="relative overflow-hidden rounded-xl sm:rounded-2xl border gradient-hero px-4 sm:px-8 py-8 sm:py-16 text-center shadow-strong transition-smooth">
+      <!-- Couches d'animation: gradient fluide + auroras synchronisées + scanline élégante -->
+      <div class="hero-anim gradient-flow" aria-hidden="true"></div>
+      <div class="hero-anim aurora aurora-left" aria-hidden="true"></div>
+      <div class="hero-anim aurora aurora-right" aria-hidden="true"></div>
+      <div class="hero-anim scanline" aria-hidden="true"></div>
       
       <!-- Contenu principal - responsive -->
       <div class="relative z-10 animate-slide-up space-y-4 sm:space-y-6">
@@ -52,22 +53,14 @@ function go(path: string) {
         </div>
       </div>
       
-      <!-- Effets SF lumineux latéraux - optimisés mobile -->
-      <div 
-        class="sf-light sf-light-left"
-        style="animation-delay: -0.8s; width: 120px; filter: blur(16px); opacity: 0.15; mix-blend-mode: screen; z-index: 5; left: 0; box-shadow: 0 0 40px rgba(99,102,241,.25), 0 0 60px rgba(168,85,247,.15); animation-duration: 6s;"
-      ></div>
-      <div 
-        class="sf-light sf-light-right"
-        style="animation-delay: 0.4s; width: 120px; filter: blur(16px); opacity: 0.15; mix-blend-mode: screen; z-index: 5; right: 0; box-shadow: 0 0 40px rgba(6,182,212,.25), 0 0 60px rgba(34,197,94,.15); animation-duration: 6s;"
-      ></div>
+      <!-- (Auroras intégrées ci-dessus) -->
     </section>
 
     <!-- Features grid avec animations échelonnées - responsive -->
     <section class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
       <Card class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30">
         <div class="absolute inset-0 bg-gradient-to-br from-trading-blue/5 to-trading-purple/5 opacity-0 group-hover:opacity-100 transition-smooth"></div>
-        <CardHeader class="relative z-10 p-4 sm:p-6">
+        <CardHeader class="relative z-10 p-3 sm:p-5">
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div class="rounded-xl sm:rounded-2xl bg-trading-blue/10 p-3 sm:p-4 text-trading-blue group-hover:bg-trading-blue/20 transition-smooth shadow-soft">
               <LineChart class="size-5 sm:size-6" />
@@ -78,14 +71,14 @@ function go(path: string) {
             </div>
           </div>
         </CardHeader>
-        <CardContent class="relative z-10 p-4 sm:p-6 pt-0">
+        <CardContent class="relative z-10 p-3 sm:p-5 pt-0">
           <p class="text-sm text-muted-foreground leading-relaxed">{{ t('landing.sections.simulation.text') }}</p>
         </CardContent>
       </Card>
 
       <Card class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30" style="animation-delay: 0.1s;">
         <div class="absolute inset-0 bg-gradient-to-br from-trading-green/5 to-trading-cyan/5 opacity-0 group-hover:opacity-100 transition-smooth"></div>
-        <CardHeader class="relative z-10 p-4 sm:p-6">
+        <CardHeader class="relative z-10 p-3 sm:p-5">
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div class="rounded-xl sm:rounded-2xl bg-trading-green/10 p-3 sm:p-4 text-trading-green group-hover:bg-trading-green/20 transition-smooth shadow-soft">
               <ShieldCheck class="size-5 sm:size-6" />
@@ -96,14 +89,14 @@ function go(path: string) {
             </div>
           </div>
         </CardHeader>
-        <CardContent class="relative z-10 p-4 sm:p-6 pt-0">
+        <CardContent class="relative z-10 p-3 sm:p-5 pt-0">
           <p class="text-sm text-muted-foreground leading-relaxed">{{ t('landing.sections.auth.text') }}</p>
         </CardContent>
       </Card>
 
       <Card class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30" style="animation-delay: 0.2s;">
         <div class="absolute inset-0 bg-gradient-to-br from-trading-orange/5 to-trading-red/5 opacity-0 group-hover:opacity-100 transition-smooth"></div>
-        <CardHeader class="relative z-10 p-4 sm:p-6">
+        <CardHeader class="relative z-10 p-3 sm:p-5">
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div class="rounded-xl sm:rounded-2xl bg-trading-orange/10 p-3 sm:p-4 text-trading-orange group-hover:bg-trading-orange/20 transition-smooth shadow-soft">
               <BarChart3 class="size-5 sm:size-6" />
@@ -114,7 +107,7 @@ function go(path: string) {
             </div>
           </div>
         </CardHeader>
-        <CardContent class="relative z-10 p-4 sm:p-6 pt-0">
+        <CardContent class="relative z-10 p-3 sm:p-5 pt-0">
           <p class="text-sm text-muted-foreground leading-relaxed">{{ t('landing.sections.visualization.text') }}</p>
         </CardContent>
       </Card>
@@ -262,74 +255,175 @@ function go(path: string) {
   }
 }
 
-/* Lumières SF latérales dans le hero - optimisées mobile */
+/* Lumières SF latérales dans le hero - animation fluide */
 .sf-light {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 120px;
+  width: 160px;
   pointer-events: none;
   filter: blur(16px);
   opacity: 0;
-  animation: sf-light 4s ease-in-out infinite;
+  mix-blend-mode: screen;
+  z-index: 1;
+  will-change: opacity, transform;
+  animation: sf-pulse 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @media (min-width: 640px) {
   .sf-light {
-    width: 140px;
+    width: 180px;
     filter: blur(18px);
   }
 }
 
 .sf-light-left {
   left: -20px;
+  animation-delay: -0.8s;
   background: radial-gradient(closest-side,
-    rgba(99, 102, 241, 0.25), /* indigo */
-    rgba(168, 85, 247, 0.15),  /* purple */
-    transparent 70%
+    rgba(99, 102, 241, 0.45), /* indigo */
+    rgba(168, 85, 247, 0.25),  /* purple */
+    transparent 65%
   );
+  box-shadow: 0 0 60px rgba(99, 102, 241, 0.35), 0 0 100px rgba(168, 85, 247, 0.25);
 }
 
 @media (min-width: 640px) {
   .sf-light-left {
     left: -30px;
     background: radial-gradient(closest-side,
-      rgba(99, 102, 241, 0.35), /* indigo */
-      rgba(168, 85, 247, 0.25),  /* purple */
-      transparent 70%
+      rgba(99, 102, 241, 0.55), /* indigo */
+      rgba(168, 85, 247, 0.35),  /* purple */
+      transparent 65%
     );
   }
 }
 
 .sf-light-right {
   right: -20px;
+  animation-delay: 0.4s;
   background: radial-gradient(closest-side,
-    rgba(6, 182, 212, 0.25),   /* cyan */
-    rgba(34, 197, 94, 0.15),   /* green */
-    transparent 70%
+    rgba(6, 182, 212, 0.45),   /* cyan */
+    rgba(34, 197, 94, 0.25),   /* green */
+    transparent 65%
   );
+  box-shadow: 0 0 60px rgba(6, 182, 212, 0.35), 0 0 100px rgba(34, 197, 94, 0.25);
 }
 
 @media (min-width: 640px) {
   .sf-light-right {
     right: -30px;
     background: radial-gradient(closest-side,
-      rgba(6, 182, 212, 0.35),   /* cyan */
-      rgba(34, 197, 94, 0.25),   /* green */
-      transparent 70%
+      rgba(6, 182, 212, 0.55),   /* cyan */
+      rgba(34, 197, 94, 0.35),   /* green */
+      transparent 65%
     );
   }
 }
 
-@keyframes sf-light {
-  0%, 100% { opacity: 0; transform: translateY(0); }
-  50% { opacity: 0.6; transform: translateY(-6px); }
+@keyframes sf-pulse {
+  0% { opacity: 0; transform: translateY(2px) scale(0.98); }
+  20% { opacity: 0.45; transform: translateY(0) scale(1); }
+  50% { opacity: 0.85; transform: translateY(-6px) scale(1.02); }
+  80% { opacity: 0.45; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(2px) scale(0.98); }
 }
 
 @media (min-width: 640px) {
-  @keyframes sf-light {
-    0%, 100% { opacity: 0; transform: translateY(0); }
-    50% { opacity: 0.8; transform: translateY(-8px); }
+  @keyframes sf-pulse {
+    0% { opacity: 0; transform: translateY(2px) scale(0.98); }
+    20% { opacity: 0.55; transform: translateY(0) scale(1); }
+    50% { opacity: 0.95; transform: translateY(-8px) scale(1.03); }
+    80% { opacity: 0.55; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(2px) scale(0.98); }
+  }
+}
+
+/* Nouvelle animation colorée du hero (fluide, synchronisée, élégante) */
+.gradient-hero {
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 20% 20%, rgba(99,102,241,0.08), transparent 60%),
+    radial-gradient(120% 80% at 80% 80%, rgba(34,197,94,0.08), transparent 60%);
+}
+
+.hero-anim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.hero-anim.gradient-flow {
+  background: linear-gradient(135deg,
+    rgba(99,102,241,0.25), rgba(168,85,247,0.20), rgba(6,182,212,0.22), rgba(34,197,94,0.18), rgba(99,102,241,0.25)
+  );
+  background-size: 200% 200%;
+  mix-blend-mode: screen;
+  opacity: 0.25;
+  animation: heroGradient 12s ease-in-out infinite;
+}
+
+.hero-anim.aurora {
+  filter: blur(18px);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: auroraPulse 12s ease-in-out infinite;
+}
+
+.hero-anim.aurora-left {
+  left: -10%;
+  width: 35%;
+  background: radial-gradient(100% 60% at 30% 50%,
+    rgba(99,102,241,0.45), rgba(168,85,247,0.25), transparent 70%
+  );
+  animation-delay: 0s;
+}
+
+.hero-anim.aurora-right {
+  right: -10%;
+  width: 35%;
+  background: radial-gradient(100% 60% at 70% 50%,
+    rgba(6,182,212,0.45), rgba(34,197,94,0.25), transparent 70%
+  );
+  animation-delay: -6s; /* décalage synchronisé */
+}
+
+.hero-anim.scanline {
+  background: linear-gradient(to right,
+    rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%
+  );
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  transform: translateX(-100%);
+  animation: scanSweep 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes heroGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes auroraPulse {
+  0% { opacity: 0; transform: translateY(2px) scale(0.98); }
+  20% { opacity: 0.45; transform: translateY(0) scale(1); }
+  50% { opacity: 0.95; transform: translateY(-8px) scale(1.03); }
+  80% { opacity: 0.45; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(2px) scale(0.98); }
+}
+
+@keyframes scanSweep {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-anim.gradient-flow,
+  .hero-anim.aurora,
+  .hero-anim.scanline {
+    animation: none;
   }
 }
 
