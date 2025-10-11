@@ -151,7 +151,7 @@ function downloadCsv() {
         >
             <!-- Form panel avec design moderne - responsive -->
             <Card
-                class="lg:col-span-1 order-2 lg:order-1 border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/20"
+                class="lg:col-span-1 order-1 lg:order-1 border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/20"
             >
                 <CardHeader class="pb-3 sm:pb-4 p-3 sm:p-4">
                     <CardTitle
@@ -174,7 +174,7 @@ function downloadCsv() {
 
             <!-- Chart panel avec interface TradingView - responsive -->
             <div
-                class="lg:col-span-2 order-1 lg:order-2 space-y-4 sm:space-y-6"
+                class="lg:col-span-2 order-2 lg:order-2 space-y-4 sm:space-y-6"
             >
                 <!-- Error banner avec style moderne -->
                 <div
