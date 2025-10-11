@@ -1,3 +1,14 @@
+# Example Terraform variables file
+# Copy this file to terraform.tfvars and update the values
+
+# AWS region where resources will be created
+aws_region = "us-west-2"
+
+# EC2 instance type (t2.micro is free tier eligible)
+instance_type = "t2.micro"
+
+# AWS Key Pair name for SSH access (must exist in your AWS account)
+key_name = "your-key-pair-name"
 # Région AWS
 aws_region = "eu-west-3"  # Paris
 
@@ -30,3 +41,7 @@ efs_encrypted = true
 
 # ------------- CloudFront -------------
 cloudfront_price_class = "PriceClass_100" # Europe + US, plus économique
+
+# CIDR block allowed for SSH access (replace with your IP for security)
+# Example: "203.0.113.0/32" for a specific IP
+allowed_ssh_cidr = "0.0.0.0/0"
