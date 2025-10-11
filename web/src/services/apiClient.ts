@@ -9,8 +9,7 @@ export type BacktestResponse = {
   sharpe: number;
 };
 
-const BASE_URL =
-  "http://trading-platform-alb-2074234892.eu-west-3.elb.amazonaws.com/api/v1";
+const BASE_URL = "/api/v1";
 
 function authHeader(): HeadersInit {
   const store = useAuthStore();
