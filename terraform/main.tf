@@ -455,6 +455,21 @@ resource "aws_cloudfront_distribution" "frontend" {
 
   default_root_object = "index.html"
 
+  # SPA routing fallback: serve index.html for 403/404 from S3
+  custom_error_response {
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
+  custom_error_response {
+    error_code            = 403
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
 
   default_cache_behavior {
 
@@ -532,7 +547,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     cloudfront_default_certificate = true
 
   }
-
+  aliases = ["hptp.quentinpiot.com"]
 
   tags = {
 
