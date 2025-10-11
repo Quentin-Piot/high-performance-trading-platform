@@ -12,7 +12,7 @@ from api.routers.auth import router as auth_router
 from api.routers.backtest import router as backtest_router
 from infrastructure.db import init_db, engine
 
-//log
+# log
 setup_logging()
 
 
