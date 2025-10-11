@@ -100,17 +100,17 @@ async def root():
     return {"message": "OK", "service": "Trading Backtest API"}
 
 
-@app.get("/healthz")
+@app.get("/api/healthz")
 async def healthz():
     return {"status": "ok"}
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_alias():
     return {"status": "ok"}
 
 
-@app.get("/readyz")
+@app.get("/api/readyz")
 async def readyz():
     try:
         async with engine.connect() as conn:
@@ -120,7 +120,11 @@ async def readyz():
         return responses.JSONResponse(status_code=503, content={"ready": False})
 
 
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logging.getLogger("http").exception("Unhandled exception")
+    return JSONResponse(status_code=500, content={"detail": "internal server error"})
+
+
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")
-app.include_router(auth_router)
-app.include_router(backtest_router)
