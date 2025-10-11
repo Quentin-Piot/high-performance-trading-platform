@@ -1,10 +1,13 @@
 /// <reference types="vite/client" />
 import axios from "axios";
 
-// Placeholder API client setup for future backend integration
-// Base URL can be replaced with real endpoint later.
+// API base URL configuration using environment variable
+// Local: http://localhost:8000/api/v1 (via VITE_API_BASE_URL)
+// Production: /api/v1 (default fallback)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
+
 export const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: API_BASE_URL,
   timeout: 10000,
 });
 

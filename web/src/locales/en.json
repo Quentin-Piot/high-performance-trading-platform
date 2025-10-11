@@ -10,7 +10,7 @@
   },
   "landing": {
     "title": "High-Performance Trading Platform",
-    "subtitle": "A modern Vue + TypeScript frontend integrated with a FastAPI backend. Run backtests with CSV upload, configure Simple Moving Averages (SMA), and visualize your equity curve, PnL, and drawdown with Lightweight Charts.",
+    "subtitle": "Transform your trading strategies into concrete results. Our modern platform combines Vue.js and FastAPI to deliver lightning-fast backtests, comprehensive performance analysis, and interactive visualizations of your equity curves.",
     "cta": {
       "startBacktest": "Start Backtest",
       "login": "Login",
@@ -23,14 +23,17 @@
     "sections": {
       "simulation": {
         "title": "Backtest Simulation",
+        "description": "Fast backtests, clear parameters, reliable results.",
         "text": "Upload your CSV price data, set SMA parameters, and run a server-powered backtest. Results show equity curve, PnL, and max drawdown with robust error handling and responsive UI."
       },
       "auth": {
         "title": "Authentication",
+        "description": "Simplified and secure authentication flow.",
         "text": "Register and login to store tokens in Pinia. Requests use an authenticated API client. For testing, the simulate page can be accessed without login."
       },
       "visualization": {
         "title": "Visualization",
+        "description": "Clear visualizations, readable themes, relevant details.",
         "text": "Equity curve rendered with Lightweight Charts. Metrics for PnL and drawdown with clear, minimal design."
       }
     },
@@ -38,9 +41,7 @@
       "ready": "Ready to start?",
       "startSimulation": "Start a simulation"
     }
-  }
-  ,
-  
+  },
   "simulate": {
     "header": {
       "title": "Backtest Simulation",
@@ -83,6 +84,7 @@
     "results": {
       "title": "Results"
     },
+    "loading": "Loading...",
     "metrics": {
       "pnl": "P&L",
       "drawdown": "Max Drawdown",
@@ -116,9 +118,7 @@
         "All": "All"
       }
     }
-  }
-  ,
-  
+  },
   "errors": {
     "invalid_csv": "The file must be a CSV",
     "no_csv_file": "Please select a CSV file",
