@@ -35,22 +35,23 @@ function go(path: string) {
         <TopNav />
 
         <section
-            class="liquid-glass-hero relative overflow-hidden rounded-xl sm:rounded-2xl px-4 sm:px-8 py-8 sm:py-16 text-center"
+            class="liquid-glass-hero gradient-hero relative overflow-hidden rounded-xl sm:rounded-2xl px-4 sm:px-8 py-8 sm:py-16 text-center"
         >
             <!-- Liquid Glass Background Layers -->
             <div class="liquid-glass-bg"></div>
             <div class="liquid-glass-overlay"></div>
             <div class="liquid-glass-reflection"></div>
             <div class="liquid-glass-shimmer"></div>
+            <div class="liquid-glass-noise"></div>
 
             <div class="relative z-10 animate-slide-up space-y-4 sm:space-y-6">
                 <h1
-                    class="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight gradient-text leading-tight px-2"
+                    class="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight gradient-text hero-title leading-tight px-2"
                 >
                     {{ t("landing.title") }}
                 </h1>
                 <p
-                    class="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed px-2"
+                    class="text-base sm:text-lg hero-description max-w-2xl mx-auto leading-relaxed px-2"
                 >
                     {{ t("landing.subtitle") }}
                 </p>
@@ -182,6 +183,129 @@ function go(path: string) {
 </template>
 
 <style scoped>
+/* Liquid Glass + Glassmorphism — Apple-inspired */
+.liquid-glass-hero {
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(24px) saturate(1.15);
+    -webkit-backdrop-filter: blur(24px) saturate(1.15);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+    transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
+        background 400ms ease, box-shadow 400ms ease;
+}
+
+.liquid-glass-hero:hover {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 18px 56px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+    transform: translateY(-2px);
+}
+
+/* Premium gradient ring around the hero (masked border) */
+.liquid-glass-hero::before {
+    content: "";
+    position: absolute;
+    inset: -10px;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(
+        135deg,
+        var(--trading-blue),
+        var(--trading-purple),
+        var(--trading-cyan),
+        var(--trading-green)
+    );
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: xor;
+    -webkit-mask-composite: xor;
+    opacity: 0.6;
+    filter: blur(6px);
+    pointer-events: none;
+}
+
+.liquid-glass-bg {
+    position: absolute;
+    inset: 0;
+    /* Darker, simpler gradient: deep blue → deep violet */
+    background: linear-gradient(
+        135deg,
+        rgba(22, 28, 43, 0.88) 0%, /* deep blue tone */
+        rgba(28, 22, 46, 0.88) 55%, /* mid transition */
+        rgba(35, 24, 58, 0.88) 100% /* deep violet tone */
+    );
+    background-size: 180% 180%;
+    animation: liquid-gradient 18s ease-in-out infinite;
+    border-radius: inherit;
+}
+
+.liquid-glass-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(255, 255, 255, 0.24) 0%,
+        rgba(255, 255, 255, 0.10) 40%,
+        transparent 70%
+    );
+    border-radius: inherit;
+    opacity: 0.95;
+}
+
+.liquid-glass-reflection {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 42%;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0.08) 45%,
+        transparent 100%
+    );
+    border-radius: inherit;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.liquid-glass-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.12) 50%,
+        transparent 70%
+    );
+    background-size: 180% 180%;
+    animation: shimmer 5s ease-in-out infinite;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 300ms ease;
+}
+
+.liquid-glass-hero:hover .liquid-glass-shimmer { opacity: 1; }
+
+/* Subtle noise layer to sell the glass texture */
+.liquid-glass-noise {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 4px 4px;
+    mix-blend-mode: overlay;
+    opacity: 0.15;
+    pointer-events: none;
+}
 .hero-glow {
     position: relative;
 }
@@ -283,19 +407,50 @@ function go(path: string) {
 }
 
 .gradient-text {
-    background: linear-gradient(
-        270deg,
-        var(--primary),
-        var(--trading-purple),
-        var(--trading-cyan),
-        var(--trading-blue),
-        var(--primary)
-    );
-    background-size: 400% 400%;
-    animation: gradient-shift 4s ease infinite;
+    /* Glassmorphism text: subtle tint and visible specular reflection */
+    background:
+        radial-gradient(50% 140% at -20% 50%, rgba(255, 255, 255, 0.42), transparent 64%), /* specular highlight */
+        linear-gradient(90deg, rgba(238, 242, 255, 0.98) 0%, rgba(245, 243, 255, 0.98) 50%, rgba(240, 245, 255, 0.98) 100%), /* ultra-light blue/violet */
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.86) 48%, rgba(255, 255, 255, 0.78) 100%); /* white body */
+    background-size: 180% 180%, 100% 100%, 100% 100%;
+    background-position: 0% 0%, 0% 0%, 0% 0%;
+    animation: specular-sweep 7s ease-in-out infinite;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.10), /* subtle depth */
+        0 8px 22px rgba(0, 0, 0, 0.20), /* ambient depth */
+        0 -1px 8px rgba(255, 255, 255, 0.20); /* top sheen */
+}
+
+/* Hero title and description glassmorphism fine-tuning */
+.hero-title {
+    /* reduce glow while keeping specular reflection visible */
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.06),
+        0 4px 12px rgba(0, 0, 0, 0.10);
+    opacity: 0.96;
+    filter: blur(0.15px);
+}
+
+.hero-description {
+    /* slightly lighter and glassy */
+    color: rgba(255, 255, 255, 0.88);
+    opacity: 0.95;
+    filter: blur(0.2px);
+}
+
+@keyframes specular-sweep {
+    0% {
+        background-position: -100% 0%, 0% 0%, 0% 0%;
+    }
+    50% {
+        background-position: 30% 0%, 0% 0%, 0% 0%;
+    }
+    100% {
+        background-position: 140% 0%, 0% 0%, 0% 0%;
+    }
 }
 
 .pulse-ring {
@@ -509,92 +664,6 @@ function go(path: string) {
 }
 
 /* Liquid Glass Effect - Apple-inspired */
-.liquid-glass-hero {
-    position: relative;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.liquid-glass-hero:hover {
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
-}
-
-.liquid-glass-bg {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        135deg,
-        rgba(99, 102, 241, 0.1) 0%,
-        rgba(168, 85, 247, 0.08) 25%,
-        rgba(6, 182, 212, 0.06) 50%,
-        rgba(34, 197, 94, 0.08) 75%,
-        rgba(99, 102, 241, 0.1) 100%
-    );
-    background-size: 400% 400%;
-    animation: liquid-gradient 8s ease-in-out infinite;
-    border-radius: inherit;
-}
-
-.liquid-glass-overlay {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        circle at 30% 20%,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.05) 40%,
-        transparent 70%
-    );
-    border-radius: inherit;
-    opacity: 0.8;
-}
-
-.liquid-glass-reflection {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 50%;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.12) 0%,
-        rgba(255, 255, 255, 0.06) 50%,
-        transparent 100%
-    );
-    border-radius: inherit;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.liquid-glass-shimmer {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.1) 50%,
-        transparent 70%
-    );
-    background-size: 200% 200%;
-    animation: shimmer 3s ease-in-out infinite;
-    border-radius: inherit;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.liquid-glass-hero:hover .liquid-glass-shimmer {
-    opacity: 1;
-}
 
 @keyframes liquid-gradient {
     0%,
@@ -618,27 +687,27 @@ function go(path: string) {
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
     .liquid-glass-hero {
-        background: rgba(0, 0, 0, 0.3);
-        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(0, 0, 0, 0.28);
+        border-color: rgba(255, 255, 255, 0.14);
         box-shadow:
-            0 8px 32px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.15),
+            0 10px 40px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.14),
             inset 0 -1px 0 rgba(255, 255, 255, 0.08);
     }
 
     .liquid-glass-hero:hover {
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.34);
         box-shadow:
-            0 12px 40px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+            0 16px 52px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.10);
     }
 
     .liquid-glass-overlay {
         background: radial-gradient(
             circle at 30% 20%,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.03) 40%,
+            rgba(255, 255, 255, 0.10) 0%,
+            rgba(255, 255, 255, 0.04) 40%,
             transparent 70%
         );
     }
@@ -647,9 +716,17 @@ function go(path: string) {
         background: linear-gradient(
             180deg,
             rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.04) 50%,
+            rgba(255, 255, 255, 0.04) 45%,
             transparent 100%
         );
+    }
+
+    .gradient-text {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 8px 20px rgba(255, 255, 255, 0.18);
+    }
+
+    .hero-description {
+        color: rgba(255, 255, 255, 0.92);
     }
 }
 </style>
