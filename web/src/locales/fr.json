@@ -105,6 +105,12 @@
         "subtitle": "Lancez un backtest pour voir les résultats"
       },
       "legend": "Équité",
+      "multi_title": "Graphique Multi-Lignes",
+      "multi_analysis": "Analyse comparative",
+      "aggregated": "Données Agrégées",
+      "series_visible": "séries visibles",
+      "series_total": "séries au total",
+      "no_data": "Aucune donnée à afficher",
       "resolution": {
         "1m": "1m",
         "5m": "5m",

@@ -12,7 +12,7 @@ export type BacktestResponse = {
 // API base URL configuration using environment variable
 // Local: http://localhost:8000/api/v1 (via VITE_API_BASE_URL)
 // Production: /api/v1 (default fallback)
-const BASE_URL = "/api/v1";
+const BASE_URL = "http://localhost:8000/api/v1";
 
 function authHeader(): HeadersInit {
   const store = useAuthStore();

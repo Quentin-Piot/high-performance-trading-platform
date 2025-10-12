@@ -5,7 +5,9 @@ import { useBacktestStore } from '@/stores/backtestStore'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ToggleGroupItem, MultiLineToggleGroup } from '@/components/ui/toggle-group'
 import { BACKTEST_STRATEGIES, type StrategyId } from '@/config/backtestStrategies'
+import { AVAILABLE_DATASETS, fetchDatasetFile } from '@/config/datasets'
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -18,12 +20,15 @@ import {
   RotateCcw, 
   AlertTriangle, 
   XCircle, 
-  AlertCircle 
+  AlertCircle,
+  X,
+  Database
 } from 'lucide-vue-next'
 
 const store = useBacktestStore()
 const { t } = useI18n()
-const fileRef = ref<File | null>(null)
+const selectedFiles = ref<File[]>([])
+const selectedDatasets = ref<string[]>([])
 const strategy = ref<StrategyId>('sma_crossover')
 const params = reactive<Record<string, number>>({})
 const startDate = ref<string>('')
@@ -73,18 +78,39 @@ watch(strategy, () => initParams())
 
 const validation = computed(() => currentCfg.value.validate(params))
 const validParams = computed(() => validation.value.ok)
-const canSubmit = computed(() => !!fileRef.value && validParams.value && store.status !== 'loading')
+const canSubmit = computed(() => 
+  (selectedFiles.value.length > 0 || selectedDatasets.value.length > 0) && 
+  validParams.value && 
+  store.status !== 'loading'
+)
 
 function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
-  const f = input.files?.[0] || null
+  const files = Array.from(input.files || [])
+  addFiles(files)
+}
+
+function addFiles(files: File[]) {
   error.value = null
-  if (f && !isCsvFile(f)) {
-    error.value = t('errors.invalid_csv')
-    fileRef.value = null
+  const validFiles = files.filter(f => {
+    if (!isCsvFile(f)) {
+      error.value = t('errors.invalid_csv')
+      return false
+    }
+    return true
+  })
+  
+  const newFiles = [...selectedFiles.value, ...validFiles]
+  if (newFiles.length > 10) {
+    error.value = 'Maximum 10 files allowed'
     return
   }
-  fileRef.value = f
+  
+  selectedFiles.value = newFiles
+}
+
+function removeFile(index: number) {
+  selectedFiles.value = selectedFiles.value.filter((_, i) => i !== index)
 }
 
 function isCsvFile(f: File) {
@@ -114,28 +140,60 @@ function onDragLeave(e: DragEvent) {
 function onDrop(e: DragEvent) {
   e.preventDefault()
   dragActive.value = false
-  const f = e.dataTransfer?.files?.[0]
-  error.value = null
-  if (!f) return
-  if (!isCsvFile(f)) {
-    error.value = 'File must be in .csv format'
-    fileRef.value = null
-    return
-  }
-  fileRef.value = f
+  const files = Array.from(e.dataTransfer?.files || [])
+  addFiles(files)
 }
 
 async function onSubmit() {
   error.value = null
-  if (!fileRef.value) { error.value = t('errors.no_csv_file'); return }
-  if (!validParams.value) { error.value = validation.value.message || t('errors.invalid_params'); return }
-  const req = { strategy: strategy.value, params: { ...params }, dates: { startDate: startDate.value || undefined, endDate: endDate.value || undefined } }
-  await store.runBacktest(fileRef.value, req)
+  
+  // Combine uploaded files and selected datasets
+  let allFiles = [...selectedFiles.value]
+  
+  // Fetch dataset files if any are selected
+  if (selectedDatasets.value.length > 0) {
+    try {
+      const datasetFiles = await Promise.all(
+        selectedDatasets.value.map(async (datasetId) => {
+          const dataset = AVAILABLE_DATASETS.find(d => d.id === datasetId)
+          if (!dataset) throw new Error(`Dataset ${datasetId} not found`)
+          return await fetchDatasetFile(dataset.filename)
+        })
+      )
+      allFiles = [...allFiles, ...datasetFiles]
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to load datasets'
+      return
+    }
+  }
+  
+  if (allFiles.length === 0) { 
+    error.value = t('errors.no_csv_file')
+    return 
+  }
+  
+  if (!validParams.value) { 
+    error.value = validation.value.message || t('errors.invalid_params')
+    return 
+  }
+  
+  const req = { 
+    strategy: strategy.value, 
+    params: { ...params }, 
+    dates: { 
+      startDate: startDate.value || undefined, 
+      endDate: endDate.value || undefined 
+    } 
+  }
+  
+  // Use the new unified backtest function that handles both single and multiple files
+  await store.runBacktestUnified(allFiles, req)
 }
 
 function onReset() {
   store.reset()
-  fileRef.value = null
+  selectedFiles.value = []
+  selectedDatasets.value = []
   error.value = null
   strategy.value = 'sma_crossover'
   initParams()
@@ -171,7 +229,7 @@ function onReset() {
         <!-- Animated background effect -->
         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
         
-        <input ref="inputEl" type="file" accept=".csv" @change="onFileChange" class="hidden" />
+        <input ref="inputEl" type="file" accept=".csv" multiple @change="onFileChange" class="hidden" />
         
         <div class="relative z-10 flex flex-col items-center gap-3">
           <div class="rounded-full bg-secondary/50 p-3 group-hover:bg-trading-blue/10 transition-colors">
@@ -179,11 +237,66 @@ function onReset() {
           </div>
           <div class="text-center">
             <p class="font-medium">{{ t('simulate.form.csv.drop_hint') }}</p>
-            <p v-if="fileRef" class="mt-2 text-xs text-trading-green font-medium flex items-center justify-center gap-2">
-              <CheckCircle class="size-4" />
-              {{ t('simulate.form.csv.selected_file', { name: fileRef?.name }) }}
-            </p>
+            <p class="text-xs text-muted-foreground mt-1">Select up to 10 CSV files</p>
+            <div v-if="selectedFiles.length > 0" class="mt-3 space-y-2">
+              <p class="text-xs text-trading-green font-medium flex items-center justify-center gap-2">
+                <CheckCircle class="size-4" />
+                {{ selectedFiles.length }} file{{ selectedFiles.length > 1 ? 's' : '' }} selected
+              </p>
+              <div class="max-h-32 overflow-y-auto space-y-1">
+                <div v-for="(file, index) in selectedFiles" :key="index" 
+                     class="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2 text-xs">
+                  <span class="truncate flex-1">{{ file.name }}</span>
+                  <button @click.stop="removeFile(index)" 
+                          class="ml-2 p-1 hover:bg-red-100 rounded-full transition-colors">
+                    <X class="size-3 text-red-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dataset Selection Section -->
+    <div class="space-y-2">
+      <Label class="text-sm font-medium flex items-center gap-2">
+        <div class="rounded-lg bg-trading-cyan/10 p-1.5 text-trading-cyan">
+          <Database class="size-3.5" />
+        </div>
+        Select Datasets
+      </Label>
+      <div class="space-y-3">
+        <p class="text-xs text-muted-foreground">Choose from pre-loaded market datasets</p>
+        <MultiLineToggleGroup 
+          v-model="selectedDatasets" 
+          type="multiple" 
+          variant="outline" 
+          size="sm"
+          :items-per-row="3"
+          class="w-full"
+        >
+          <ToggleGroupItem 
+            v-for="dataset in AVAILABLE_DATASETS" 
+            :key="dataset.id" 
+            :value="dataset.id"
+            class="text-xs px-3 py-2 font-medium transition-all duration-200 
+                   !rounded-md !border-2 !border-gray-200
+                   data-[state=on]:!bg-gradient-to-r data-[state=on]:!from-[oklch(0.55_0.18_260)] data-[state=on]:!to-[oklch(0.65_0.2_300)]
+                   data-[state=on]:!text-white data-[state=on]:!shadow-md data-[state=on]:!border-transparent
+                   data-[state=on]:!scale-[1.02] data-[state=on]:!font-semibold
+                   hover:data-[state=on]:!opacity-90
+                   data-[state=off]:hover:!border-purple-300/30 data-[state=off]:hover:!bg-purple-50/5"
+          >
+            {{ dataset.name }}
+          </ToggleGroupItem>
+        </MultiLineToggleGroup>
+        <div v-if="selectedDatasets.length > 0" class="mt-2">
+          <p class="text-xs text-trading-green font-medium flex items-center gap-2">
+            <CheckCircle class="size-4" />
+            {{ selectedDatasets.length }} dataset{{ selectedDatasets.length > 1 ? 's' : '' }} selected
+          </p>
         </div>
       </div>
     </div>
