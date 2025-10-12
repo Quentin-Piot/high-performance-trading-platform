@@ -32,4 +32,4 @@ def test_backtest_unknown_strategy_400():
     resp = client.post("/api/v1/backtest?strategy=unknown", files=files)
     assert resp.status_code == 400
     body = resp.json()
-    assert "detail" in body and "non prise en charge" in body["detail"]
+    assert "detail" in body and "Unsupported strategy" in body["detail"]
