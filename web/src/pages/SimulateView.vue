@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BacktestForm from "@/components/backtest/BacktestForm.vue";
 import BacktestChart from "@/components/backtest/BacktestChart.vue";
+import MultiLineChart from "@/components/backtest/MultiLineChart.vue";
 import MetricsCard from "@/components/common/MetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { useBacktestStore } from "@/stores/backtestStore";
@@ -17,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
 import TopNav from "@/components/common/TopNav.vue";
+import { buildEquityPoints } from "@/composables/useEquitySeries";
 // Local chart types avoiding dependency on lightweight-charts TS exports
 type BusinessDay = { year: number; month: number; day: number };
 type ChartTime = number | BusinessDay;
@@ -106,6 +108,41 @@ const chartSeries = computed<LinePoint[]>(() =>
         value: p.value,
     })),
 );
+
+// Computed properties pour le graphique multi-lignes
+const hasMultipleResults = computed(() => store.isMultipleResults && store.results.length > 1);
+
+// Données agrégées pour le graphique multi-lignes
+const aggregatedData = computed<LinePoint[]>(() => {
+    if (!hasMultipleResults.value || !store.results.length) return [];
+    
+    // Créer un map des timestamps vers les valeurs moyennes
+    const timestampMap = new Map<number, { sum: number; count: number }>();
+    
+    // Parcourir tous les résultats pour calculer les moyennes
+    store.results.forEach(result => {
+        const points = buildEquityPoints(result.timestamps, result.equity_curve);
+        points.forEach(point => {
+            const existing = timestampMap.get(point.time);
+            if (existing) {
+                existing.sum += point.value;
+                existing.count += 1;
+            } else {
+                timestampMap.set(point.time, { sum: point.value, count: 1 });
+            }
+        });
+    });
+    
+    // Convertir en points de ligne avec moyennes
+    const aggregatedPoints = Array.from(timestampMap.entries())
+        .map(([time, { sum, count }]) => ({
+            time,
+            value: sum / count
+        }))
+        .sort((a, b) => a.time - b.time);
+    
+    return aggregatedPoints;
+});
 
 function downloadCsv() {
     const rows = [
@@ -374,7 +411,17 @@ function downloadCsv() {
                             </div>
                         </div>
                         <div v-else>
-                            <BacktestChart :series="chartSeries" />
+                            <!-- Graphique multi-lignes pour plusieurs résultats -->
+                            <MultiLineChart 
+                                v-if="hasMultipleResults"
+                                :results="store.results"
+                                :aggregated-data="aggregatedData"
+                            />
+                            <!-- Graphique simple pour un seul résultat -->
+                            <BacktestChart 
+                                v-else
+                                :series="chartSeries" 
+                            />
                         </div>
                     </CardContent>
                 </Card>

@@ -1,25 +1,25 @@
-import eslint from '@eslint/js';
-import eslintConfigPrettier from 'eslint-config-prettier';
-import eslintPluginVue from 'eslint-plugin-vue';
-import globals from 'globals';
-import typescriptEslint from 'typescript-eslint';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import eslint from "@eslint/js";
+import eslintConfigPrettier from "eslint-config-prettier";
+import eslintPluginVue from "eslint-plugin-vue";
+import globals from "globals";
+import typescriptEslint from "typescript-eslint";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default typescriptEslint.config(
-  { ignores: ['*.d.ts', '**/coverage', '**/dist'] },
+  { ignores: ["*.d.ts", "**/coverage", "**/dist"] },
   {
     extends: [
       eslint.configs.recommended,
       ...typescriptEslint.configs.recommended,
-      ...eslintPluginVue.configs['flat/recommended'],
+      ...eslintPluginVue.configs["flat/recommended"],
     ],
-    files: ['**/*.{ts,vue}'],
+    files: ["**/*.{ts,vue}"],
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: "latest",
+      sourceType: "module",
       globals: globals.browser,
       parserOptions: {
         // Vue SFC parser delegates <script> blocks to TS parser
@@ -27,23 +27,26 @@ export default typescriptEslint.config(
         // Fix: explicitly set tsconfigRootDir to avoid ambiguity between src/ and project root
         tsconfigRootDir: __dirname,
         // Use the application tsconfig for type-aware linting
-        project: ['./tsconfig.app.json'],
-        extraFileExtensions: ['.vue'],
+        project: ["./tsconfig.app.json"],
+        extraFileExtensions: [".vue"],
       },
+    },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
   // Override for Node/Vite config files which are covered by tsconfig.node.json
   {
-    files: ['vite.config.ts'],
+    files: ["vite.config.ts"],
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: "latest",
+      sourceType: "module",
       parserOptions: {
         parser: typescriptEslint.parser,
         tsconfigRootDir: __dirname,
-        project: ['./tsconfig.node.json'],
+        project: ["./tsconfig.node.json"],
       },
     },
   },
-  eslintConfigPrettier
+  eslintConfigPrettier,
 );

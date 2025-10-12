@@ -105,6 +105,12 @@
         "subtitle": "Run a backtest to see results"
       },
       "legend": "Equity",
+      "multi_title": "Multi-Line Chart",
+      "multi_analysis": "Comparative analysis",
+      "aggregated": "Aggregated Data",
+      "series_visible": "series visible",
+      "series_total": "series total",
+      "no_data": "No data to display",
       "resolution": {
         "1m": "1m",
         "5m": "5m",

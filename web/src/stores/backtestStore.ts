@@ -1,6 +1,17 @@
 import { defineStore } from 'pinia'
-import { BacktestValidationError, runBacktest as runBacktestSvc } from '@/services/backtestService'
-import type { BacktestResponse, BacktestRequest } from '@/services/backtestService'
+import { 
+  BacktestValidationError, 
+  runBacktest as runBacktestSvc, 
+  runBacktestUnified as runBacktestUnifiedSvc,
+  isMultipleBacktestResponse
+} from '@/services/backtestService'
+import type { 
+  BacktestResponse, 
+  BacktestRequest, 
+  BacktestApiResponse, 
+  BacktestResult,
+  AggregatedMetrics
+} from '@/services/backtestService'
 import { useErrorStore } from '@/stores/errorStore'
 import { buildEquityPoints, toLineData } from '@/composables/useEquitySeries'
 
@@ -17,7 +28,12 @@ export const useBacktestStore = defineStore('backtest', {
     errorCode: null as string | null,
     errorMessage: null as string | null,
     lastFile: null as File | null,
+    lastFiles: [] as File[],
     lastRequest: null as BacktestRequest | null,
+    // Multiple backtest results
+    results: [] as BacktestResult[],
+    aggregatedMetrics: null as AggregatedMetrics | null,
+    isMultipleResults: false,
   }),
   getters: {
     equitySeries(state) {
@@ -36,7 +52,11 @@ export const useBacktestStore = defineStore('backtest', {
       this.errorCode = null
       this.errorMessage = null
       this.lastFile = null
+      this.lastFiles = []
       this.lastRequest = null
+      this.results = []
+      this.aggregatedMetrics = null
+      this.isMultipleResults = false
     },
     async runBacktest(file: File, req: BacktestRequest) {
       this.status = 'loading'
@@ -69,9 +89,72 @@ export const useBacktestStore = defineStore('backtest', {
         this.status = 'error'
       }
     },
+    async runBacktestUnified(files: File[], req: BacktestRequest) {
+      this.status = 'loading'
+      this.errorCode = null
+      this.errorMessage = null
+      try {
+        const resp: BacktestApiResponse = await runBacktestUnifiedSvc(files, req)
+
+        if (isMultipleBacktestResponse(resp)) {
+           // Handle multiple results
+           this.results = resp.results
+           this.aggregatedMetrics = resp.aggregated_metrics
+           this.isMultipleResults = true
+           
+           // For backward compatibility, set the first result as the main result
+           if (resp.results.length > 0) {
+             const firstResult = resp.results[0]!
+             const curve = firstResult.equity_curve || []
+             const base = curve.length ? curve[0] : 1
+             const normalized = base ? curve.map(v => v / base) : curve
+             
+             this.timestamps = firstResult.timestamps || []
+             this.equityCurve = normalized
+             this.pnl = firstResult.pnl
+             this.drawdown = firstResult.drawdown
+             this.sharpe = firstResult.sharpe
+           }
+         } else {
+          // Handle single result (backward compatible)
+          const curve = resp.equity_curve || []
+          const base = curve.length ? curve[0] : 1
+          const normalized = base ? curve.map(v => v / base) : curve
+
+          this.timestamps = resp.timestamps || []
+          this.equityCurve = normalized
+          this.pnl = resp.pnl
+          this.drawdown = resp.drawdown
+          this.sharpe = resp.sharpe
+          this.isMultipleResults = false
+          this.results = []
+          this.aggregatedMetrics = null
+        }
+        
+        this.lastFiles = files
+         this.lastFile = files.length === 1 ? files[0] || null : null
+         this.lastRequest = req
+         this.status = 'success'
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e)
+        let code: string = 'error.backtest_failed'
+        if (e instanceof BacktestValidationError) {
+          code = e.code
+        }
+        this.errorCode = code
+        this.errorMessage = msg
+        useErrorStore().log(code, msg, req)
+        this.status = 'error'
+      }
+    },
     async retryLast() {
-      if (!this.lastFile || !this.lastRequest) return
-      await this.runBacktest(this.lastFile, this.lastRequest)
+      if (this.lastRequest) {
+        if (this.lastFiles.length > 1) {
+          await this.runBacktestUnified(this.lastFiles, this.lastRequest)
+        } else if (this.lastFile) {
+          await this.runBacktest(this.lastFile, this.lastRequest)
+        }
+      }
     },
   },
 })
