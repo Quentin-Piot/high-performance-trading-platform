@@ -38,8 +38,34 @@
       }
     },
     "final": {
-      "ready": "Prêt à démarrer ?",
-      "startSimulation": "Lancer une simulation"
+      "ready": "Prêt à commencer ?",
+      "startSimulation": "Commencer une simulation"
+    },
+    "project": {
+      "title": "Architecture du Projet",
+      "description": "Plateforme de trading full-stack moderne construite avec des technologies de pointe",
+      "frontend": {
+        "title": "Frontend",
+        "description": "Vue.js 3 avec TypeScript, Vite, et composants UI modernes"
+      },
+      "backend": {
+        "title": "API Backend",
+        "description": "FastAPI avec Python, base de données PostgreSQL, et traitement de données robuste"
+      },
+      "infrastructure": {
+        "title": "Infrastructure AWS",
+        "description": "ECS Fargate, CDN CloudFront, stockage S3, et Application Load Balancer"
+      },
+      "features": {
+        "title": "Fonctionnalités Clés",
+        "items": [
+          "Backtesting en temps réel avec simulations Monte Carlo",
+          "Graphiques interactifs avec la bibliothèque Lightweight Charts",
+          "Authentification sécurisée et gestion de session",
+          "Design responsive avec support thème sombre/clair",
+          "Infrastructure cloud évolutive sur AWS"
+        ]
+      }
     }
   },
   "simulate": {
@@ -53,7 +79,11 @@
         "csv_file": "Fichier CSV",
         "strategy": "Stratégie",
         "start_date_optional": "Date de début (optionnel)",
-        "end_date_optional": "Date de fin (optionnel)"
+        "end_date_optional": "Date de fin (optionnel)",
+        "datasets": "Sélectionner les Jeux de Données",
+        "datasets_description": "Choisissez parmi les jeux de données de marché pré-chargés",
+        "strategy_params": "Paramètres de stratégie",
+        "analysis_period": "Période d'analyse"
       },
       "buttons": {
         "run": "Lancer",
@@ -61,7 +91,21 @@
       },
       "csv": {
         "drop_hint": "Glissez-déposez votre fichier ou cliquez pour sélectionner.",
-        "selected_file": "Fichier sélectionné : {name}"
+        "selected_file": "Fichier sélectionné : {name}",
+        "max_files": "Sélectionnez jusqu'à 10 fichiers CSV",
+        "files_selected": "fichier(s) sélectionné(s)",
+        "datasets_selected": "jeu(x) de données sélectionné(s)"
+      },
+      "monte_carlo": {
+        "title": "Simulation Monte Carlo",
+        "runs": "Nombre d'Exécutions (1-20000)",
+        "runs_description": "Définir à 1 pour un backtest régulier, >1 pour une simulation Monte Carlo",
+        "method": "Méthode de Perturbation",
+        "bootstrap": "Bootstrap",
+        "gaussian": "Gaussien",
+        "sample_fraction": "Fraction d'Échantillon (0.1-2.0)",
+        "gaussian_scale": "Échelle Gaussienne (0.1-5.0)",
+        "method_required": "Veuillez sélectionner une méthode de perturbation pour la simulation Monte Carlo"
       },
       "strategy": {
         "names": {
@@ -82,7 +126,11 @@
       }
     },
     "results": {
-      "title": "Résultats"
+      "title": "Résultats",
+      "monte_carlo": {
+        "title": "Résultats de Simulation Monte Carlo",
+        "description": "Affichage de l'enveloppe d'équité avec bandes de confiance"
+      }
     },
     "loading": "Chargement...",
     "metrics": {

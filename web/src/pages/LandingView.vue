@@ -1,66 +1,168 @@
 <script setup lang="ts">
-import { useRouter } from "@/router";
-import { Button } from "@/components/ui/button";
 import { useI18n } from "vue-i18n";
-import { BarChart3 } from "lucide-vue-next";
-import TopNav from "@/components/common/TopNav.vue";
-import { ref, watch } from "vue";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+    TrendingUp,
+    BarChart3,
+    Zap,
+    Shield,
+    Users,
+    Star,
+} from "lucide-vue-next";
+import { useRouter } from "@/router";
+import BaseLayout from "@/components/layouts/BaseLayout.vue";
 
-const i18n = useI18n();
-
-const { navigate } = useRouter();
 const { t } = useI18n();
-const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } })
-    .locale;
-const selectedLocale = ref<"en" | "fr">("en");
-watch(selectedLocale, (val) => {
-    if (localeRef) localeRef.value = val;
-});
-function go(path: string) {
-    navigate(path);
+const { navigate } = useRouter();
+
+function goToSimulate() {
+    navigate("/simulate");
 }
 </script>
 
 <template>
-     <main
-        class="container mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-10 animate-fade-in"
-    >
-                 <TopNav />
-
-
-        <section
-            class="liquid-glass-hero gradient-hero relative overflow-hidden rounded-xl sm:rounded-2xl px-6 sm:px-12 py-12 sm:py-20 text-center max-w-4xl mx-auto"
-        >
-            <div class="liquid-glass-bg"></div>
-            <div class="liquid-glass-overlay"></div>
-            <div class="liquid-glass-reflection"></div>
-            <div class="liquid-glass-shimmer"></div>
-            <div class="liquid-glass-noise"></div>
-
-            <div class="relative z-10 space-y-6 sm:space-y-8">
-                <h1
-                    class="text-3xl sm:text-3xl md:text-5xl font-bold tracking-tight gradient-text hero-title leading-tight"
+    <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <BaseLayout main-class="flex-1 flex flex-col" container-class="">
+            <!-- Hero Section -->
+            <section
+                class="flex-1 flex items-center justify-center relative overflow-hidden pt-8 md:pt-12"
+            >
+                <div
+                    class="liquid-glass-hero rounded-3xl p-12 md:p-16 lg:p-20 relative z-10"
                 >
-                    {{ t("landing.title") }}
-                </h1>
-                <p
-                    class="text-md sm:text-lg hero-description max-w-3xl mx-auto leading-relaxed"
-                >
-                    {{ t("landing.subtitle") }}
-                </p>
-                <div class="flex justify-center gap-4 pt-4 sm:pt-6">
-                    <Button
-                        size="lg"
-                        class="gradient-primary text-white font-semibold px-8 sm:px-12 py-4 sm:py-5 rounded-xl shadow-medium hover-glow hover-scale transition-bounce text-base sm:text-lg"
-                        @click="go('/simulate')"
-                    >
-                        <BarChart3 class="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
-                        {{ t("landing.cta.startBacktest") }}
-                    </Button>
+                    <div class="liquid-glass-bg"></div>
+                    <div class="liquid-glass-overlay"></div>
+                    <div class="liquid-glass-reflection"></div>
+                    <div class="liquid-glass-shimmer"></div>
+                    <div class="liquid-glass-noise"></div>
+
+                    <div class="relative z-20 text-center space-y-8">
+                        <div class="space-y-6">
+                            <h1
+                                class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight gradient-text hero-title"
+                            >
+                                {{ t("landing.title") }}
+                            </h1>
+                            <p
+                                class="text-lg sm:text-xl lg:text-2xl hero-description max-w-3xl mx-auto leading-relaxed"
+                            >
+                                {{ t("landing.subtitle") }}
+                            </p>
+                        </div>
+
+                        <div
+                            class="flex flex-col sm:flex-row gap-4 justify-center pt-4"
+                        >
+                            <Button
+                                size="lg"
+                                class="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                @click="goToSimulate"
+                            >
+                                <TrendingUp class="mr-2 h-5 w-5" />
+                                {{ t("landing.cta.startBacktest") }}
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </section>
-    </main>
+            </section>
+
+            <!-- Project Architecture Section -->
+            <section class="py-16 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-7xl mx-auto">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                            {{ t("landing.project.title") }}
+                        </h2>
+                        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                            {{ t("landing.project.description") }}
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                        <!-- Frontend Card -->
+                        <Card class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+                            <CardHeader class="text-center pb-4">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <Zap class="h-8 w-8 text-white" />
+                                </div>
+                                <CardTitle class="text-xl font-bold text-gray-900 dark:text-white">
+                                    {{ t("landing.project.frontend.title") }}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription class="text-gray-600 dark:text-gray-300 text-center">
+                                    {{ t("landing.project.frontend.description") }}
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <!-- Backend Card -->
+                        <Card class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+                            <CardHeader class="text-center pb-4">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <BarChart3 class="h-8 w-8 text-white" />
+                                </div>
+                                <CardTitle class="text-xl font-bold text-gray-900 dark:text-white">
+                                    {{ t("landing.project.backend.title") }}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription class="text-gray-600 dark:text-gray-300 text-center">
+                                    {{ t("landing.project.backend.description") }}
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <!-- Infrastructure Card -->
+                        <Card class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+                            <CardHeader class="text-center pb-4">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <Shield class="h-8 w-8 text-white" />
+                                </div>
+                                <CardTitle class="text-xl font-bold text-gray-900 dark:text-white">
+                                    {{ t("landing.project.infrastructure.title") }}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription class="text-gray-600 dark:text-gray-300 text-center">
+                                    {{ t("landing.project.infrastructure.description") }}
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <!-- Features Section -->
+                    <Card class="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-0 shadow-lg">
+                        <CardHeader class="text-center">
+                            <CardTitle class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                                {{ t("landing.project.features.title") }}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div 
+                                    v-for="(feature, index) in $tm('landing.project.features.items')" 
+                                    :key="index"
+                                    class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50/50 dark:bg-slate-700/50"
+                                >
+                                    <Star class="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                                    <span class="text-gray-700 dark:text-gray-300">{{ feature }}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </section>
+        </BaseLayout>
+    </div>
 </template>
 
 <style scoped>
@@ -75,11 +177,11 @@ function go(path: string) {
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
         inset 0 -1px 0 rgba(255, 255, 255, 0.12);
     transition: none;
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 .liquid-glass-hero::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 50%;
     left: 50%;
@@ -88,12 +190,13 @@ function go(path: string) {
     background: radial-gradient(
         circle closest-corner at 50% 50%,
         rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 5%, /* Réduit la partie la plus intense */
-        transparent 15% /* Transparence plus rapide pour un effet de rayon plus net */
+        rgba(255, 255, 255, 0.05) 5%,
+        /* Réduit la partie la plus intense */ transparent 15%
+            /* Transparence plus rapide pour un effet de rayon plus net */
     );
     transform: translate(-50%, -50%) scale(0);
     border-radius: 50%;
-    transition: 
+    transition:
         transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94),
         opacity 0.8s ease;
     opacity: 0;
@@ -228,7 +331,7 @@ function go(path: string) {
             inset 0 1px 0 rgba(255, 255, 255, 0.14),
             inset 0 -1px 0 rgba(255, 255, 255, 0.08);
     }
-    
+
     .liquid-glass-hero::before {
         background: radial-gradient(
             circle closest-corner at 50% 50%,

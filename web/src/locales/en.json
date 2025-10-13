@@ -40,6 +40,32 @@
     "final": {
       "ready": "Ready to start?",
       "startSimulation": "Start a simulation"
+    },
+    "project": {
+      "title": "Project Architecture",
+      "description": "Modern full-stack trading platform built with cutting-edge technologies",
+      "frontend": {
+        "title": "Frontend",
+        "description": "Vue.js 3 with TypeScript, Vite, and modern UI components"
+      },
+      "backend": {
+        "title": "Backend API",
+        "description": "FastAPI with Python, PostgreSQL database, and robust data processing"
+      },
+      "infrastructure": {
+        "title": "AWS Infrastructure",
+        "description": "ECS Fargate, CloudFront CDN, S3 storage, and Application Load Balancer"
+      },
+      "features": {
+        "title": "Key Features",
+        "items": [
+          "Real-time backtesting with Monte Carlo simulations",
+          "Interactive charts with Lightweight Charts library",
+          "Secure authentication and session management",
+          "Responsive design with dark/light theme support",
+          "Scalable cloud infrastructure on AWS"
+        ]
+      }
     }
   },
   "simulate": {
@@ -53,7 +79,11 @@
         "csv_file": "CSV File",
         "strategy": "Strategy",
         "start_date_optional": "Start Date (optional)",
-        "end_date_optional": "End Date (optional)"
+        "end_date_optional": "End Date (optional)",
+        "datasets": "Select Datasets",
+        "datasets_description": "Choose from pre-loaded market datasets",
+        "strategy_params": "Strategy Parameters",
+        "analysis_period": "Analysis Period"
       },
       "buttons": {
         "run": "Run",
@@ -61,7 +91,21 @@
       },
       "csv": {
         "drop_hint": "Drag and drop your file or click to select.",
-        "selected_file": "Selected file: {name}"
+        "selected_file": "Selected file: {name}",
+        "max_files": "Select up to 10 CSV files",
+        "files_selected": "file(s) selected",
+        "datasets_selected": "dataset(s) selected"
+      },
+      "monte_carlo": {
+        "title": "Monte Carlo Simulation",
+        "runs": "Number of Runs (1-20000)",
+        "runs_description": "Set to 1 for regular backtest, >1 for Monte Carlo simulation",
+        "method": "Perturbation Method",
+        "bootstrap": "Bootstrap",
+        "gaussian": "Gaussian",
+        "sample_fraction": "Sample Fraction (0.1-2.0)",
+        "gaussian_scale": "Gaussian Scale (0.1-5.0)",
+        "method_required": "Please select a perturbation method for Monte Carlo simulation"
       },
       "strategy": {
         "names": {
@@ -82,7 +126,11 @@
       }
     },
     "results": {
-      "title": "Results"
+      "title": "Results",
+      "monte_carlo": {
+        "title": "Monte Carlo Simulation Results",
+        "description": "Showing equity envelope with confidence bands"
+      }
     },
     "loading": "Loading...",
     "metrics": {

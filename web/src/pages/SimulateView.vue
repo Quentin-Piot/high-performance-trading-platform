@@ -1,8 +1,10 @@
-<script setup lang="ts">
+tes<script setup lang="ts">
 import BacktestForm from "@/components/backtest/BacktestForm.vue";
 import BacktestChart from "@/components/backtest/BacktestChart.vue";
 import MultiLineChart from "@/components/backtest/MultiLineChart.vue";
+import EquityEnvelopeChart from "@/components/backtest/EquityEnvelopeChart.vue";
 import MetricsCard from "@/components/common/MetricsCard.vue";
+import DistributionMetricsCard from "@/components/common/DistributionMetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { useBacktestStore } from "@/stores/backtestStore";
 import { computed, ref } from "vue";
@@ -17,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
-import TopNav from "@/components/common/TopNav.vue";
+import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { buildEquityPoints } from "@/composables/useEquitySeries";
 // Local chart types avoiding dependency on lightweight-charts TS exports
 type BusinessDay = { year: number; month: number; day: number };
@@ -110,7 +112,10 @@ const chartSeries = computed<LinePoint[]>(() =>
 );
 
 // Computed properties pour le graphique multi-lignes
-const hasMultipleResults = computed(() => store.isMultipleResults && store.results.length > 1);
+const hasMultipleResults = computed(() => store.isMultipleResults && store.results.length > 1)
+const hasMonteCarloResults = computed(() => {
+  return store.isMonteCarloResults && store.monteCarloResults.length > 0
+})
 
 // Données agrégées pour le graphique multi-lignes
 const aggregatedData = computed<LinePoint[]>(() => {
@@ -134,12 +139,29 @@ const aggregatedData = computed<LinePoint[]>(() => {
     });
     
     // Convertir en points de ligne avec moyennes
-    const aggregatedPoints = Array.from(timestampMap.entries())
+    let aggregatedPoints = Array.from(timestampMap.entries())
         .map(([time, { sum, count }]) => ({
             time,
             value: sum / count
         }))
         .sort((a, b) => a.time - b.time);
+    
+    // Appliquer le filtrage par plage temporelle
+    if (activeRange.value !== "All" && aggregatedPoints.length > 0) {
+        const times = aggregatedPoints.map(p => p.time);
+        const maxTime = Math.max(...times);
+        let cutoff = maxTime;
+        
+        if (activeRange.value === "1W") cutoff = maxTime - 7 * 86400;
+        else if (activeRange.value === "1M") cutoff = maxTime - 30 * 86400;
+        else if (activeRange.value === "YTD") {
+            const d = new Date(maxTime * 1000);
+            const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
+            cutoff = jan1;
+        }
+        
+        aggregatedPoints = aggregatedPoints.filter(p => p.time >= cutoff);
+    }
     
     return aggregatedPoints;
 });
@@ -164,12 +186,7 @@ function downloadCsv() {
 </script>
 
 <template>
-    <main
-        class="container mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-10 animate-fade-in"
-    >
-        <TopNav />
-
-
+    <BaseLayout>
         <!-- Layout: mobile empilé, desktop côte à côte -->
         <section
             class="flex flex-col lg:grid lg:grid-cols-3 gap-2 sm:gap-8 animate-scale-in"
@@ -399,12 +416,31 @@ function downloadCsv() {
                                 <span class="text-sm text-muted-foreground">{{ t("simulate.loading") }}</span>
                             </div>
                         </div>
+                        <div v-if="store.isMonteCarloResults" class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                          <h3 class="text-lg font-semibold text-foreground">{{ t('simulate.results.monte_carlo.title') }}</h3>
+                          <p class="text-sm text-muted-foreground">
+                            {{ t('simulate.results.monte_carlo.description') }}
+                          </p>
+                        </div>
                         <div v-else>
-                            <!-- Graphique multi-lignes pour plusieurs résultats -->
-                            <MultiLineChart 
-                                v-if="hasMultipleResults"
+                            <!-- Monte Carlo Results with Equity Envelope -->
+                            <div v-if="hasMonteCarloResults" class="space-y-4">
+                                <div class="text-center">
+                                    <h3 class="text-lg font-semibold text-foreground">{{ t('simulate.results.monte_carlo.title') }}</h3>
+                                    <p class="text-sm text-muted-foreground">
+                                        {{ t('simulate.results.monte_carlo.description') }}
+                                    </p>
+                                </div>
+                                <EquityEnvelopeChart 
+                                    :equity-envelope="store.equityEnvelope || undefined" 
+                                    :active-range="activeRange"
+                                />
+                            </div>
+                            <MultiLineChart
+                                v-else-if="hasMultipleResults"
                                 :results="store.results"
                                 :aggregated-data="aggregatedData"
+                                :active-range="activeRange"
                             />
                             <!-- Graphique simple pour un seul résultat -->
                             <BacktestChart 
@@ -417,7 +453,34 @@ function downloadCsv() {
 
                 <!-- KPI grid avec design premium - mobile responsive -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <div
+                    <!-- Monte Carlo Metrics Display -->
+                    <div v-if="hasMonteCarloResults" class="col-span-full mb-4">
+                        <div class="text-center mb-4">
+                            <h3 class="text-lg font-semibold text-foreground">Distribution Statistics</h3>
+                            <p class="text-sm text-muted-foreground">
+                                Showing median values with distribution ranges
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                            <DistributionMetricsCard
+                                :label="t('simulate.metrics.pnl')"
+                                :distribution="store.metricsDistribution?.pnl || null"
+                                percentage
+                            />
+                            <DistributionMetricsCard
+                                :label="t('simulate.metrics.drawdown')"
+                                :distribution="store.metricsDistribution?.drawdown || null"
+                                percentage
+                            />
+                            <DistributionMetricsCard
+                                :label="t('simulate.metrics.sharpe')"
+                                :distribution="store.metricsDistribution?.sharpe || null"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Regular Metrics Display -->
+                    <div v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-green/5"
                     >
                         <div
@@ -431,7 +494,7 @@ function downloadCsv() {
                         />
                     </div>
 
-                    <div
+                    <div v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-red/5"
                     >
                         <div
@@ -445,7 +508,7 @@ function downloadCsv() {
                         />
                     </div>
 
-                    <div
+                    <div v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-blue/5"
                     >
                         <div
@@ -460,7 +523,7 @@ function downloadCsv() {
                 </div>
             </div>
         </section>
-    </main>
+    </BaseLayout>
 </template>
 
 <style scoped>

@@ -6,7 +6,7 @@ import axios from "axios";
 // Production: /api/v1 (default fallback)
 
 export const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: "http://localhost:8000/api/v1",
   timeout: 10000,
 });
 

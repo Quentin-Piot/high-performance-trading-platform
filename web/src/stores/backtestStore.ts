@@ -3,14 +3,17 @@ import {
   BacktestValidationError, 
   runBacktest as runBacktestSvc, 
   runBacktestUnified as runBacktestUnifiedSvc,
-  isMultipleBacktestResponse
-} from '@/services/backtestService'
-import type { 
-  BacktestResponse, 
-  BacktestRequest, 
-  BacktestApiResponse, 
-  BacktestResult,
-  AggregatedMetrics
+  isMultipleBacktestResponse,
+  isMonteCarloResponse,
+  type BacktestRequest,
+  type BacktestResponse,
+  type BacktestApiResponse,
+  type BacktestResult,
+  type AggregatedMetrics,
+  type MonteCarloResponse,
+  type MonteCarloResult,
+  type MetricsDistribution,
+  type EquityEnvelope
 } from '@/services/backtestService'
 import { useErrorStore } from '@/stores/errorStore'
 import { buildEquityPoints, toLineData } from '@/composables/useEquitySeries'
@@ -34,6 +37,11 @@ export const useBacktestStore = defineStore('backtest', {
     results: [] as BacktestResult[],
     aggregatedMetrics: null as AggregatedMetrics | null,
     isMultipleResults: false,
+    // Monte Carlo specific state
+    isMonteCarloResults: false,
+    monteCarloResults: [] as MonteCarloResult[],
+    metricsDistribution: null as { pnl: MetricsDistribution; sharpe: MetricsDistribution; drawdown: MetricsDistribution } | null,
+    equityEnvelope: null as EquityEnvelope | null,
   }),
   getters: {
     equitySeries(state) {
@@ -57,6 +65,11 @@ export const useBacktestStore = defineStore('backtest', {
       this.results = []
       this.aggregatedMetrics = null
       this.isMultipleResults = false
+      // Reset Monte Carlo state
+      this.isMonteCarloResults = false
+      this.monteCarloResults = []
+      this.metricsDistribution = null
+      this.equityEnvelope = null
     },
     async runBacktest(file: File, req: BacktestRequest) {
       this.status = 'loading'
@@ -101,13 +114,14 @@ export const useBacktestStore = defineStore('backtest', {
            this.results = resp.results
            this.aggregatedMetrics = resp.aggregated_metrics
            this.isMultipleResults = true
+           this.isMonteCarloResults = false
            
            // For backward compatibility, set the first result as the main result
            if (resp.results.length > 0) {
              const firstResult = resp.results[0]!
              const curve = firstResult.equity_curve || []
              const base = curve.length ? curve[0] : 1
-             const normalized = base ? curve.map(v => v / base) : curve
+             const normalized = base ? curve.map((v: number) => v / base) : curve
              
              this.timestamps = firstResult.timestamps || []
              this.equityCurve = normalized
@@ -115,11 +129,33 @@ export const useBacktestStore = defineStore('backtest', {
              this.drawdown = firstResult.drawdown
              this.sharpe = firstResult.sharpe
            }
+         } else if (isMonteCarloResponse(resp)) {
+           // Handle Monte Carlo results
+           this.monteCarloResults = resp.results
+           this.aggregatedMetrics = resp.aggregated_metrics
+           this.isMonteCarloResults = true
+           this.isMultipleResults = false
+           
+           // Set distribution data from first result
+           if (resp.results.length > 0) {
+             const firstResult = resp.results[0]!
+             this.metricsDistribution = firstResult.metrics_distribution
+             this.equityEnvelope = firstResult.equity_envelope
+             
+             // Set median values as main metrics for display
+             this.pnl = firstResult.metrics_distribution.pnl.median
+             this.drawdown = firstResult.metrics_distribution.drawdown.median
+             this.sharpe = firstResult.metrics_distribution.sharpe.median
+             
+             // Use median equity curve for main display
+             this.timestamps = firstResult.equity_envelope.timestamps
+             this.equityCurve = firstResult.equity_envelope.median
+           }
          } else {
           // Handle single result (backward compatible)
           const curve = resp.equity_curve || []
           const base = curve.length ? curve[0] : 1
-          const normalized = base ? curve.map(v => v / base) : curve
+          const normalized = base ? curve.map((v: number) => v / base) : curve
 
           this.timestamps = resp.timestamps || []
           this.equityCurve = normalized
@@ -127,6 +163,7 @@ export const useBacktestStore = defineStore('backtest', {
           this.drawdown = resp.drawdown
           this.sharpe = resp.sharpe
           this.isMultipleResults = false
+          this.isMonteCarloResults = false
           this.results = []
           this.aggregatedMetrics = null
         }
