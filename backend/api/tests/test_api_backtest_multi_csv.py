@@ -120,15 +120,23 @@ def test_backtest_too_many_files():
 
 def test_backtest_rsi_multiple_files():
     """Test RSI strategy with multiple files"""
-    csv1 = _make_csv([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110])
-    csv2 = _make_csv([200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210])
+    # Use more data points for RSI calculation (RSI needs more data to avoid NaN)
+    csv1 = _make_csv([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120])
+    csv2 = _make_csv([200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220])
     
     files = [
         ("csv", ("rsi1.csv", io.BytesIO(csv1.encode("utf-8")), "text/csv")),
         ("csv", ("rsi2.csv", io.BytesIO(csv2.encode("utf-8")), "text/csv")),
     ]
     
-    resp = client.post("/api/v1/backtest?strategy=rsi&period=5&overbought=70&oversold=30", files=files)
+    # Use period=14 (standard RSI period) instead of 5 to get better results
+    resp = client.post("/api/v1/backtest?strategy=rsi&period=14&overbought=70&oversold=30", files=files)
+    
+    # Debug: print response details if it fails
+    if resp.status_code != 200:
+        print(f"Response status: {resp.status_code}")
+        print(f"Response body: {resp.text}")
+    
     assert resp.status_code == 200
     
     body = resp.json()

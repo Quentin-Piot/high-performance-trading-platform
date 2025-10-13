@@ -6,10 +6,11 @@ from strategies.metrics import sharpe_ratio, max_drawdown, total_return, trade_s
 
 
 def test_sharpe_ratio_nan_on_zero_returns():
-    # Zero returns -> zero std -> NaN Sharpe per implementation
-    returns = pd.Series([0.0] * 252, index=pd.date_range("2023-01-01", periods=252, freq="D"))
-    s = sharpe_ratio(returns)
-    assert np.isnan(s)
+    """Test that sharpe ratio returns 0 (not NaN) when returns are zero"""
+    zero_returns = pd.Series([0.0, 0.0, 0.0, 0.0])
+    s = sharpe_ratio(zero_returns)
+    # After our fix, sharpe_ratio should return 0.0 instead of NaN for JSON compatibility
+    assert s == 0.0
 
 
 def test_max_drawdown_on_known_path():

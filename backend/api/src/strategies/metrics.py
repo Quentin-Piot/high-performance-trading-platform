@@ -8,8 +8,8 @@ def sharpe_ratio(returns: pd.Series, annualization: int = 252) -> float:
     # returns: simple returns series (periodic, e.g., daily pct change)
     mean = returns.mean()
     std = returns.std(ddof=0)
-    if std == 0 or np.isnan(std):
-        return float("nan")
+    if std == 0 or np.isnan(std) or np.isnan(mean):
+        return 0.0  # Return 0 instead of NaN for JSON compatibility
     return float((mean / std) * (annualization**0.5))
 
 
