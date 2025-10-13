@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from "@/router";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/components/ui/card";
 import { useI18n } from "vue-i18n";
-import { LineChart, ShieldCheck, BarChart3 } from "lucide-vue-next";
+import { BarChart3 } from "lucide-vue-next";
 import TopNav from "@/components/common/TopNav.vue";
 import { ref, watch } from "vue";
 
@@ -30,12 +23,14 @@ function go(path: string) {
 
 <template>
     <main
-        class="container mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-10 animate-fade-in"
+        class="min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 animate-fade-in"
     >
-        <TopNav />
+        <div class="absolute top-6 left-0 right-0">
+            <TopNav />
+        </div>
 
         <section
-            class="liquid-glass-hero gradient-hero relative overflow-hidden rounded-xl sm:rounded-2xl px-4 sm:px-8 py-8 sm:py-16 text-center"
+            class="liquid-glass-hero gradient-hero relative overflow-hidden rounded-xl sm:rounded-2xl px-6 sm:px-12 py-12 sm:py-20 text-center max-w-4xl mx-auto"
         >
             <!-- Liquid Glass Background Layers -->
             <div class="liquid-glass-bg"></div>
@@ -44,140 +39,28 @@ function go(path: string) {
             <div class="liquid-glass-shimmer"></div>
             <div class="liquid-glass-noise"></div>
 
-            <div class="relative z-10 animate-slide-up space-y-4 sm:space-y-6">
+            <div class="relative z-10 animate-slide-up space-y-6 sm:space-y-8">
                 <h1
-                    class="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight gradient-text hero-title leading-tight px-2"
+                    class="text-3xl sm:text-3xl md:text-5xl font-bold tracking-tight gradient-text hero-title leading-tight"
                 >
                     {{ t("landing.title") }}
                 </h1>
                 <p
-                    class="text-base sm:text-lg hero-description max-w-2xl mx-auto leading-relaxed px-2"
+                    class="text-md sm:text-lg hero-description max-w-3xl mx-auto leading-relaxed"
                 >
                     {{ t("landing.subtitle") }}
                 </p>
-                <div class="flex justify-center gap-4 pt-2 sm:pt-4">
+                <div class="flex justify-center gap-4 pt-4 sm:pt-6">
                     <Button
                         size="lg"
+                        class="gradient-primary text-white font-semibold px-8 sm:px-12 py-4 sm:py-5 rounded-xl shadow-medium hover-glow hover-scale transition-bounce text-base sm:text-lg"
                         @click="go('/simulate')"
-                        class="gradient-primary text-white font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-medium hover-glow hover-scale transition-bounce text-sm sm:text-base"
                     >
-                        <BarChart3 class="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                        <BarChart3 class="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
                         {{ t("landing.cta.startBacktest") }}
                     </Button>
                 </div>
             </div>
-        </section>
-
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
-            <Card
-                class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30"
-            >
-                <div
-                    class="absolute inset-0 bg-gradient-to-br from-trading-blue/5 to-trading-purple/5 opacity-0 group-hover:opacity-100 transition-smooth"
-                ></div>
-                <CardHeader class="relative z-10 p-3 sm:p-5">
-                    <div
-                        class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4"
-                    >
-                        <div
-                            class="rounded-xl sm:rounded-2xl bg-trading-blue/10 p-3 sm:p-4 text-trading-blue group-hover:bg-trading-blue/20 transition-smooth shadow-soft"
-                        >
-                            <LineChart class="size-5 sm:size-6" />
-                        </div>
-                        <div class="flex-1">
-                            <CardTitle
-                                class="text-lg sm:text-xl font-semibold"
-                                >{{
-                                    t("landing.sections.simulation.title")
-                                }}</CardTitle
-                            >
-                            <CardDescription
-                                class="text-muted-foreground mt-1 text-sm"
-                                >{{ t("landing.sections.simulation.description") }}</CardDescription
-                            >
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="relative z-10 p-3 sm:p-5 pt-0">
-                    <p class="text-sm text-muted-foreground leading-relaxed">
-                        {{ t("landing.sections.simulation.text") }}
-                    </p>
-                </CardContent>
-            </Card>
-
-            <Card
-                class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30"
-                style="animation-delay: 0.1s"
-            >
-                <div
-                    class="absolute inset-0 bg-gradient-to-br from-trading-green/5 to-trading-cyan/5 opacity-0 group-hover:opacity-100 transition-smooth"
-                ></div>
-                <CardHeader class="relative z-10 p-3 sm:p-5">
-                    <div
-                        class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4"
-                    >
-                        <div
-                            class="rounded-xl sm:rounded-2xl bg-trading-green/10 p-3 sm:p-4 text-trading-green group-hover:bg-trading-green/20 transition-smooth shadow-soft"
-                        >
-                            <ShieldCheck class="size-5 sm:size-6" />
-                        </div>
-                        <div class="flex-1">
-                            <CardTitle
-                                class="text-lg sm:text-xl font-semibold"
-                                >{{
-                                    t("landing.sections.auth.title")
-                                }}</CardTitle
-                            >
-                            <CardDescription
-                                class="text-muted-foreground mt-1 text-sm"
-                                >{{ t("landing.sections.auth.description") }}</CardDescription
-                            >
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="relative z-10 p-3 sm:p-5 pt-0">
-                    <p class="text-sm text-muted-foreground leading-relaxed">
-                        {{ t("landing.sections.auth.text") }}
-                    </p>
-                </CardContent>
-            </Card>
-
-            <Card
-                class="group relative overflow-hidden border-0 shadow-soft hover-lift hover-glow transition-smooth animate-scale-in bg-gradient-to-br from-card via-card to-secondary/30"
-                style="animation-delay: 0.2s"
-            >
-                <div
-                    class="absolute inset-0 bg-gradient-to-br from-trading-orange/5 to-trading-red/5 opacity-0 group-hover:opacity-100 transition-smooth"
-                ></div>
-                <CardHeader class="relative z-10 p-3 sm:p-5">
-                    <div
-                        class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4"
-                    >
-                        <div
-                            class="rounded-xl sm:rounded-2xl bg-trading-orange/10 p-3 sm:p-4 text-trading-orange group-hover:bg-trading-orange/20 transition-smooth shadow-soft"
-                        >
-                            <BarChart3 class="size-5 sm:size-6" />
-                        </div>
-                        <div class="flex-1">
-                            <CardTitle
-                                class="text-lg sm:text-xl font-semibold"
-                                >{{
-                                    t("landing.sections.visualization.title")
-                                }}</CardTitle
-                            >
-                            <CardDescription
-                                class="text-muted-foreground mt-1 text-sm"
-                                >{{ t("landing.sections.visualization.description") }}</CardDescription
-                            >
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="relative z-10 p-3 sm:p-5 pt-0">
-                    <p class="text-sm text-muted-foreground leading-relaxed">
-                        {{ t("landing.sections.visualization.text") }}
-                    </p>
-                </CardContent>
-            </Card>
         </section>
     </main>
 </template>
@@ -194,8 +77,10 @@ function go(path: string) {
         0 12px 40px rgba(0, 0, 0, 0.18),
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
         inset 0 -1px 0 rgba(255, 255, 255, 0.12);
-    transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
-        background 400ms ease, box-shadow 400ms ease;
+    transition:
+        transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
+        background 400ms ease,
+        box-shadow 400ms ease;
 }
 
 .liquid-glass-hero:hover {
@@ -207,39 +92,14 @@ function go(path: string) {
     transform: translateY(-2px);
 }
 
-/* Premium gradient ring around the hero (masked border) */
-.liquid-glass-hero::before {
-    content: "";
-    position: absolute;
-    inset: -10px;
-    border-radius: inherit;
-    padding: 2px;
-    background: linear-gradient(
-        135deg,
-        var(--trading-blue),
-        var(--trading-purple),
-        var(--trading-cyan),
-        var(--trading-green)
-    );
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    mask-composite: xor;
-    -webkit-mask-composite: xor;
-    opacity: 0.6;
-    filter: blur(6px);
-    pointer-events: none;
-}
-
 .liquid-glass-bg {
     position: absolute;
     inset: 0;
-    /* Darker, simpler gradient: deep blue → deep violet */
     background: linear-gradient(
         135deg,
-        rgba(22, 28, 43, 0.88) 0%, /* deep blue tone */
-        rgba(28, 22, 46, 0.88) 55%, /* mid transition */
-        rgba(35, 24, 58, 0.88) 100% /* deep violet tone */
+        rgba(22, 28, 43, 0.88) 0%,
+        rgba(28, 22, 46, 0.88) 55%,
+        rgba(35, 24, 58, 0.88) 100%
     );
     background-size: 180% 180%;
     animation: liquid-gradient 18s ease-in-out infinite;
@@ -252,7 +112,7 @@ function go(path: string) {
     background: radial-gradient(
         circle at 30% 20%,
         rgba(255, 255, 255, 0.24) 0%,
-        rgba(255, 255, 255, 0.10) 40%,
+        rgba(255, 255, 255, 0.1) 40%,
         transparent 70%
     );
     border-radius: inherit;
@@ -292,150 +152,67 @@ function go(path: string) {
     transition: opacity 300ms ease;
 }
 
-.liquid-glass-hero:hover .liquid-glass-shimmer { opacity: 1; }
+.liquid-glass-hero:hover .liquid-glass-shimmer {
+    opacity: 1;
+}
 
-/* Subtle noise layer to sell the glass texture */
 .liquid-glass-noise {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background:
-        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 4px 4px;
     mix-blend-mode: overlay;
     opacity: 0.15;
     pointer-events: none;
 }
-.hero-glow {
-    position: relative;
-}
-
-.hero-glow::before {
-    content: "";
-    position: absolute;
-    inset: -10px; /* Augmenté pour faire déborder le glow */
-    border-radius: inherit;
-    padding: 2px;
-    background: linear-gradient(
-        135deg,
-        var(--trading-blue),
-        var(--trading-purple),
-        var(--trading-cyan),
-        var(--trading-green)
-    );
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    mask-composite: xor;
-    -webkit-mask-composite: xor;
-    opacity: 0.9; /* Opacité augmentée pour un glow plus intense */
-    filter: blur(5px); /* Ajout d'un flou pour un effet plus diffus */
-}
-
-@keyframes particle-float {
-    0%,
-    100% {
-        transform: translateY(0px) rotate(0deg);
-        opacity: 0.7;
-    }
-    33% {
-        transform: translateY(-15px) rotate(120deg);
-        opacity: 1;
-    }
-    66% {
-        transform: translateY(-8px) rotate(240deg);
-        opacity: 0.8;
-    }
-}
-
-@media (min-width: 640px) {
-    @keyframes particle-float {
-        0%,
-        100% {
-            transform: translateY(0px) rotate(0deg);
-            opacity: 0.7;
-        }
-        33% {
-            transform: translateY(-20px) rotate(120deg);
-            opacity: 1;
-        }
-        66% {
-            transform: translateY(-10px) rotate(240deg);
-            opacity: 0.8;
-        }
-    }
-}
-
-.particle {
-    animation: particle-float 8s ease-in-out infinite;
-}
-
-.card-shine {
-    position: relative;
-    overflow: hidden;
-}
-
-.card-shine::after {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        transparent
-    );
-    transform: rotate(45deg) translate(-100%, -100%);
-    transition: transform 0.6s ease;
-}
-
-.card-shine:hover::after {
-    transform: rotate(45deg) translate(100%, 100%);
-}
-
-@keyframes gradient-shift {
-    0%,
-    100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
 
 .gradient-text {
-    /* Glassmorphism text: subtle tint and visible specular reflection */
     background:
-        radial-gradient(50% 140% at -20% 50%, rgba(255, 255, 255, 0.42), transparent 64%), /* specular highlight */
-        linear-gradient(90deg, rgba(238, 242, 255, 0.98) 0%, rgba(245, 243, 255, 0.98) 50%, rgba(240, 245, 255, 0.98) 100%), /* ultra-light blue/violet */
-        linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.86) 48%, rgba(255, 255, 255, 0.78) 100%); /* white body */
-    background-size: 180% 180%, 100% 100%, 100% 100%;
-    background-position: 0% 0%, 0% 0%, 0% 0%;
+        radial-gradient(
+            50% 140% at -20% 50%,
+            rgba(255, 255, 255, 0.42),
+            transparent 64%
+        ),
+        linear-gradient(
+            90deg,
+            rgba(238, 242, 255, 0.98) 0%,
+            rgba(245, 243, 255, 0.98) 50%,
+            rgba(240, 245, 255, 0.98) 100%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.96) 0%,
+            rgba(255, 255, 255, 0.86) 48%,
+            rgba(255, 255, 255, 0.78) 100%
+        );
+    background-size:
+        180% 180%,
+        100% 100%,
+        100% 100%;
+    background-position:
+        0% 0%,
+        0% 0%,
+        0% 0%;
     animation: specular-sweep 7s ease-in-out infinite;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.10), /* subtle depth */
-        0 8px 22px rgba(0, 0, 0, 0.20), /* ambient depth */
-        0 -1px 8px rgba(255, 255, 255, 0.20); /* top sheen */
+        0 1px 2px rgba(0, 0, 0, 0.1),
+        0 8px 22px rgba(0, 0, 0, 0.2),
+        0 -1px 8px rgba(255, 255, 255, 0.2);
 }
 
-/* Hero title and description glassmorphism fine-tuning */
 .hero-title {
-    /* reduce glow while keeping specular reflection visible */
     text-shadow:
         0 1px 2px rgba(0, 0, 0, 0.06),
-        0 4px 12px rgba(0, 0, 0, 0.10);
+        0 4px 12px rgba(0, 0, 0, 0.1);
     opacity: 0.96;
     filter: blur(0.15px);
 }
 
 .hero-description {
-    /* slightly lighter and glassy */
     color: rgba(255, 255, 255, 0.88);
     opacity: 0.95;
     filter: blur(0.2px);
@@ -443,227 +220,24 @@ function go(path: string) {
 
 @keyframes specular-sweep {
     0% {
-        background-position: -100% 0%, 0% 0%, 0% 0%;
+        background-position:
+            -100% 0%,
+            0% 0%,
+            0% 0%;
     }
     50% {
-        background-position: 30% 0%, 0% 0%, 0% 0%;
+        background-position:
+            30% 0%,
+            0% 0%,
+            0% 0%;
     }
     100% {
-        background-position: 140% 0%, 0% 0%, 0% 0%;
+        background-position:
+            140% 0%,
+            0% 0%,
+            0% 0%;
     }
 }
-
-.pulse-ring {
-    position: relative;
-}
-
-.pulse-ring::before {
-    content: "";
-    position: absolute;
-    inset: -4px;
-    border-radius: inherit;
-    background: var(--gradient-primary);
-    opacity: 0;
-    animation: pulse-ring 2s ease-out infinite;
-}
-
-@keyframes pulse-ring {
-    0% {
-        transform: scale(1);
-        opacity: 0.8;
-    }
-    100% {
-        transform: scale(1.2);
-        opacity: 0;
-    }
-}
-
-/* Lumières SF latérales dans le hero - animation fluide */
-.sf-light {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 160px;
-    pointer-events: none;
-    filter: blur(16px);
-    opacity: 0;
-    mix-blend-mode: screen;
-    z-index: 1;
-    will-change: opacity, transform;
-    animation: sf-pulse 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-@media (min-width: 640px) {
-    .sf-light {
-        width: 180px;
-        filter: blur(18px);
-    }
-}
-
-.sf-light-left {
-    left: -20px;
-    animation-delay: -0.8s;
-    background: radial-gradient(
-        closest-side,
-        rgba(99, 102, 241, 0.45),
-        /* indigo */ rgba(168, 85, 247, 0.25),
-        /* purple */ transparent 65%
-    );
-    box-shadow:
-        0 0 60px rgba(99, 102, 241, 0.35),
-        0 0 100px rgba(168, 85, 247, 0.25);
-}
-
-@media (min-width: 640px) {
-    .sf-light-left {
-        left: -30px;
-        background: radial-gradient(
-            closest-side,
-            rgba(99, 102, 241, 0.55),
-            /* indigo */ rgba(168, 85, 247, 0.35),
-            /* purple */ transparent 65%
-        );
-    }
-}
-
-.sf-light-right {
-    right: -20px;
-    animation-delay: 0.4s;
-    background: radial-gradient(
-        closest-side,
-        rgba(6, 182, 212, 0.45),
-        /* cyan */ rgba(34, 197, 94, 0.25),
-        /* green */ transparent 65%
-    );
-    box-shadow:
-        0 0 60px rgba(6, 182, 212, 0.35),
-        0 0 100px rgba(34, 197, 94, 0.25);
-}
-
-@media (min-width: 640px) {
-    .sf-light-right {
-        right: -30px;
-        background: radial-gradient(
-            closest-side,
-            rgba(6, 182, 212, 0.55),
-            /* cyan */ rgba(34, 197, 94, 0.35),
-            /* green */ transparent 65%
-        );
-    }
-}
-
-@keyframes sf-pulse {
-    0% {
-        opacity: 0;
-        transform: translateY(2px) scale(0.98);
-    }
-    20% {
-        opacity: 0.45;
-        transform: translateY(0) scale(1);
-    }
-    50% {
-        opacity: 0.85;
-        transform: translateY(-6px) scale(1.02);
-    }
-    80% {
-        opacity: 0.45;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(2px) scale(0.98);
-    }
-}
-
-@media (min-width: 640px) {
-    @keyframes sf-pulse {
-        0% {
-            opacity: 0;
-            transform: translateY(2px) scale(0.98);
-        }
-        20% {
-            opacity: 0.55;
-            transform: translateY(0) scale(1);
-        }
-        50% {
-            opacity: 0.95;
-            transform: translateY(-8px) scale(1.03);
-        }
-        80% {
-            opacity: 0.55;
-            transform: translateY(0) scale(1);
-        }
-        100% {
-            opacity: 0;
-            transform: translateY(2px) scale(0.98);
-        }
-    }
-}
-
-.gradient-hero {
-    position: relative;
-    background:
-        radial-gradient(
-            120% 80% at 20% 20%,
-            rgba(99, 102, 241, 0.08),
-            transparent 60%
-        ),
-        radial-gradient(
-            120% 80% at 80% 80%,
-            rgba(34, 197, 94, 0.08),
-            transparent 60%
-        );
-}
-
-@media (hover: none) and (pointer: coarse) {
-    .hover-lift:hover {
-        transform: none;
-    }
-
-    .hover-lift:active {
-        transform: translateY(2px);
-    }
-
-    .hover-glow:hover {
-        box-shadow: none;
-    }
-
-    .hover-scale:hover {
-        transform: none;
-    }
-
-    .hover-scale:active {
-        transform: scale(0.98);
-    }
-
-    .animate-float {
-        animation-duration: 12s;
-    }
-
-    .gradient-text {
-        animation-duration: 6s;
-    }
-}
-
-@media (max-width: 640px) {
-    .shadow-strong {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .shadow-medium {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .shadow-soft {
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    }
-
-    .backdrop-blur-sm {
-        backdrop-filter: blur(4px);
-    }
-}
-
-/* Liquid Glass Effect - Apple-inspired */
 
 @keyframes liquid-gradient {
     0%,
@@ -700,13 +274,13 @@ function go(path: string) {
         box-shadow:
             0 16px 52px rgba(0, 0, 0, 0.45),
             inset 0 1px 0 rgba(255, 255, 255, 0.18),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.10);
+            inset 0 -1px 0 rgba(255, 255, 255, 0.1);
     }
 
     .liquid-glass-overlay {
         background: radial-gradient(
             circle at 30% 20%,
-            rgba(255, 255, 255, 0.10) 0%,
+            rgba(255, 255, 255, 0.1) 0%,
             rgba(255, 255, 255, 0.04) 40%,
             transparent 70%
         );
@@ -722,7 +296,9 @@ function go(path: string) {
     }
 
     .gradient-text {
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 8px 20px rgba(255, 255, 255, 0.18);
+        text-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.12),
+            0 8px 20px rgba(255, 255, 255, 0.18);
     }
 
     .hero-description {

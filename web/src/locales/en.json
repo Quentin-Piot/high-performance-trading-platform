@@ -10,7 +10,7 @@
   },
   "landing": {
     "title": "High-Performance Trading Platform",
-    "subtitle": "Transform your trading strategies into concrete results. Our modern platform combines Vue.js and FastAPI to deliver lightning-fast backtests, comprehensive performance analysis, and interactive visualizations of your equity curves.",
+    "subtitle": "Technical demo of a modern trading platform. Educational project combining Vue.js and FastAPI.",
     "cta": {
       "startBacktest": "Start Backtest",
       "login": "Login",
