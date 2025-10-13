@@ -127,6 +127,11 @@ type RawMultipleBacktestResponse = {
 }
 
 
+function asNegativeDrawdown(value?: number): number {
+  const v = value ?? 0
+  return v <= 0 ? v : -Math.abs(v)
+}
+
 function normalizeResponse(resp: RawBacktestResponse): BacktestResponse {
   // If already in normalized shape, return as-is
   if ('timestamps' in resp && 'equity_curve' in resp && resp.timestamps && resp.equity_curve) {
@@ -134,7 +139,7 @@ function normalizeResponse(resp: RawBacktestResponse): BacktestResponse {
       timestamps: resp.timestamps,
       equity_curve: resp.equity_curve,
       pnl: resp.pnl,
-      drawdown: (resp.drawdown ?? resp.max_drawdown ?? 0),
+      drawdown: asNegativeDrawdown(resp.drawdown ?? resp.max_drawdown ?? 0),
       sharpe: (resp.sharpe ?? resp.sharpe_ratio ?? 0),
     }
   }
@@ -145,7 +150,7 @@ function normalizeResponse(resp: RawBacktestResponse): BacktestResponse {
       timestamps: resp.dates,
       equity_curve: resp.equity,
       pnl: resp.pnl,
-      drawdown: (resp.drawdown ?? resp.max_drawdown ?? 0),
+      drawdown: asNegativeDrawdown(resp.drawdown ?? resp.max_drawdown ?? 0),
       sharpe: (resp.sharpe ?? resp.sharpe_ratio ?? 0),
     }
   }
@@ -155,7 +160,7 @@ function normalizeResponse(resp: RawBacktestResponse): BacktestResponse {
     timestamps: (resp.timestamps ?? resp.dates ?? []),
     equity_curve: (resp.equity_curve ?? resp.equity ?? []),
     pnl: resp.pnl,
-    drawdown: (resp.drawdown ?? resp.max_drawdown ?? 0),
+    drawdown: asNegativeDrawdown(resp.drawdown ?? resp.max_drawdown ?? 0),
     sharpe: (resp.sharpe ?? resp.sharpe_ratio ?? 0),
   }
 }
@@ -167,10 +172,15 @@ function normalizeMultipleResponse(resp: RawMultipleBacktestResponse): MultipleB
       timestamps: result.timestamps ?? result.dates ?? [],
       equity_curve: result.equity_curve ?? result.equity ?? [],
       pnl: result.pnl,
-      drawdown: result.drawdown ?? result.max_drawdown ?? 0,
+      drawdown: asNegativeDrawdown(result.drawdown ?? result.max_drawdown ?? 0),
       sharpe: result.sharpe ?? result.sharpe_ratio ?? 0,
     })),
-    aggregated_metrics: resp.aggregated_metrics
+    aggregated_metrics: {
+      average_pnl: resp.aggregated_metrics.average_pnl,
+      average_sharpe: resp.aggregated_metrics.average_sharpe,
+      average_drawdown: asNegativeDrawdown(resp.aggregated_metrics.average_drawdown),
+      total_files_processed: resp.aggregated_metrics.total_files_processed,
+    }
   }
 }
 

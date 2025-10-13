@@ -22,24 +22,22 @@ function go(path: string) {
 </script>
 
 <template>
-    <main
-        class="min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 animate-fade-in"
+     <main
+        class="container mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-10 animate-fade-in"
     >
-        <div class="absolute top-6 left-0 right-0">
-            <TopNav />
-        </div>
+                 <TopNav />
+
 
         <section
             class="liquid-glass-hero gradient-hero relative overflow-hidden rounded-xl sm:rounded-2xl px-6 sm:px-12 py-12 sm:py-20 text-center max-w-4xl mx-auto"
         >
-            <!-- Liquid Glass Background Layers -->
             <div class="liquid-glass-bg"></div>
             <div class="liquid-glass-overlay"></div>
             <div class="liquid-glass-reflection"></div>
             <div class="liquid-glass-shimmer"></div>
             <div class="liquid-glass-noise"></div>
 
-            <div class="relative z-10 animate-slide-up space-y-6 sm:space-y-8">
+            <div class="relative z-10 space-y-6 sm:space-y-8">
                 <h1
                     class="text-3xl sm:text-3xl md:text-5xl font-bold tracking-tight gradient-text hero-title leading-tight"
                 >
@@ -66,7 +64,6 @@ function go(path: string) {
 </template>
 
 <style scoped>
-/* Liquid Glass + Glassmorphism — Apple-inspired */
 .liquid-glass-hero {
     position: relative;
     background: rgba(255, 255, 255, 0.06);
@@ -77,19 +74,36 @@ function go(path: string) {
         0 12px 40px rgba(0, 0, 0, 0.18),
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
         inset 0 -1px 0 rgba(255, 255, 255, 0.12);
-    transition:
-        transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
-        background 400ms ease,
-        box-shadow 400ms ease;
+    transition: none;
+    overflow: hidden; 
 }
 
-.liquid-glass-hero:hover {
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow:
-        0 18px 56px rgba(0, 0, 0, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.16);
-    transform: translateY(-2px);
+.liquid-glass-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 600%; /* Augmenté pour couvrir plus de terrain */
+    height: 600%; /* Augmenté pour couvrir plus de terrain */
+    background: radial-gradient(
+        circle closest-corner at 50% 50%,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 5%, /* Réduit la partie la plus intense */
+        transparent 15% /* Transparence plus rapide pour un effet de rayon plus net */
+    );
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    transition: 
+        transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        opacity 0.8s ease;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.liquid-glass-hero:hover::before {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1); /* Va à l'échelle normale, couvrant les coins */
 }
 
 .liquid-glass-bg {
@@ -102,7 +116,6 @@ function go(path: string) {
         rgba(35, 24, 58, 0.88) 100%
     );
     background-size: 180% 180%;
-    animation: liquid-gradient 18s ease-in-out infinite;
     border-radius: inherit;
 }
 
@@ -140,20 +153,15 @@ function go(path: string) {
     position: absolute;
     inset: 0;
     background: linear-gradient(
-        45deg,
+        90deg,
         transparent 30%,
         rgba(255, 255, 255, 0.12) 50%,
         transparent 70%
     );
-    background-size: 180% 180%;
-    animation: shimmer 5s ease-in-out infinite;
+    background-size: 300% 100%;
     border-radius: inherit;
     opacity: 0;
-    transition: opacity 300ms ease;
-}
-
-.liquid-glass-hero:hover .liquid-glass-shimmer {
-    opacity: 1;
+    transition: none;
 }
 
 .liquid-glass-noise {
@@ -186,15 +194,8 @@ function go(path: string) {
             rgba(255, 255, 255, 0.86) 48%,
             rgba(255, 255, 255, 0.78) 100%
         );
-    background-size:
-        180% 180%,
-        100% 100%,
-        100% 100%;
-    background-position:
-        0% 0%,
-        0% 0%,
-        0% 0%;
-    animation: specular-sweep 7s ease-in-out infinite;
+    background-size: 100% 100%;
+    background-position: 0% 0%;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -218,47 +219,6 @@ function go(path: string) {
     filter: blur(0.2px);
 }
 
-@keyframes specular-sweep {
-    0% {
-        background-position:
-            -100% 0%,
-            0% 0%,
-            0% 0%;
-    }
-    50% {
-        background-position:
-            30% 0%,
-            0% 0%,
-            0% 0%;
-    }
-    100% {
-        background-position:
-            140% 0%,
-            0% 0%,
-            0% 0%;
-    }
-}
-
-@keyframes liquid-gradient {
-    0%,
-    100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -200% -200%;
-    }
-    100% {
-        background-position: 200% 200%;
-    }
-}
-
-/* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
     .liquid-glass-hero {
         background: rgba(0, 0, 0, 0.28);
@@ -268,13 +228,14 @@ function go(path: string) {
             inset 0 1px 0 rgba(255, 255, 255, 0.14),
             inset 0 -1px 0 rgba(255, 255, 255, 0.08);
     }
-
-    .liquid-glass-hero:hover {
-        background: rgba(0, 0, 0, 0.34);
-        box-shadow:
-            0 16px 52px rgba(0, 0, 0, 0.45),
-            inset 0 1px 0 rgba(255, 255, 255, 0.18),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+    
+    .liquid-glass-hero::before {
+        background: radial-gradient(
+            circle closest-corner at 50% 50%,
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 255, 255, 0.04) 5%,
+            transparent 15%
+        );
     }
 
     .liquid-glass-overlay {

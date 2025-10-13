@@ -169,17 +169,6 @@ function downloadCsv() {
     >
         <TopNav />
 
-        <!-- Header avec effet premium - responsive -->
-        <header class="flex flex-col gap-2 animate-slide-up">
-            <h1
-                class="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary via-trading-purple to-trading-cyan bg-clip-text text-transparent"
-            >
-                {{ t("simulate.header.title") }}
-            </h1>
-            <p class="text-sm sm:text-base text-muted-foreground">
-                {{ t("simulate.header.subtitle") }}
-            </p>
-        </header>
 
         <!-- Layout: mobile empilé, desktop côte à côte -->
         <section
@@ -550,18 +539,6 @@ function downloadCsv() {
     }
 }
 
-/* Animation d'entrée optimisée pour mobile */
-@media (prefers-reduced-motion: reduce) {
-    .animate-fade-in,
-    .animate-slide-up,
-    .animate-scale-in {
-        animation: none;
-    }
-
-    .transition-smooth {
-        transition: none;
-    }
-}
 
 /* Optimisation de la grille KPI sur très petits écrans */
 @media (max-width: 480px) {
