@@ -3,9 +3,9 @@ import pandas as pd
 from typing import Optional
 from pydantic import Field
 
-from ..domain.backtest import BacktestResult
-from .base import Strategy, StrategyParams
-from .metrics import (
+from domain.backtest import BacktestResult
+from strategies.base import Strategy, StrategyParams
+from strategies.metrics import (
     sharpe_ratio,
     max_drawdown,
     total_return,
@@ -57,7 +57,7 @@ class MovingAverageStrategy(Strategy):
         position = raw_signal.shift(1).fillna(0).astype(int) * params.position_size
 
         # Returns
-        returns = close.pct_change().fillna(0.0)
+        returns = close.pct_change(fill_method=None).fillna(0.0)
         # trade detection
         trade_events = position.diff().abs().fillna(0)
 

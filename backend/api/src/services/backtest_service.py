@@ -10,6 +10,10 @@ from dataclasses import dataclass
 from domain.backtest import BacktestResult, BacktestParams
 from domain.interfaces import PriceSeriesSource, StrategyInterface
 
+# Import des stratégies modernes
+from strategies.moving_average import MovingAverageStrategy, MovingAverageParams
+from strategies.rsi_reversion import RSIReversionStrategy, RSIParams
+
 logger = logging.getLogger("services.backtest")
 
 
@@ -44,79 +48,41 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
 
     def get_prices(self) -> pd.Series:
         return _read_csv_to_series(self._data)
+    
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert CSV data to DataFrame for Monte Carlo processing."""
+        if isinstance(self._data, (bytes, bytearray)):
+            buffer = io.BytesIO(self._data)
+            df = pd.read_csv(buffer)
+        else:
+            df = pd.read_csv(self._data)
 
+        df.columns = [str(c).strip().lower() for c in df.columns]
 
-class SmaCrossoverStrategy(StrategyInterface):
-    def __init__(self, short_window: int, long_window: int):
-        if short_window <= 0 or long_window <= 0 or short_window >= long_window:
-            raise ValueError("Paramètres SMA invalides: short>0, long>0 et short<long")
-        self.short_window = short_window
-        self.long_window = long_window
-
-    def run(self, source: PriceSeriesSource, params: BacktestParams) -> BacktestResult:
-        prices = source.get_prices()
-        s_short = prices.rolling(
-            window=self.short_window, min_periods=self.short_window
-        ).mean()
-        s_long = prices.rolling(
-            window=self.long_window, min_periods=self.long_window
-        ).mean()
-        position = (s_short > s_long).astype(int)
-
-        returns = prices.pct_change().fillna(0.0)
-        strat_returns = (position.shift(1).fillna(0) * returns).astype(float)
-
-        equity = (1.0 + strat_returns).cumprod()
-        pnl = float(equity.iloc[-1] - 1.0)
-
-        peak = equity.cummax()
-        drawdown = ((peak - equity) / peak).fillna(0.0)
-        max_dd = float(drawdown.max())
-
-        mean_ret, std_ret = strat_returns.mean(), strat_returns.std()
-        sharpe = float((mean_ret / std_ret) * np.sqrt(252)) if std_ret > 0 else 0.0
-
-        return BacktestResult(
-            equity=equity,
-            pnl=pnl,
-            max_drawdown=max_dd,
-            sharpe_ratio=sharpe,
+        # Ensure we have required columns
+        price_col = next(
+            (c for c in ["close", "adj close", "adj_close"] if c in df.columns), None
         )
+        if not price_col:
+            raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
+
+        # Handle date column if present
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df = df.sort_values("date")
+            df = df.set_index("date")
+        
+        # Rename price column to 'close' for consistency
+        if price_col != "close":
+            df = df.rename(columns={price_col: "close"})
+        
+        # Ensure close column is float
+        df["close"] = df["close"].astype(float)
+        
+        return df
 
 
-class RsiStrategy(StrategyInterface):
-    def __init__(self, period: int, overbought: float, oversold: float):
-        self.period = period
-        self.overbought = overbought
-        self.oversold = oversold
-
-    def run(self, source: PriceSeriesSource, params: BacktestParams) -> BacktestResult:
-        prices = source.get_prices()
-        delta = prices.diff()
-        gain = delta.clip(lower=0)
-        loss = -delta.clip(upper=0)
-        avg_gain = gain.rolling(self.period, min_periods=self.period).mean()
-        avg_loss = loss.rolling(self.period, min_periods=self.period).mean()
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-
-        position = rsi.apply(
-            lambda x: 1 if x < self.oversold else (-1 if x > self.overbought else 0)
-        )
-        returns = prices.pct_change().fillna(0.0)
-        strat_returns = (position.shift(1).fillna(0) * returns).astype(float)
-
-        equity = (1.0 + strat_returns).cumprod()
-        pnl = float(equity.iloc[-1] - 1.0)
-        peak = equity.cummax()
-        drawdown = ((peak - equity) / peak).fillna(0.0)
-        max_dd = float(drawdown.max())
-        mean_ret, std_ret = strat_returns.mean(), strat_returns.std()
-        sharpe = float((mean_ret / std_ret) * np.sqrt(252)) if std_ret > 0 else 0.0
-
-        return BacktestResult(
-            equity=equity, pnl=pnl, max_drawdown=max_dd, sharpe_ratio=sharpe
-        )
+# Stratégies supprimées - utiliser les implémentations modernes dans strategies/
 
 
 @dataclass
@@ -137,23 +103,32 @@ def _default_date_bounds():
 def run_sma_crossover(
     source: PriceSeriesSource, sma_short: int, sma_long: int
 ) -> ServiceBacktestResult:
-    logger.info(
-        "Run SMA crossover", extra={"sma_short": sma_short, "sma_long": sma_long}
+    """
+    Fonction legacy pour compatibilité avec Monte Carlo.
+    Utilise l'implémentation moderne MovingAverageStrategy.
+    """
+    # Convertir les données en DataFrame
+    df = source.to_dataframe()
+    
+    # Créer les paramètres pour la stratégie moderne
+    params = MovingAverageParams(
+        short_window=sma_short,
+        long_window=sma_long,
+        position_size=1.0,
+        initial_capital=1.0,
+        commission=0.0
     )
-    strat = SmaCrossoverStrategy(short_window=sma_short, long_window=sma_long)
-    start_date, end_date = _default_date_bounds()
-    params = BacktestParams(
-        start_date=start_date,
-        end_date=end_date,
-        strategy_params={"short_window": sma_short, "long_window": sma_long},
-        symbol="unknown",
-    )
-    res: BacktestResult = strat.run(source, params)
+    
+    # Exécuter la stratégie moderne
+    strategy = MovingAverageStrategy()
+    result = strategy.run(df, params)
+    
+    # Convertir vers le format legacy
     return ServiceBacktestResult(
-        equity=res.equity,
-        pnl=res.pnl,
-        drawdown=res.max_drawdown,
-        sharpe=res.sharpe_ratio,
+        equity=result.equity,
+        pnl=result.pnl,
+        drawdown=result.max_drawdown,
+        sharpe=result.sharpe_ratio,
     )
 
 
@@ -173,22 +148,31 @@ def sma_crossover_backtest(
 def run_rsi(
     source: PriceSeriesSource, period: int, overbought: float, oversold: float
 ) -> ServiceBacktestResult:
-    strat = RsiStrategy(period=period, overbought=overbought, oversold=oversold)
-    start_date, end_date = _default_date_bounds()
-    params = BacktestParams(
-        start_date=start_date,
-        end_date=end_date,
-        strategy_params={
-            "period": period,
-            "overbought": overbought,
-            "oversold": oversold,
-        },
-        symbol="unknown",
+    """
+    Fonction legacy pour compatibilité avec Monte Carlo.
+    Utilise l'implémentation moderne RSIReversionStrategy.
+    """
+    # Convertir les données en DataFrame
+    df = source.to_dataframe()
+    
+    # Créer les paramètres pour la stratégie moderne
+    params = RSIParams(
+        window=period,
+        rsi_low=oversold,
+        rsi_high=overbought,
+        position_size=1.0,
+        initial_capital=1.0,
+        commission=0.0
     )
-    res: BacktestResult = strat.run(source, params)
+    
+    # Exécuter la stratégie moderne
+    strategy = RSIReversionStrategy()
+    result = strategy.run(df, params)
+    
+    # Convertir vers le format legacy
     return ServiceBacktestResult(
-        equity=res.equity,
-        pnl=res.pnl,
-        drawdown=res.max_drawdown,
-        sharpe=res.sharpe_ratio,
+        equity=result.equity,
+        pnl=result.pnl,
+        drawdown=result.max_drawdown,
+        sharpe=result.sharpe_ratio,
     )
