@@ -25,6 +25,7 @@ interface ChartSeries {
 const props = defineProps<{
     results?: BacktestResult[];
     aggregatedData?: LinePoint[];
+    activeRange?: "1W" | "1M" | "YTD" | "All";
 }>();
 
 const el = ref<HTMLDivElement | null>(null);
@@ -49,15 +50,39 @@ const colors = [
 
 const seriesVisibility = ref<Record<string, boolean>>({});
 
+// Function to apply time range filtering to data points
+function applyTimeRangeFilter(data: LinePoint[]): LinePoint[] {
+    if (!props.activeRange || props.activeRange === "All" || data.length === 0) {
+        return data;
+    }
+
+    const times = data.map(d => d.time);
+    const maxTime = Math.max(...times);
+    let cutoff = maxTime;
+
+    if (props.activeRange === "1W") cutoff = maxTime - 7 * 86400;
+    else if (props.activeRange === "1M") cutoff = maxTime - 30 * 86400;
+    else if (props.activeRange === "YTD") {
+        const d = new Date(maxTime * 1000);
+        const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
+        cutoff = jan1;
+    }
+
+    return data.filter(d => d.time >= cutoff);
+}
+
 const chartSeries = computed<ChartSeries[]>(() => {
     const series: ChartSeries[] = [];
 
     if (props.results) {
         props.results.forEach((result, index) => {
-            const data = result.timestamps.map((timestamp, i) => ({
+            let data = result.timestamps.map((timestamp, i) => ({
                 time: Math.floor(new Date(timestamp).getTime() / 1000),
                 value: result.equity_curve[i] || 0,
             }));
+
+            // Apply time range filtering
+            data = applyTimeRangeFilter(data);
 
             const seriesId = `result-${index}`;
             series.push({
@@ -72,10 +97,13 @@ const chartSeries = computed<ChartSeries[]>(() => {
 
     if (props.aggregatedData && props.aggregatedData.length > 0) {
         const aggregatedId = "aggregated";
+        // Apply time range filtering to aggregated data
+        const filteredAggregatedData = applyTimeRangeFilter(props.aggregatedData);
+        
         series.push({
             id: aggregatedId,
             name: t("simulate.chart.aggregated"),
-            data: props.aggregatedData,
+            data: filteredAggregatedData,
             color: "#1f2937", // gray-800
             visible: seriesVisibility.value[aggregatedId] !== false,
         });

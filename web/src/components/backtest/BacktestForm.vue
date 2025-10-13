@@ -37,6 +37,22 @@ const error = ref<string | null>(null)
 const dragActive = ref(false)
 const inputEl = ref<HTMLInputElement | null>(null)
 
+// Monte Carlo parameters
+const monteCarloRuns = ref<number>(1)
+const monteCarloMethod = ref<'bootstrap' | 'gaussian' | ''>('bootstrap')
+const sampleFraction = ref<number>(1.0)
+const gaussianScale = ref<number>(1.0)
+
+// Computed property to check if Monte Carlo is enabled
+const isMonteCarloEnabled = computed(() => monteCarloRuns.value > 1)
+
+// Watch for Monte Carlo runs changes to ensure method is selected
+watch(monteCarloRuns, (newValue) => {
+  if (newValue > 1 && !monteCarloMethod.value) {
+    monteCarloMethod.value = 'bootstrap'
+  }
+})
+
 function formatDateToDisplay(isoDate: string): string {
   if (!isoDate) return ''
   const [year, month, day] = isoDate.split('-')
@@ -81,7 +97,9 @@ const validParams = computed(() => validation.value.ok)
 const canSubmit = computed(() => 
   (selectedFiles.value.length > 0 || selectedDatasets.value.length > 0) && 
   validParams.value && 
-  store.status !== 'loading'
+  store.status !== 'loading' &&
+  // Add validation for Monte Carlo method when Monte Carlo is enabled
+  (!isMonteCarloEnabled.value || (isMonteCarloEnabled.value && monteCarloMethod.value))
 )
 
 function onFileChange(e: Event) {
@@ -147,6 +165,12 @@ function onDrop(e: DragEvent) {
 async function onSubmit() {
   error.value = null
   
+  // Validate Monte Carlo method selection
+  if (isMonteCarloEnabled.value && !monteCarloMethod.value) {
+    error.value = t('simulate.form.monte_carlo.method_required')
+    return
+  }
+  
   // Combine uploaded files and selected datasets
   let allFiles = [...selectedFiles.value]
   
@@ -183,7 +207,12 @@ async function onSubmit() {
     dates: { 
       startDate: startDate.value || undefined, 
       endDate: endDate.value || undefined 
-    } 
+    },
+    // Add Monte Carlo parameters
+    monte_carlo_runs: monteCarloRuns.value,
+    method: monteCarloMethod.value || undefined,
+    sample_fraction: sampleFraction.value,
+    gaussian_scale: gaussianScale.value
   }
   
   // Use the new unified backtest function that handles both single and multiple files
@@ -199,6 +228,11 @@ function onReset() {
   initParams()
   startDate.value = ''
   endDate.value = ''
+  // Reset Monte Carlo parameters
+  monteCarloRuns.value = 1
+  monteCarloMethod.value = 'bootstrap'
+  sampleFraction.value = 1.0
+  gaussianScale.value = 1.0
 }
 </script>
 
@@ -237,11 +271,11 @@ function onReset() {
           </div>
           <div class="text-center">
             <p class="font-medium">{{ t('simulate.form.csv.drop_hint') }}</p>
-            <p class="text-xs text-muted-foreground mt-1">Select up to 10 CSV files</p>
+            <p class="text-xs text-muted-foreground mt-1">{{ t('simulate.form.csv.max_files') }}</p>
             <div v-if="selectedFiles.length > 0" class="mt-3 space-y-2">
               <p class="text-xs text-trading-green font-medium flex items-center justify-center gap-2">
                 <CheckCircle class="size-4" />
-                {{ selectedFiles.length }} file{{ selectedFiles.length > 1 ? 's' : '' }} selected
+                {{ selectedFiles.length }} {{ t('simulate.form.csv.files_selected') }}
               </p>
               <div class="max-h-32 overflow-y-auto space-y-1">
                 <div v-for="(file, index) in selectedFiles" :key="index" 
@@ -265,10 +299,10 @@ function onReset() {
         <div class="rounded-lg bg-trading-cyan/10 p-1.5 text-trading-cyan">
           <Database class="size-3.5" />
         </div>
-        Select Datasets
+        {{ t('simulate.form.labels.datasets') }}
       </Label>
       <div class="space-y-3">
-        <p class="text-xs text-muted-foreground">Choose from pre-loaded market datasets</p>
+        <p class="text-xs text-muted-foreground">{{ t('simulate.form.labels.datasets_description') }}</p>
         <MultiLineToggleGroup 
           v-model="selectedDatasets" 
           type="multiple" 
@@ -328,7 +362,7 @@ function onReset() {
         <div class="rounded-lg bg-trading-green/10 p-1.5 text-trading-green">
           <Settings class="size-3.5" />
         </div>
-        Paramètres de stratégie
+        {{ t('simulate.form.labels.strategy_params') }}
       </Label>
       <div class="grid gap-4 animate-slide-up" :class="currentCfg.params.length === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'">
         <div v-for="(p, index) in currentCfg.params" :key="p.key" class="space-y-2 animate-scale-in" :style="`animation-delay: ${index * 0.1}s`">
@@ -349,13 +383,122 @@ function onReset() {
       </div>
     </div>
 
+    <!-- Monte Carlo Parameters Section -->
+    <div class="space-y-2">
+      <Label class="text-sm font-medium flex items-center gap-2">
+        <div class="rounded-lg bg-trading-purple/10 p-1.5 text-trading-purple">
+          <TrendingUp class="size-3.5" />
+        </div>
+        {{ t('simulate.form.monte_carlo.title') }}
+      </Label>
+      <div class="space-y-4">
+        <!-- Number of Runs -->
+        <div class="space-y-2">
+          <Label class="text-xs font-medium text-muted-foreground">
+            {{ t('simulate.form.monte_carlo.runs') }}
+          </Label>
+          <div class="relative group">
+            <Input
+              v-model.number="monteCarloRuns"
+              type="number"
+              :min="1"
+              :max="20000"
+              :step="1"
+              class="h-10 border-0 bg-gradient-to-r from-secondary/30 to-accent/20 shadow-soft hover:shadow-medium focus:shadow-strong transition-all duration-300 focus:ring-2 focus:ring-trading-purple/50"
+            />
+            <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-trading-purple/0 via-trading-purple/5 to-trading-purple/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+          </div>
+          <p class="text-xs text-muted-foreground">{{ t('simulate.form.monte_carlo.runs_description') }}</p>
+        </div>
+
+        <!-- Method Selection (only show when Monte Carlo is enabled) -->
+        <div v-if="isMonteCarloEnabled" class="space-y-2">
+          <Label class="text-xs font-medium text-muted-foreground">
+            {{ t('simulate.form.monte_carlo.method') }}
+          </Label>
+          <MultiLineToggleGroup 
+            v-model="monteCarloMethod" 
+            type="single" 
+            variant="outline" 
+            size="sm"
+            :items-per-row="2"
+            class="w-full"
+          >
+            <ToggleGroupItem 
+              value="bootstrap"
+              class="text-xs px-3 py-2 font-medium transition-all duration-200 
+                     !rounded-md !border-2 !border-gray-200
+                     data-[state=on]:!bg-gradient-to-r data-[state=on]:!from-[oklch(0.55_0.18_260)] data-[state=on]:!to-[oklch(0.65_0.2_300)]
+                     data-[state=on]:!text-white data-[state=on]:!shadow-md data-[state=on]:!border-transparent
+                     data-[state=on]:!scale-[1.02] data-[state=on]:!font-semibold
+                     hover:data-[state=on]:!opacity-90
+                     data-[state=off]:hover:!border-purple-300/30 data-[state=off]:hover:!bg-purple-50/5"
+            >
+              {{ t('simulate.form.monte_carlo.bootstrap') }}
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="gaussian"
+              class="text-xs px-3 py-2 font-medium transition-all duration-200 
+                     !rounded-md !border-2 !border-gray-200
+                     data-[state=on]:!bg-gradient-to-r data-[state=on]:!from-[oklch(0.55_0.18_260)] data-[state=on]:!to-[oklch(0.65_0.2_300)]
+                     data-[state=on]:!text-white data-[state=on]:!shadow-md data-[state=on]:!border-transparent
+                     data-[state=on]:!scale-[1.02] data-[state=on]:!font-semibold
+                     hover:data-[state=on]:!opacity-90
+                     data-[state=off]:hover:!border-purple-300/30 data-[state=off]:hover:!bg-purple-50/5"
+            >
+              {{ t('simulate.form.monte_carlo.gaussian') }}
+            </ToggleGroupItem>
+          </MultiLineToggleGroup>
+        </div>
+
+        <!-- Method-specific parameters -->
+        <div v-if="isMonteCarloEnabled" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Sample Fraction (for bootstrap) -->
+          <div v-if="monteCarloMethod === 'bootstrap'" class="space-y-2">
+            <Label class="text-xs font-medium text-muted-foreground">
+              {{ t('simulate.form.monte_carlo.sample_fraction') }}
+            </Label>
+            <div class="relative group">
+              <Input
+                v-model.number="sampleFraction"
+                type="number"
+                :min="0.1"
+                :max="2.0"
+                :step="0.1"
+                class="h-10 border-0 bg-gradient-to-r from-secondary/30 to-accent/20 shadow-soft hover:shadow-medium focus:shadow-strong transition-all duration-300 focus:ring-2 focus:ring-trading-purple/50"
+              />
+              <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-trading-purple/0 via-trading-purple/5 to-trading-purple/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            </div>
+          </div>
+
+          <!-- Gaussian Scale (for gaussian) -->
+          <div v-if="monteCarloMethod === 'gaussian'" class="space-y-2">
+            <Label class="text-xs font-medium text-muted-foreground">
+              {{ t('simulate.form.monte_carlo.gaussian_scale') }}
+            </Label>
+            <div class="relative group">
+              <Input
+                v-model.number="gaussianScale"
+                type="number"
+                :min="0.1"
+                :max="5.0"
+                :step="0.1"
+                class="h-10 border-0 bg-gradient-to-r from-secondary/30 to-accent/20 shadow-soft hover:shadow-medium focus:shadow-strong transition-all duration-300 focus:ring-2 focus:ring-trading-purple/50"
+              />
+              <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-trading-purple/0 via-trading-purple/5 to-trading-purple/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Date Range avec design élégant -->
     <div class="space-y-2">
       <Label class="text-sm font-medium flex items-center gap-2">
         <div class="rounded-lg bg-trading-cyan/10 p-1.5 text-trading-cyan">
           <Calendar class="size-3.5" />
         </div>
-        Période d'analyse
+        {{ t('simulate.form.labels.analysis_period') }}
       </Label>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="space-y-2">
