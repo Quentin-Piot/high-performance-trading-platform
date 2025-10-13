@@ -8,15 +8,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-    TrendingUp,
-    BarChart3,
-    Zap,
-    Shield,
-    Users,
-    Star,
-} from "lucide-vue-next";
+import { TrendingUp, BarChart3, Zap, Shield, Star } from "lucide-vue-next";
 import { useRouter } from "@/router";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 
@@ -29,7 +21,9 @@ function goToSimulate() {
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div
+        class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900"
+    >
         <BaseLayout main-class="flex-1 flex flex-col" container-class="">
             <!-- Hero Section -->
             <section
@@ -78,83 +72,136 @@ function goToSimulate() {
             <section class="py-16 px-4 sm:px-6 lg:px-8">
                 <div class="max-w-7xl mx-auto">
                     <div class="text-center mb-12">
-                        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                        <h2
+                            class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4"
+                        >
                             {{ t("landing.project.title") }}
                         </h2>
-                        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                        <p
+                            class="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+                        >
                             {{ t("landing.project.description") }}
                         </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                         <!-- Frontend Card -->
-                        <Card class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+                        <Card
+                            class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg"
+                        >
                             <CardHeader class="text-center pb-4">
-                                <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <div
+                                    class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                >
                                     <Zap class="h-8 w-8 text-white" />
                                 </div>
-                                <CardTitle class="text-xl font-bold text-gray-900 dark:text-white">
+                                <CardTitle
+                                    class="text-xl font-bold text-gray-900 dark:text-white"
+                                >
                                     {{ t("landing.project.frontend.title") }}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <CardDescription class="text-gray-600 dark:text-gray-300 text-center">
-                                    {{ t("landing.project.frontend.description") }}
+                                <CardDescription
+                                    class="text-gray-600 dark:text-gray-300 text-center"
+                                >
+                                    {{
+                                        t(
+                                            "landing.project.frontend.description",
+                                        )
+                                    }}
                                 </CardDescription>
                             </CardContent>
                         </Card>
 
                         <!-- Backend Card -->
-                        <Card class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+                        <Card
+                            class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg"
+                        >
                             <CardHeader class="text-center pb-4">
-                                <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <div
+                                    class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                >
                                     <BarChart3 class="h-8 w-8 text-white" />
                                 </div>
-                                <CardTitle class="text-xl font-bold text-gray-900 dark:text-white">
+                                <CardTitle
+                                    class="text-xl font-bold text-gray-900 dark:text-white"
+                                >
                                     {{ t("landing.project.backend.title") }}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <CardDescription class="text-gray-600 dark:text-gray-300 text-center">
-                                    {{ t("landing.project.backend.description") }}
+                                <CardDescription
+                                    class="text-gray-600 dark:text-gray-300 text-center"
+                                >
+                                    {{
+                                        t("landing.project.backend.description")
+                                    }}
                                 </CardDescription>
                             </CardContent>
                         </Card>
 
                         <!-- Infrastructure Card -->
-                        <Card class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+                        <Card
+                            class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg"
+                        >
                             <CardHeader class="text-center pb-4">
-                                <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <div
+                                    class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                >
                                     <Shield class="h-8 w-8 text-white" />
                                 </div>
-                                <CardTitle class="text-xl font-bold text-gray-900 dark:text-white">
-                                    {{ t("landing.project.infrastructure.title") }}
+                                <CardTitle
+                                    class="text-xl font-bold text-gray-900 dark:text-white"
+                                >
+                                    {{
+                                        t(
+                                            "landing.project.infrastructure.title",
+                                        )
+                                    }}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <CardDescription class="text-gray-600 dark:text-gray-300 text-center">
-                                    {{ t("landing.project.infrastructure.description") }}
+                                <CardDescription
+                                    class="text-gray-600 dark:text-gray-300 text-center"
+                                >
+                                    {{
+                                        t(
+                                            "landing.project.infrastructure.description",
+                                        )
+                                    }}
                                 </CardDescription>
                             </CardContent>
                         </Card>
                     </div>
 
                     <!-- Features Section -->
-                    <Card class="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-0 shadow-lg">
+                    <Card
+                        class="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-0 shadow-lg"
+                    >
                         <CardHeader class="text-center">
-                            <CardTitle class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                            <CardTitle
+                                class="text-2xl font-bold text-gray-900 dark:text-white mb-4"
+                            >
                                 {{ t("landing.project.features.title") }}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div 
-                                    v-for="(feature, index) in $tm('landing.project.features.items')" 
+                                <div
+                                    v-for="(feature, index) in $tm(
+                                        'landing.project.features.items',
+                                    )"
                                     :key="index"
                                     class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50/50 dark:bg-slate-700/50"
                                 >
-                                    <Star class="h-5 w-5 text-yellow-500 flex-shrink-0" />
-                                    <span class="text-gray-700 dark:text-gray-300">{{ feature }}</span>
+                                    <Star
+                                        class="h-5 w-5 text-yellow-500 flex-shrink-0"
+                                    />
+                                    <span
+                                        class="text-gray-700 dark:text-gray-300"
+                                        >{{ feature }}</span
+                                    >
                                 </div>
                             </div>
                         </CardContent>
