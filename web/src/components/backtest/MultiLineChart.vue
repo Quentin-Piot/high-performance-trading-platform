@@ -47,14 +47,11 @@ const colors = [
     "#6366f1", // indigo-500
 ];
 
-// État de visibilité des séries
 const seriesVisibility = ref<Record<string, boolean>>({});
 
-// Préparer les données des séries
 const chartSeries = computed<ChartSeries[]>(() => {
     const series: ChartSeries[] = [];
 
-    // Ajouter les séries individuelles
     if (props.results) {
         props.results.forEach((result, index) => {
             const data = result.timestamps.map((timestamp, i) => ({
@@ -73,14 +70,13 @@ const chartSeries = computed<ChartSeries[]>(() => {
         });
     }
 
-    // Ajouter la série agrégée si disponible
     if (props.aggregatedData && props.aggregatedData.length > 0) {
         const aggregatedId = "aggregated";
         series.push({
             id: aggregatedId,
             name: t("simulate.chart.aggregated"),
             data: props.aggregatedData,
-            color: "#1f2937", // gray-800 - couleur distinctive pour l'agrégé
+            color: "#1f2937", // gray-800
             visible: seriesVisibility.value[aggregatedId] !== false,
         });
     }
@@ -88,7 +84,6 @@ const chartSeries = computed<ChartSeries[]>(() => {
     return series;
 });
 
-// Initialiser la visibilité
 watch(
     () => props.results,
     () => {
@@ -107,7 +102,6 @@ watch(
     { immediate: true },
 );
 
-// Computed properties pour l'UI
 const hasData = computed(() => chartSeries.value.length > 0);
 const visibleSeries = computed(() =>
     chartSeries.value.filter((s) => s.visible),
@@ -121,7 +115,6 @@ function toggleSeriesVisibility(seriesId: string) {
 function updateChartSeries() {
     if (!chart) return;
 
-    // Supprimer toutes les séries existantes
     seriesMap.forEach((series) => {
         try {
             (chart as any)?.removeSeries(series);
@@ -131,7 +124,6 @@ function updateChartSeries() {
     });
     seriesMap.clear();
 
-    // Ajouter les séries visibles
     visibleSeries.value.forEach((series) => {
         if (chart) {
             const lineSeries = chart.addLineSeries({
@@ -156,7 +148,6 @@ onMounted(() => {
         rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
     );
 
-    // Enhanced styling with modern colors
     const textColor = "#e2e8f0";
     const gridColor = "#1e293b";
 
@@ -187,7 +178,6 @@ onMounted(() => {
     updateChartSeries();
     loaded.value = true;
 
-    // Handle resize so chart always has width
     ro = new ResizeObserver(() => {
         if (rootEl && chart) {
             const w = Math.max(
@@ -209,7 +199,6 @@ onUnmounted(() => {
     seriesMap.clear();
 });
 
-// Observer les changements de données
 watch(
     () => [props.results, props.aggregatedData],
     () => {
@@ -220,7 +209,6 @@ watch(
     { deep: true },
 );
 
-// Observer les changements de visibilité
 watch(
     () => seriesVisibility.value,
     () => {
@@ -234,7 +222,6 @@ watch(
 
 <template>
     <div class="relative group">
-        <!-- Chart Header avec indicateurs -->
         <div class="flex items-center justify-between mb-4 px-2">
             <div class="flex items-center gap-3">
                 <div
@@ -255,7 +242,6 @@ watch(
                 </div>
             </div>
 
-            <!-- Indicateur de tendance global -->
             <div v-if="hasData" class="flex items-center gap-2 text-xs">
                 <div
                     class="rounded-lg bg-trading-green/10 p-1.5 text-trading-green"
@@ -268,7 +254,6 @@ watch(
             </div>
         </div>
 
-        <!-- Légende interactive -->
         <div
             v-if="hasData"
             class="mb-4 p-3 bg-secondary/20 rounded-lg border border-border/50"
@@ -282,7 +267,6 @@ watch(
                 <button
                     v-for="series in chartSeries"
                     :key="series.id"
-                    @click="toggleSeriesVisibility(series.id)"
                     :class="[
                         'flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
                         'border border-transparent hover:border-border/50',
@@ -290,6 +274,7 @@ watch(
                             ? 'bg-card shadow-sm'
                             : 'bg-muted/50 opacity-60 hover:opacity-80',
                     ]"
+                    @click="toggleSeriesVisibility(series.id)"
                 >
                     <div
                         class="w-3 h-0.5 rounded-full"
@@ -312,14 +297,12 @@ watch(
             </div>
         </div>
 
-        <!-- Chart Container -->
         <div
             ref="el"
             class="w-full h-[400px] rounded-lg bg-card/50 border border-border/20 shadow-inner"
             :class="{ 'animate-pulse': !loaded }"
         />
 
-        <!-- État vide -->
         <div
             v-if="!hasData"
             class="absolute inset-0 flex items-center justify-center bg-card/80 rounded-lg border-2 border-dashed border-border/50"
