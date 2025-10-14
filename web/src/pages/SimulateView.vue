@@ -416,38 +416,30 @@ function downloadCsv() {
                                 <span class="text-sm text-muted-foreground">{{ t("simulate.loading") }}</span>
                             </div>
                         </div>
-                        <div v-if="store.isMonteCarloResults" class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
-                          <h3 class="text-lg font-semibold text-foreground">{{ t('simulate.results.monte_carlo.title') }}</h3>
-                          <p class="text-sm text-muted-foreground">
-                            {{ t('simulate.results.monte_carlo.description') }}
-                          </p>
-                        </div>
-                        <div v-else>
-                            <!-- Monte Carlo Results with Equity Envelope -->
-                            <div v-if="hasMonteCarloResults" class="space-y-4">
-                                <div class="text-center">
-                                    <h3 class="text-lg font-semibold text-foreground">{{ t('simulate.results.monte_carlo.title') }}</h3>
-                                    <p class="text-sm text-muted-foreground">
-                                        {{ t('simulate.results.monte_carlo.description') }}
-                                    </p>
-                                </div>
-                                <EquityEnvelopeChart 
-                                    :equity-envelope="store.equityEnvelope || undefined" 
-                                    :active-range="activeRange"
-                                />
+                        <!-- Monte Carlo Results with Equity Envelope -->
+                        <div v-if="hasMonteCarloResults" class="space-y-4">
+                            <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                                <h3 class="text-lg font-semibold text-foreground">{{ t('simulate.results.monte_carlo.title') }}</h3>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ t('simulate.results.monte_carlo.description') }}
+                                </p>
                             </div>
-                            <MultiLineChart
-                                v-else-if="hasMultipleResults"
-                                :results="store.results"
-                                :aggregated-data="aggregatedData"
+                            <EquityEnvelopeChart 
+                                :equity-envelope="store.equityEnvelope || undefined" 
                                 :active-range="activeRange"
                             />
-                            <!-- Graphique simple pour un seul résultat -->
-                            <BacktestChart 
-                                v-else
-                                :series="chartSeries" 
-                            />
                         </div>
+                        <MultiLineChart
+                            v-else-if="hasMultipleResults"
+                            :results="store.results"
+                            :aggregated-data="aggregatedData"
+                            :active-range="activeRange"
+                        />
+                        <!-- Graphique simple pour un seul résultat -->
+                        <BacktestChart 
+                            v-else
+                            :series="chartSeries" 
+                        />
                     </CardContent>
                 </Card>
 
