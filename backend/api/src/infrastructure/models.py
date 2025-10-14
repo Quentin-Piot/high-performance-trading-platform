@@ -1,7 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Integer, String, DateTime, ForeignKey, Float
+from sqlalchemy import Integer, String, DateTime, ForeignKey, Float, Text, JSON, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from infrastructure.db import Base
+import uuid
 
 
 # -----------------------------------------
@@ -59,3 +60,35 @@ class Backtest(Base):
     )
 
     strategy: Mapped[Strategy] = relationship(back_populates="backtests")
+
+
+# -----------------------------------------
+# Job (Monte Carlo Queue System)
+# -----------------------------------------
+class Job(Base):
+    __tablename__ = "jobs"
+    __table_args__ = (
+        UniqueConstraint('dedup_key', name='uq_job_dedup_key'),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
+    progress: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    priority: Mapped[str] = mapped_column(String(20), nullable=False, default="normal")
+    worker_id: Mapped[str] = mapped_column(String(100), nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error: Mapped[str] = mapped_column(Text, nullable=True)
+    artifact_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    dedup_key: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
+    
+    # Job timing fields for duration tracking
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )

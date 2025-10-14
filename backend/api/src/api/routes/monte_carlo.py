@@ -7,13 +7,13 @@ from uuid import UUID
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query, status
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
-from src.domain.queue import JobStatus, JobPriority, MonteCarloJobPayload
-from src.services.job_manager import MonteCarloJobManager
-from src.infrastructure.queue.sqs_adapter import SQSQueueAdapter
-from src.infrastructure.monitoring.metrics import MonitoringService
-from src.config.queue_config import get_config
+from domain.queue import JobStatus, JobPriority, MonteCarloJobPayload, JobMetadata
+from services.job_manager import MonteCarloJobManager
+from infrastructure.queue.sqs_adapter import SQSQueueAdapter
+from infrastructure.monitoring.metrics import MonitoringService
+from config.queue_config import get_config
 
 
 # Pydantic models for API requests/responses
@@ -28,13 +28,15 @@ class MonteCarloJobRequest(BaseModel):
     priority: JobPriority = Field(default=JobPriority.NORMAL, description="Job priority")
     timeout_seconds: Optional[int] = Field(None, ge=60, le=7200, description="Job timeout in seconds")
     
-    @validator('end_date')
-    def end_date_after_start_date(cls, v, values):
-        if 'start_date' in values and v <= values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def end_date_after_start_date(cls, v, info):
+        if 'start_date' in info.data and v <= info.data['start_date']:
             raise ValueError('end_date must be after start_date')
         return v
     
-    @validator('num_runs')
+    @field_validator('num_runs')
+    @classmethod
     def validate_num_runs(cls, v):
         if v > 100:
             # For jobs with more than 100 runs, we might want to split them
@@ -44,7 +46,7 @@ class MonteCarloJobRequest(BaseModel):
 
 class BulkMonteCarloJobRequest(BaseModel):
     """Request model for creating multiple Monte Carlo jobs"""
-    jobs: List[MonteCarloJobRequest] = Field(..., min_items=1, max_items=50)
+    jobs: List[MonteCarloJobRequest] = Field(..., min_length=1, max_length=50)
     batch_name: Optional[str] = Field(None, description="Optional batch name for grouping")
 
 
@@ -134,21 +136,34 @@ async def submit_job(
         HTTPException: If job submission fails
     """
     try:
-        # Create job payload
+        # Create job payload - convert API request to domain payload
+        # For now, we'll create a simple CSV data representation
+        csv_data = f"symbol,start_date,end_date,initial_capital\n{job_request.symbol},{job_request.start_date},{job_request.end_date},{job_request.initial_capital}".encode()
+        
         payload = MonteCarloJobPayload(
-            symbol=job_request.symbol,
-            start_date=job_request.start_date,
-            end_date=job_request.end_date,
-            num_runs=job_request.num_runs,
-            initial_capital=job_request.initial_capital,
-            strategy_params=job_request.strategy_params
+            csv_data=csv_data,
+            filename=f"{job_request.symbol}_{job_request.start_date.strftime('%Y%m%d')}_{job_request.end_date.strftime('%Y%m%d')}.csv",
+            strategy_name="default_strategy",
+            strategy_params=job_request.strategy_params,
+            runs=job_request.num_runs,
+            method="bootstrap",
+            method_params=None,
+            seed=None,
+            include_equity_envelope=True,
+            parallel_workers=1
+        )
+        
+        # Create job metadata with priority and timeout
+        metadata = JobMetadata(
+            priority=job_request.priority,
+            timeout_seconds=job_request.timeout_seconds or 3600,
+            max_retries=3
         )
         
         # Submit job
         job_id = await job_manager.submit_job(
             payload=payload,
-            priority=job_request.priority,
-            timeout_seconds=job_request.timeout_seconds
+            metadata=metadata
         )
         
         return JobSubmissionResponse(
@@ -417,14 +432,14 @@ async def get_queue_metrics(
         metrics = await job_manager.get_queue_metrics()
         
         return QueueMetricsResponse(
-            total_jobs=metrics.total_jobs,
-            pending_jobs=metrics.pending_jobs,
-            running_jobs=metrics.running_jobs,
-            completed_jobs=metrics.completed_jobs,
-            failed_jobs=metrics.failed_jobs,
-            average_processing_time=metrics.average_processing_time,
-            queue_depth=metrics.queue_depth,
-            worker_count=metrics.worker_count
+            total_jobs=metrics.get("database_stats", {}).get("total_jobs", 0),
+            pending_jobs=metrics.get("pending_jobs", 0),
+            running_jobs=metrics.get("processing_jobs", 0),
+            completed_jobs=metrics.get("completed_jobs", 0),
+            failed_jobs=metrics.get("failed_jobs", 0),
+            average_processing_time=metrics.get("average_processing_time"),
+            queue_depth=metrics.get("pending_jobs", 0),
+            worker_count=metrics.get("health_indicators", {}).get("active_workers", 0)
         )
         
     except Exception as e:

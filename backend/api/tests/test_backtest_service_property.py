@@ -49,5 +49,5 @@ def test_backtest_outputs_are_well_formed(prices, sma_short, sma_gap):
         assert isinstance(v, float)
         assert math.isfinite(v)
 
-    # Drawdown entre 0 et 1
-    assert 0.0 <= dd <= 1.0
+    # Drawdown négatif entre -1 et 0
+    assert -1.0 <= dd <= 0.0

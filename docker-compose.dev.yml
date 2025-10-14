@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  localstack:
+    container_name: localstack_main
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"            # LocalStack Gateway
+      - "4510-4559:4510-4559"  # external services port range
+    environment:
+      # LocalStack configuration
+      - DEBUG=${DEBUG:-0}
+      - SERVICES=sqs,elasticache,s3,logs,iam
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOST_TMP_FOLDER=${TMPDIR:-/tmp/}localstack
+      - PERSISTENCE=${PERSISTENCE:-0}
+      
+      # Redis configuration
+      - REDIS_PORT=4510
+      
+      # SQS configuration  
+      - SQS_ENDPOINT_STRATEGY=domain
+      
+      # S3 configuration
+      - S3_SKIP_SIGNATURE_VALIDATION=1
+      
+    volumes:
+      - "${TMPDIR:-/var/lib/localstack}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./scripts/localstack:/etc/localstack/init/ready.d"
+    networks:
+      - localstack_network
+
+  # Redis standalone (alternative si LocalStack Redis pose problème)
+  redis:
+    image: redis:7-alpine
+    container_name: redis_dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - localstack_network
+
+volumes:
+  redis_data:
+
+networks:
+  localstack_network:
+    driver: bridge

@@ -30,15 +30,11 @@
 
 
 terraform {
-
   required_version = ">= 1.0"
-
   required_providers {
-
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-
+    aws    = { source = "hashicorp/aws", version = "~> 5.0" }
+    random = { source = "hashicorp/random", version = "~> 3.0" }
   }
-
 }
 
 
@@ -547,8 +543,8 @@ resource "aws_cloudfront_distribution" "frontend" {
     cloudfront_default_certificate = true
 
   }
-  
-#  aliases = ["hptp.quentinpiot.com"]
+
+  #  aliases = ["hptp.quentinpiot.com"]
 
   tags = {
 
@@ -642,44 +638,207 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 
 
 # Attach managed policies for task execution (ECR pull, logs)
-
 resource "aws_iam_role_policy_attachment" "exec_policy" {
-
-  role = aws_iam_role.ecs_task_execution_role.name
-
+  role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-
 }
-
 
 # Add ECR read (included above but safe) and EFS client
-
 resource "aws_iam_role_policy_attachment" "ecr_read" {
-
-  role = aws_iam_role.ecs_task_execution_role.name
-
+  role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-
 }
-
 
 resource "aws_iam_role_policy_attachment" "efs_client" {
-
-  role = aws_iam_role.ecs_task_execution_role.name
-
+  role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
+}
 
+# IAM Task Role for application permissions
+resource "aws_iam_role" "ecs_task_role" {
+  name               = "${var.project_name}-ecs-task-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
+}
+
+# Custom policy for SQS, S3, and CloudWatch access
+resource "aws_iam_policy" "app_permissions" {
+  name        = "${var.project_name}-app-permissions"
+  description = "Permissions for trading platform application"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:ChangeMessageVisibility"
+        ]
+        Resource = [
+          aws_sqs_queue.monte_carlo_jobs.arn,
+          aws_sqs_queue.monte_carlo_dlq.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.monte_carlo_artifacts.arn,
+          "${aws_s3_bucket.monte_carlo_artifacts.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = [
+          aws_cloudwatch_log_group.application.arn,
+          aws_cloudwatch_log_group.monte_carlo_worker.arn,
+          "${aws_cloudwatch_log_group.application.arn}:*",
+          "${aws_cloudwatch_log_group.monte_carlo_worker.arn}:*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "app_permissions" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.app_permissions.arn
 }
 
 
-# CloudWatch Log Group
-
+# CloudWatch Log Groups
 resource "aws_cloudwatch_log_group" "ecs" {
-
-  name = "/ecs/${var.project_name}"
-
+  name              = "/ecs/${var.project_name}"
   retention_in_days = 14
+}
 
+resource "aws_cloudwatch_log_group" "application" {
+  name              = "/aws/application/${var.project_name}"
+  retention_in_days = 30
+  tags              = { Name = "${var.project_name}-app-logs" }
+}
+
+resource "aws_cloudwatch_log_group" "monte_carlo_worker" {
+  name              = "/aws/worker/${var.project_name}-monte-carlo"
+  retention_in_days = 30
+  tags              = { Name = "${var.project_name}-worker-logs" }
+}
+
+# -------------------
+# SQS Queues for Monte Carlo Jobs
+# -------------------
+
+# Dead Letter Queue
+resource "aws_sqs_queue" "monte_carlo_dlq" {
+  name = "${var.project_name}-monte-carlo-jobs-dlq"
+
+  message_retention_seconds = 1209600 # 14 days
+
+  tags = {
+    Name        = "${var.project_name}-monte-carlo-dlq"
+    Environment = var.env
+  }
+}
+
+# Main Queue
+resource "aws_sqs_queue" "monte_carlo_jobs" {
+  name = "${var.project_name}-monte-carlo-jobs"
+
+  visibility_timeout_seconds = 300
+  message_retention_seconds  = 1209600 # 14 days
+  max_message_size           = 262144  # 256 KB
+  delay_seconds              = 0
+  receive_wait_time_seconds  = 20 # Long polling
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.monte_carlo_dlq.arn
+    maxReceiveCount     = 3
+  })
+
+  tags = {
+    Name        = "${var.project_name}-monte-carlo-queue"
+    Environment = var.env
+  }
+}
+
+# -------------------
+# S3 Bucket for Monte Carlo Artifacts
+# -------------------
+
+resource "aws_s3_bucket" "monte_carlo_artifacts" {
+  bucket = "${var.project_name}-monte-carlo-artifacts-${random_string.bucket_suffix.result}"
+
+  tags = {
+    Name        = "${var.project_name}-monte-carlo-artifacts"
+    Environment = var.env
+  }
+}
+
+resource "aws_s3_bucket_versioning" "monte_carlo_artifacts" {
+  bucket = aws_s3_bucket.monte_carlo_artifacts.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "monte_carlo_artifacts" {
+  bucket = aws_s3_bucket.monte_carlo_artifacts.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "monte_carlo_artifacts" {
+  bucket = aws_s3_bucket.monte_carlo_artifacts.id
+
+  rule {
+    id     = "cleanup_old_artifacts"
+    status = "Enabled"
+
+    filter {
+      prefix = ""
+    }
+
+    expiration {
+      days = 90
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
+resource "random_string" "bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
 }
 
 
@@ -778,145 +937,127 @@ resource "aws_lb_listener" "listener" {
 # -------------------
 
 resource "aws_ecs_task_definition" "backend_task" {
-
-  family = "${var.project_name}-backend-task"
-
+  family                   = "${var.project_name}-backend-task"
   requires_compatibilities = ["FARGATE"]
-
-  network_mode = "awsvpc"
-
-  cpu = "512"
-
-  memory = "1024"
-
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-
-  task_role_arn = aws_iam_role.ecs_task_execution_role.arn
-
+  network_mode             = "awsvpc"
+  cpu                      = "1024"
+  memory                   = "2048"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
-
     {
-
-      name = "postgres"
-
-      image = "postgres:16"
-
+      name      = "postgres"
+      image     = "postgres:16"
       essential = true
-
       environment = [
-
         { name = "POSTGRES_DB", value = "trading_db" },
-
         { name = "POSTGRES_USER", value = "postgres" },
-
         { name = "POSTGRES_PASSWORD", value = "postgres" }
-
       ]
-
       mountPoints = [
-
         {
-
-          sourceVolume = "postgres-data"
-
+          sourceVolume  = "postgres-data"
           containerPath = "/var/lib/postgresql/data"
-
-          readOnly = false
-
+          readOnly      = false
         }
-
       ]
-
       logConfiguration = {
-
         logDriver = "awslogs"
-
         options = {
-
-          "awslogs-group" = aws_cloudwatch_log_group.ecs.name
-
-          "awslogs-region" = var.aws_region
-
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-region"        = var.aws_region
           "awslogs-stream-prefix" = "postgres"
-
         }
-
       }
-
     },
-
     {
-
-      name = "backend"
-
-      image = "${aws_ecr_repository.backend.repository_url}:latest"
-
+      name      = "redis"
+      image     = "redis:7-alpine"
       essential = true
-
       portMappings = [
-
-        { containerPort = 8000, protocol = "tcp" }
-
+        { containerPort = 6379, protocol = "tcp" }
       ]
-
-      environment = [
-
-        { name = "DATABASE_HOST", value = "localhost" }, # postgres in same task
-
-        { name = "DATABASE_PORT", value = "5432" },
-
-        { name = "DATABASE_NAME", value = "trading_db" },
-
-        { name = "DATABASE_USER", value = "postgres" },
-
-        { name = "DATABASE_PASSWORD", value = "postgres" }
-
+      command = [
+        "redis-server",
+        "--appendonly", "no",
+        "--save", "",
+        "--maxmemory", "256mb",
+        "--maxmemory-policy", "allkeys-lru",
+        "--protected-mode", "yes"
       ]
-
-      dependsOn = [
-
-        { containerName = "postgres", condition = "START" }
-
-      ]
-
       logConfiguration = {
-
         logDriver = "awslogs"
-
         options = {
-
-          "awslogs-group" = aws_cloudwatch_log_group.ecs.name
-
-          "awslogs-region" = var.aws_region
-
-          "awslogs-stream-prefix" = "backend"
-
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "redis"
         }
-
       }
+    },
+    {
+      name      = "backend"
+      image     = "${aws_ecr_repository.backend.repository_url}:latest"
+      essential = true
+      portMappings = [
+        { containerPort = 8000, protocol = "tcp" }
+      ]
+      environment = [
+        # Database configuration
+        { name = "DATABASE_HOST", value = "localhost" }, # postgres in same task
+        { name = "DATABASE_PORT", value = "5432" },
+        { name = "DATABASE_NAME", value = "trading_db" },
+        { name = "DATABASE_USER", value = "postgres" },
+        { name = "DATABASE_PASSWORD", value = "postgres" },
 
+        # Redis cache
+        { name = "REDIS_URL", value = "redis://localhost:6379/0" },
+        { name = "CACHE_ENABLED", value = "true" },
+
+        # AWS configuration
+        { name = "AWS_REGION", value = var.aws_region },
+        { name = "AWS_DEFAULT_REGION", value = var.aws_region },
+
+        # SQS configuration
+        { name = "SQS_QUEUE_URL", value = aws_sqs_queue.monte_carlo_jobs.url },
+        { name = "SQS_DLQ_URL", value = aws_sqs_queue.monte_carlo_dlq.url },
+        { name = "SQS_VISIBILITY_TIMEOUT", value = "300" },
+        { name = "SQS_MESSAGE_RETENTION", value = "1209600" },
+
+        # CloudWatch Logs configuration
+        { name = "ENABLE_CLOUDWATCH_LOGGING", value = "true" },
+        { name = "AWS_LOG_GROUP", value = aws_cloudwatch_log_group.application.name },
+        { name = "AWS_LOG_STREAM", value = "api-logs" },
+
+        # S3 configuration
+        { name = "S3_ARTIFACTS_BUCKET", value = aws_s3_bucket.monte_carlo_artifacts.bucket },
+
+        # Application configuration
+        { name = "ENVIRONMENT", value = var.env }
+      ]
+      dependsOn = [
+        { containerName = "postgres", condition = "START" },
+        { containerName = "redis", condition = "START" }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "backend"
+        }
+      }
     }
-
   ])
 
-
   volume {
-
     name = "postgres-data"
-
     efs_volume_configuration {
-
-      file_system_id = aws_efs_file_system.postgres.id
-
-      root_directory = "/"
-
+      file_system_id     = aws_efs_file_system.postgres.id
+      root_directory     = "/"
       transit_encryption = "ENABLED"
-
     }
-
   }
-
 }
 
 
@@ -969,48 +1110,65 @@ resource "aws_ecs_service" "backend_service" {
 
 
 # -------------------
-
 # Outputs
-
 # -------------------
 
 output "ecr_repo_url" {
-
   value = aws_ecr_repository.backend.repository_url
-
 }
-
 
 output "s3_bucket" {
-
   value = aws_s3_bucket.frontend_bucket.bucket
-
 }
-
 
 output "cloudfront_domain" {
-
   value = aws_cloudfront_distribution.frontend.domain_name
-
 }
-
 
 output "alb_dns" {
-
   value = aws_lb.alb.dns_name
-
 }
-
 
 output "ecs_cluster_name" {
-
   value = aws_ecs_cluster.main.name
-
 }
 
-
 output "ecs_service_name" {
-
   value = aws_ecs_service.backend_service.name
+}
 
+# New outputs for queue and logging infrastructure
+output "sqs_queue_url" {
+  description = "URL of the main SQS queue for Monte Carlo jobs"
+  value       = aws_sqs_queue.monte_carlo_jobs.url
+}
+
+output "sqs_dlq_url" {
+  description = "URL of the Dead Letter Queue for failed Monte Carlo jobs"
+  value       = aws_sqs_queue.monte_carlo_dlq.url
+}
+
+output "cloudwatch_log_group" {
+  description = "Name of the CloudWatch log group for application logs"
+  value       = aws_cloudwatch_log_group.application.name
+}
+
+output "cloudwatch_worker_log_group" {
+  description = "Name of the CloudWatch log group for Monte Carlo worker logs"
+  value       = aws_cloudwatch_log_group.monte_carlo_worker.name
+}
+
+output "s3_bucket_arn" {
+  description = "ARN of the S3 bucket for Monte Carlo artifacts"
+  value       = aws_s3_bucket.monte_carlo_artifacts.arn
+}
+
+output "s3_artifacts_bucket" {
+  description = "Name of the S3 bucket for Monte Carlo artifacts"
+  value       = aws_s3_bucket.monte_carlo_artifacts.bucket
+}
+
+output "iam_task_role_arn" {
+  description = "ARN of the ECS task role with application permissions"
+  value       = aws_iam_role.ecs_task_role.arn
 }

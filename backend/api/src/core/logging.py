@@ -117,28 +117,75 @@ class RequestIdFilter(logging.Filter):
 
 SENSITIVE_KEYS = {
     "authorization",
-    "password",
+    "password", 
     "secret",
     "token",
     "api_key",
     "jwt",
     "access_token",
     "refresh_token",
+    "aws_access_key_id",
+    "aws_secret_access_key",
+    "aws_session_token",
+    "private_key",
+    "client_secret",
+    "database_url",
+    "db_url",
+    "connection_string",
+    "redis_url",
+    "smtp_password",
+    "webhook_secret"
+}
+
+SENSITIVE_PATTERNS = {
+    "bearer ",
+    "basic ",
+    "key=",
+    "token=",
+    "secret=",
+    "password=",
+    "aws_access_key_id=",
+    "aws_secret_access_key=",
+    "arn:aws:iam::",
+    "-----BEGIN"
 }
 
 
 def _redact(value):
+    """
+    Recursively redact sensitive information from log data.
+    
+    This function identifies and redacts:
+    - Dictionary keys that match sensitive patterns
+    - String values containing sensitive patterns
+    - AWS credentials and tokens
+    - Database connection strings
+    - API keys and secrets
+    """
     if isinstance(value, dict):
         return {
             k: ("[REDACTED]" if k.lower() in SENSITIVE_KEYS else _redact(v))
             for k, v in value.items()
         }
-    if isinstance(value, str) and len(value) > 12:
-        return (
-            "[REDACTED]"
-            if any(key in value.lower() for key in ("secret", "token", "bearer"))
-            else value
-        )
+    elif isinstance(value, list):
+        return [_redact(item) for item in value]
+    elif isinstance(value, str):
+        # Check for sensitive patterns in string values
+        value_lower = value.lower()
+        
+        # Redact if string contains sensitive patterns
+        if any(pattern in value_lower for pattern in SENSITIVE_PATTERNS):
+            return "[REDACTED]"
+        
+        # Redact long strings that might be tokens/keys (but preserve short ones)
+        if len(value) > 20 and any(key in value_lower for key in SENSITIVE_KEYS):
+            return "[REDACTED]"
+        
+        # Redact AWS ARNs and other identifiable patterns
+        if value.startswith(("arn:aws:", "AKIA", "ASIA")) or "-----BEGIN" in value:
+            return "[REDACTED]"
+            
+        return value
     return value
 
 

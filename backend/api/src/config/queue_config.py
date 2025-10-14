@@ -5,9 +5,14 @@ This module provides configuration classes for development, testing, and product
 environments, with support for environment variables and validation.
 """
 import os
+import logging
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any
 from enum import Enum
+
+from infrastructure.security import CredentialManager, AWSCredentials
+
+logger = logging.getLogger(__name__)
 
 
 class Environment(Enum):
@@ -20,15 +25,14 @@ class Environment(Enum):
 
 @dataclass
 class SQSConfig:
-    """SQS-specific configuration"""
+    """SQS-specific configuration with secure credential management"""
     queue_url: str
     region_name: str = "us-east-1"
     dead_letter_queue_url: Optional[str] = None
     visibility_timeout: int = 300  # 5 minutes
     message_retention_period: int = 1209600  # 14 days
     max_receive_count: int = 3
-    aws_access_key_id: Optional[str] = None
-    aws_secret_access_key: Optional[str] = None
+    aws_credentials: Optional[AWSCredentials] = None
     endpoint_url: Optional[str] = None  # For LocalStack
     
     def __post_init__(self):
@@ -41,6 +45,40 @@ class SQSConfig:
         
         if self.message_retention_period < 60 or self.message_retention_period > 1209600:  # 14 days max
             raise ValueError("message_retention_period must be between 60 and 1209600 seconds")
+        
+        # Initialize AWS credentials if not provided
+        if self.aws_credentials is None:
+            environment = os.getenv("ENVIRONMENT", "development")
+            self.aws_credentials = CredentialManager.resolve_aws_credentials(
+                environment=environment,
+                prefer_iam_role=(environment in ("staging", "production"))
+            )
+            
+        # Validate credentials
+        if not CredentialManager.validate_credentials(self.aws_credentials):
+            logger.warning("AWS credentials validation failed", extra={
+                "credential_info": self.aws_credentials.mask_sensitive_data()
+            })
+    
+    def get_boto3_config(self) -> Dict[str, Any]:
+        """Get boto3 configuration with secure credentials"""
+        config = self.aws_credentials.to_boto3_config()
+        if self.endpoint_url:
+            config["endpoint_url"] = self.endpoint_url
+        return config
+    
+    def mask_sensitive_data(self) -> Dict[str, Any]:
+        """Return configuration with sensitive data masked for logging"""
+        return {
+            "queue_url": self.queue_url,
+            "region_name": self.region_name,
+            "dead_letter_queue_url": self.dead_letter_queue_url,
+            "visibility_timeout": self.visibility_timeout,
+            "message_retention_period": self.message_retention_period,
+            "max_receive_count": self.max_receive_count,
+            "endpoint_url": self.endpoint_url,
+            "aws_credentials": self.aws_credentials.mask_sensitive_data() if self.aws_credentials else None
+        }
 
 
 @dataclass
@@ -128,7 +166,12 @@ class QueueSystemConfig:
         except ValueError:
             raise ValueError(f"Invalid environment: {env_name}")
         
-        # SQS Configuration
+        # SQS Configuration with secure credentials
+        aws_credentials = CredentialManager.resolve_aws_credentials(
+            environment=environment.value,
+            prefer_iam_role=(environment in (Environment.STAGING, Environment.PRODUCTION))
+        )
+        
         sqs_config = SQSConfig(
             queue_url=os.getenv("SQS_QUEUE_URL", ""),
             region_name=os.getenv("AWS_REGION", "us-east-1"),
@@ -136,8 +179,7 @@ class QueueSystemConfig:
             visibility_timeout=int(os.getenv("SQS_VISIBILITY_TIMEOUT", "300")),
             message_retention_period=int(os.getenv("SQS_MESSAGE_RETENTION", "1209600")),
             max_receive_count=int(os.getenv("SQS_MAX_RECEIVE_COUNT", "3")),
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            aws_credentials=aws_credentials,
             endpoint_url=os.getenv("SQS_ENDPOINT_URL")  # For LocalStack
         )
         
@@ -212,9 +254,8 @@ class QueueSystemConfig:
         """Validate the complete configuration"""
         # Environment-specific validations
         if self.environment == Environment.PRODUCTION:
-            if not self.sqs.aws_access_key_id or not self.sqs.aws_secret_access_key:
-                if not os.getenv("AWS_PROFILE") and not os.getenv("AWS_ROLE_ARN"):
-                    raise ValueError("Production environment requires AWS credentials or IAM role")
+            if not self.sqs.aws_credentials or not self.sqs.aws_credentials.is_valid():
+                raise ValueError("Production environment requires valid AWS credentials or IAM role")
             
             if self.sqs.endpoint_url:
                 raise ValueError("Production environment should not use custom SQS endpoint")
@@ -227,6 +268,16 @@ class QueueSystemConfig:
         # General validations
         if not self.sqs.queue_url:
             raise ValueError("SQS queue URL is required")
+        
+        # Log configuration for debugging (with sensitive data masked)
+        logger.info("Queue configuration validated", extra={
+            "environment": self.environment.value,
+            "sqs_config": self.sqs.mask_sensitive_data(),
+            "worker_config": {
+                "max_concurrent_jobs": self.worker.max_concurrent_jobs,
+                "poll_interval": self.worker.poll_interval
+            }
+        })
 
 
 # Environment-specific configurations
@@ -255,6 +306,16 @@ def get_development_config() -> QueueSystemConfig:
 
 def get_testing_config() -> QueueSystemConfig:
     """Get testing configuration"""
+    from infrastructure.security import AWSCredentials, CredentialSource
+    
+    # Create mock AWS credentials for testing
+    test_credentials = AWSCredentials(
+        access_key_id='testing',
+        secret_access_key='testing',
+        region='us-east-1',
+        source=CredentialSource.ENVIRONMENT
+    )
+    
     return QueueSystemConfig(
         environment=Environment.TESTING,
         sqs=SQSConfig(
@@ -263,7 +324,8 @@ def get_testing_config() -> QueueSystemConfig:
             endpoint_url="http://localhost:4566",  # LocalStack for testing
             visibility_timeout=30,  # Short for testing
             message_retention_period=3600,  # 1 hour for testing
-            max_receive_count=1
+            max_receive_count=1,
+            aws_credentials=test_credentials
         ),
         worker=WorkerConfig(
             max_concurrent_jobs=1,

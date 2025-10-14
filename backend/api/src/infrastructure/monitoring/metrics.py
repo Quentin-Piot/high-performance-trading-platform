@@ -14,7 +14,7 @@ import asyncio
 import threading
 from contextlib import asynccontextmanager
 
-from src.domain.queue import MonitoringInterface
+from domain.queue import MonitoringInterface
 
 logger = logging.getLogger(__name__)
 
