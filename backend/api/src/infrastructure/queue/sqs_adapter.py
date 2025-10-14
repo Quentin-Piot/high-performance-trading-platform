@@ -2,21 +2,23 @@
 SQS implementation of the queue interface.
 
 This module provides a concrete implementation of the queue interface using AWS SQS,
-with support for dead letter queues, message attributes, and monitoring.
+with support for dead letter queues, message attributes, monitoring, and visibility timeout heartbeat.
 """
 import json
 import logging
 from datetime import datetime, UTC
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Set
 import boto3
 from botocore.exceptions import ClientError, BotoCoreError
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
-from src.domain.queue import (
+from domain.queue import (
     QueueInterface, Job, JobStatus, JobMetadata, QueueMetrics,
     MonteCarloJobPayload
 )
+from config.queue_config import SQSConfig
+from infrastructure.security import CredentialManager
 
 logger = logging.getLogger(__name__)
 
@@ -26,48 +28,32 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
     
     def __init__(
         self,
-        queue_url: str,
-        region_name: str = "us-east-1",
-        dead_letter_queue_url: Optional[str] = None,
-        visibility_timeout: int = 300,
-        message_retention_period: int = 1209600,  # 14 days
-        max_receive_count: int = 3,
-        aws_access_key_id: Optional[str] = None,
-        aws_secret_access_key: Optional[str] = None,
-        endpoint_url: Optional[str] = None  # For LocalStack testing
+        config: SQSConfig
     ):
         """
-        Initialize SQS queue adapter.
+        Initialize SQS queue adapter with secure configuration.
         
         Args:
-            queue_url: SQS queue URL
-            region_name: AWS region
-            dead_letter_queue_url: Dead letter queue URL
-            visibility_timeout: Message visibility timeout in seconds
-            message_retention_period: Message retention period in seconds
-            max_receive_count: Maximum receive count before moving to DLQ
-            aws_access_key_id: AWS access key (optional, uses default credentials if not provided)
-            aws_secret_access_key: AWS secret key (optional)
-            endpoint_url: Custom endpoint URL (for testing with LocalStack)
+            config: SQS configuration with secure credential management
         """
-        self.queue_url = queue_url
-        self.dead_letter_queue_url = dead_letter_queue_url
-        self.visibility_timeout = visibility_timeout
-        self.message_retention_period = message_retention_period
-        self.max_receive_count = max_receive_count
+        self.queue_url = config.queue_url
+        self.dead_letter_queue_url = config.dead_letter_queue_url
+        self.visibility_timeout = config.visibility_timeout
+        self.message_retention_period = config.message_retention_period
+        self.max_receive_count = config.max_receive_count
         
-        # Initialize SQS client
-        session_kwargs = {"region_name": region_name}
-        if aws_access_key_id and aws_secret_access_key:
-            session_kwargs.update({
-                "aws_access_key_id": aws_access_key_id,
-                "aws_secret_access_key": aws_secret_access_key
-            })
+        # Validate credentials
+        if not CredentialManager.validate_credentials(config.aws_credentials):
+            raise ValueError("Invalid AWS credentials provided")
         
-        self.session = boto3.Session(**session_kwargs)
+        # Initialize SQS client with secure configuration
+        boto3_config = config.get_boto3_config()
+        self.session = boto3.Session(**{k: v for k, v in boto3_config.items() 
+                                      if k not in ("endpoint_url",)})
+        
         client_kwargs = {}
-        if endpoint_url:
-            client_kwargs["endpoint_url"] = endpoint_url
+        if "endpoint_url" in boto3_config:
+            client_kwargs["endpoint_url"] = boto3_config["endpoint_url"]
             
         self.sqs_client = self.session.client("sqs", **client_kwargs)
         
@@ -77,7 +63,14 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
         # In-memory job tracking for status queries
         self._job_cache: Dict[str, Job[MonteCarloJobPayload]] = {}
         
-        logger.info(f"Initialized SQS adapter for queue: {queue_url}")
+        # Heartbeat tracking for visibility timeout extension
+        self._active_heartbeats: Set[str] = set()
+        self._heartbeat_tasks: Dict[str, asyncio.Task] = {}
+        
+        logger.info("Initialized SQS adapter", extra={
+            "queue_url": config.queue_url,
+            "credential_info": config.aws_credentials.mask_sensitive_data()
+        })
     
     async def enqueue(self, job: Job[MonteCarloJobPayload]) -> str:
         """Enqueue a Monte Carlo job to SQS"""
@@ -138,6 +131,9 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
             # Update cache
             self._job_cache[job.metadata.job_id] = job
             
+            # Start heartbeat for visibility timeout extension
+            await self._start_heartbeat(job.metadata.job_id, message["ReceiptHandle"])
+            
             logger.info(f"Dequeued job {job.metadata.job_id} from SQS")
             return job
             
@@ -168,6 +164,9 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
             
             # Update job status
             job.update_status(JobStatus.COMPLETED)
+            
+            # Stop heartbeat
+            await self._stop_heartbeat(job_id)
             
             logger.info(f"Acknowledged job {job_id}")
             return True
@@ -209,6 +208,10 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
                     receipt_handle
                 )
                 job.update_status(JobStatus.FAILED)
+                
+                # Stop heartbeat
+                await self._stop_heartbeat(job_id)
+                
                 logger.info(f"Rejected job {job_id} (max retries exceeded)")
             
             return True
@@ -242,34 +245,55 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
             return False
     
     async def get_metrics(self) -> QueueMetrics:
-        """Get queue metrics from SQS"""
+        """Get queue metrics including DLQ statistics"""
         try:
             loop = asyncio.get_event_loop()
-            attributes = await loop.run_in_executor(
+            
+            # Get main queue attributes
+            main_attributes = await loop.run_in_executor(
                 self.executor,
                 self._get_queue_attributes_sync
             )
             
-            # Calculate metrics from cache and SQS attributes
-            pending_jobs = int(attributes.get("ApproximateNumberOfMessages", 0))
-            processing_jobs = len([j for j in self._job_cache.values() if j.status == JobStatus.PROCESSING])
-            completed_jobs = len([j for j in self._job_cache.values() if j.status == JobStatus.COMPLETED])
-            failed_jobs = len([j for j in self._job_cache.values() if j.status == JobStatus.FAILED])
+            # Get DLQ attributes if configured
+            dlq_attributes = {}
+            if self.dead_letter_queue_url:
+                try:
+                    dlq_attributes = await loop.run_in_executor(
+                        self.executor,
+                        self._get_dlq_attributes_sync
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to get DLQ metrics: {e}")
+            
+            # Parse metrics
+            pending_jobs = int(main_attributes.get("ApproximateNumberOfMessages", 0))
+            processing_jobs = int(main_attributes.get("ApproximateNumberOfMessagesNotVisible", 0))
+            dlq_messages = int(dlq_attributes.get("ApproximateNumberOfMessages", 0))
             
             return QueueMetrics(
                 queue_name=self.queue_url.split("/")[-1],
                 pending_jobs=pending_jobs,
                 processing_jobs=processing_jobs,
-                completed_jobs=completed_jobs,
-                failed_jobs=failed_jobs,
-                average_processing_time=0.0,  # Would need additional tracking
-                throughput_per_minute=0.0,    # Would need additional tracking
+                completed_jobs=0,  # SQS doesn't track completed jobs
+                failed_jobs=dlq_messages,  # Messages in DLQ are failed jobs
+                average_processing_time=0.0,  # Would need CloudWatch for this
+                throughput_per_minute=0.0,  # Would need CloudWatch for this
                 last_updated=datetime.now(UTC)
             )
             
         except Exception as e:
             logger.error(f"Failed to get queue metrics: {str(e)}")
-            raise
+            return QueueMetrics(
+                queue_name="unknown",
+                pending_jobs=0,
+                processing_jobs=0,
+                completed_jobs=0,
+                failed_jobs=0,
+                average_processing_time=0.0,
+                throughput_per_minute=0.0,
+                last_updated=datetime.now(UTC)
+            )
     
     def _serialize_job(self, job: Job[MonteCarloJobPayload]) -> str:
         """Serialize job to JSON string"""
@@ -411,7 +435,90 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
         )
         return response.get("Attributes", {})
     
+    def _get_dlq_attributes_sync(self) -> Dict[str, str]:
+        """Get DLQ attributes synchronously"""
+        if not self.dead_letter_queue_url:
+            return {}
+            
+        try:
+            response = self.sqs_client.get_queue_attributes(
+                QueueUrl=self.dead_letter_queue_url,
+                AttributeNames=['ApproximateNumberOfMessages']
+            )
+            return response.get('Attributes', {})
+        except (ClientError, BotoCoreError) as e:
+            logger.error(f"Failed to get DLQ attributes: {e}")
+            return {}
+
     async def cleanup(self) -> None:
         """Cleanup resources"""
+        # Stop all active heartbeats
+        for job_id in list(self._active_heartbeats):
+            await self._stop_heartbeat(job_id)
+        
         self.executor.shutdown(wait=True)
         logger.info("SQS adapter cleanup completed")
+    
+    async def _start_heartbeat(self, job_id: str, receipt_handle: str) -> None:
+        """Start heartbeat task to extend message visibility timeout"""
+        if job_id in self._active_heartbeats:
+            logger.warning(f"Heartbeat already active for job {job_id}")
+            return
+        
+        self._active_heartbeats.add(job_id)
+        
+        async def heartbeat_loop():
+            """Background task to extend visibility timeout every 15 seconds"""
+            try:
+                while job_id in self._active_heartbeats:
+                    await asyncio.sleep(15)  # Wait 15 seconds
+                    
+                    if job_id not in self._active_heartbeats:
+                        break
+                    
+                    try:
+                        # Extend visibility timeout by the original timeout value
+                        loop = asyncio.get_event_loop()
+                        await loop.run_in_executor(
+                            self.executor,
+                            self._change_message_visibility_sync,
+                            receipt_handle,
+                            self.visibility_timeout
+                        )
+                        logger.debug(f"Extended visibility timeout for job {job_id}")
+                    except Exception as e:
+                        logger.error(f"Failed to extend visibility timeout for job {job_id}: {e}")
+                        # Continue the loop - transient errors shouldn't stop heartbeat
+                        
+            except asyncio.CancelledError:
+                logger.debug(f"Heartbeat cancelled for job {job_id}")
+            except Exception as e:
+                logger.error(f"Heartbeat error for job {job_id}: {e}")
+            finally:
+                self._active_heartbeats.discard(job_id)
+                self._heartbeat_tasks.pop(job_id, None)
+        
+        # Start the heartbeat task
+        task = asyncio.create_task(heartbeat_loop())
+        self._heartbeat_tasks[job_id] = task
+        
+        logger.debug(f"Started heartbeat for job {job_id}")
+    
+    async def _stop_heartbeat(self, job_id: str) -> None:
+        """Stop heartbeat task for a job"""
+        if job_id not in self._active_heartbeats:
+            return
+        
+        # Remove from active set
+        self._active_heartbeats.discard(job_id)
+        
+        # Cancel the task if it exists
+        task = self._heartbeat_tasks.pop(job_id, None)
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        
+        logger.debug(f"Stopped heartbeat for job {job_id}")

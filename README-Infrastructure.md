@@ -252,3 +252,49 @@ For production use, consider:
 - Implementing auto-scaling
 - Setting up monitoring and logging
 - Using AWS Secrets Manager for sensitive data
+
+## 🔴 Redis en production (ECS Fargate)
+
+Ce projet déploie Redis comme sidecar dans la même tâche ECS que le backend afin d’optimiser les coûts (partage CPU/mémoire Fargate). Cette approche est adaptée pour un cache applicatif non persistant.
+
+### Déploiement et configuration
+- Conteneur: `redis:7-alpine` démarré aux côtés du backend et de Postgres.
+- Démarrage ordonné: le backend attend que `postgres` et `redis` soient démarrés.
+- Variables backend: `REDIS_URL=redis://localhost:6379/0`, `CACHE_ENABLED=true`.
+- Performance: `maxmemory=256mb`, politique d’éviction `allkeys-lru` (ajustable en fonction de la charge).
+- Persistance: désactivée (`appendonly no`, `save ""`) car Redis sert de cache; les données sont régénérées si nécessaire.
+- Sécurité: Redis n’est pas exposé publiquement (aucune règle SG sur 6379), mode protégé activé.
+
+### Bonnes pratiques
+- Utiliser Redis comme cache seulement; pour un stockage persistant, préférer ElastiCache ou Redis géré.
+- Ajuster la taille de la tâche Fargate (CPU/mémoire) si la pression mémoire augmente.
+- Fixer la version d’image (`redis:7-alpine`) et éviter `latest`.
+
+### Monitoring
+- Logs: CloudWatch (`/ecs/<project>`), flux `redis`, `backend`, `postgres`.
+- Metrics ECS: activer Container Insights pour CPU/mémoire par conteneur.
+- Checks applicatifs: exposer un endpoint backend qui valide la connexion Redis (ex: `/api/readyz`).
+- Inspecter Redis: utiliser `aws ecs execute-command` pour lancer `redis-cli INFO` dans le conteneur.
+
+### Maintenance
+- Montées de charge: augmenter `maxmemory` et la mémoire Fargate, vérifier l’éviction.
+- Redéploiements: un `force-new-deployment` sur le service backend redémarre Redis (cache vidé).
+- Sécurité: envisager de renommer les commandes sensibles (`FLUSHALL`, `CONFIG`) si des opérateurs CLI interviennent en prod.
+- Coûts: sidecar = pas de charge supplémentaire d’un service dédié; ajuster la taille de tâche pour éviter la sur-allocation.
+
+### Commandes utiles
+```bash
+# Exécuter une commande dans le conteneur Redis (session chiffrée ECS Exec)
+aws ecs execute-command \
+  --cluster <ECS_CLUSTER_NAME> \
+  --task <TASK_ID> \
+  --container redis \
+  --command "redis-cli INFO" \
+  --interactive
+
+# Forcer un redeploy (recréation de tâche et redémarrage du sidecar Redis)
+aws ecs update-service \
+  --cluster <ECS_CLUSTER_NAME> \
+  --service <ECS_SERVICE_NAME> \
+  --force-new-deployment
+```

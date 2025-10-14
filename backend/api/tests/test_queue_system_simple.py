@@ -6,8 +6,8 @@ import pytest
 import asyncio
 from datetime import datetime
 from unittest.mock import Mock, AsyncMock
-from src.domain.queue import JobStatus, JobPriority, MonteCarloJobPayload, Job, JobMetadata
-from src.workers.monte_carlo_worker import MonteCarloJobProcessor
+from domain.queue import JobStatus, JobPriority, MonteCarloJobPayload, Job, JobMetadata
+from workers.monte_carlo_worker import MonteCarloJobProcessor
 
 
 @pytest.mark.asyncio

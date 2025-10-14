@@ -26,6 +26,7 @@ asyncpg = ">=0.29.0,<1.0.0"
 boto3 = ">=1.34.0,<2.0.0"
 watchtower = ">=3.0.0,<4.0.0"
 psutil = ">=5.9.0,<6.0.0"
+redis = "^6.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0,<9.0"

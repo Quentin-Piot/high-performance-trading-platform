@@ -1,0 +1,36 @@
+# Configuration LocalStack pour le développement local
+# Utilisé avec: localstack start --config localstack-config.yml
+
+# Services AWS à activer
+services: sqs,s3,logs,iam,elasticache
+
+# Configuration des ports
+gateway:
+  listen:
+    - host: 0.0.0.0
+      port: 4566
+
+# Configuration Redis/ElastiCache
+elasticache:
+  port: 6379
+
+# Configuration SQS
+sqs:
+  port: 4566
+
+# Configuration S3
+s3:
+  port: 4566
+
+# Configuration des logs
+logs:
+  level: INFO
+
+# Persistance des données (optionnel)
+persistence:
+  enabled: false
+
+# Configuration des extensions
+extensions:
+  - name: localstack-extension-redis
+    enabled: true

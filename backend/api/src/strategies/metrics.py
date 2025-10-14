@@ -17,6 +17,7 @@ def max_drawdown(equity: pd.Series) -> float:
     # equity: cumulative portfolio value
     roll_max = equity.cummax()
     drawdown = equity / roll_max - 1.0
+    # Return the minimum drawdown (negative value)
     return float(drawdown.min())
 
 
