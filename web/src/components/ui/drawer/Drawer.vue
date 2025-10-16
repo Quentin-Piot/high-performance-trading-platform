@@ -3,13 +3,15 @@ import type { DrawerRootEmits, DrawerRootProps } from "vaul-vue"
 import { useForwardPropsEmits } from "reka-ui"
 import { DrawerRoot } from "vaul-vue"
 
+defineOptions({ name: "UiDrawer" })
+
 const props = withDefaults(defineProps<DrawerRootProps>(), {
   shouldScaleBackground: true,
 })
 
 const emits = defineEmits<DrawerRootEmits>()
 
-const forwarded = useForwardPropsEmits(props, emits)
+const forwarded = useForwardPropsEmits(props, emits) as any
 </script>
 
 <template>
