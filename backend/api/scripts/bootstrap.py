@@ -56,6 +56,72 @@ def _alembic_version(dsn: str) -> str | None:
     except Exception:
         return None
 
+def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
+    """Detect and repair a corrupted 'jobs' table by dropping it.
+
+    Returns True if the table was dropped (corrupted detected), False otherwise.
+    """
+    try:
+        with psycopg.connect(_to_psycopg_dsn(dsn)) as conn:
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                # Check if table exists
+                cur.execute(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.tables
+                        WHERE table_schema='public' AND table_name='jobs'
+                    )
+                    """
+                )
+                exists = bool(cur.fetchone()[0])
+                if not exists:
+                    return False
+
+                # Validate a minimal set of expected columns
+                cur.execute(
+                    """
+                    SELECT column_name FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='jobs'
+                    """
+                )
+                cols = {r[0] for r in cur.fetchall()}
+                expected_core = {
+                    "id","payload","status","progress","priority",
+                    "worker_id","attempts","error","artifact_url",
+                    "dedup_key","created_at","updated_at"
+                }
+
+                # If core columns are missing, table likely corrupted
+                if not expected_core.issubset(cols):
+                    print("Detected corrupted 'jobs' table (missing core columns); dropping for clean migration...")
+                    cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
+                    return True
+
+                # Also check pg_attribute count which indicates catalog consistency
+                try:
+                    cur.execute(
+                        """
+                        SELECT COUNT(*) FROM pg_attribute
+                        WHERE attrelid = 'jobs'::regclass AND attnum > 0
+                        """
+                    )
+                    attcount = int(cur.fetchone()[0])
+                    if attcount < len(expected_core):
+                        print("Detected inconsistent pg_attribute for 'jobs'; dropping table to recover...")
+                        cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
+                        return True
+                except Exception:
+                    # If querying pg_attribute itself errors, err on the side of repair
+                    print("pg_attribute query failed for 'jobs'; dropping table to recover...")
+                    cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
+                    return True
+
+                return False
+    except Exception as e:
+        print(f"Failed to inspect/repair jobs table: {e}", file=sys.stderr)
+        return False
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -101,9 +167,19 @@ def ensure_database_exists(dsn: str) -> None:
 
 
 def run_alembic_migrations(dsn: str) -> None:
+    # Detect and repair corrupted 'jobs' table if necessary
+    dropped = _repair_jobs_table_if_corrupted(dsn)
+
     # If schema was created out-of-band, align Alembic state to avoid DuplicateTable errors.
     current_rev = _alembic_version(dsn)
     jobs_exists = _table_exists(dsn, "jobs")
+
+    if dropped:
+        print("Corrupted 'jobs' table was dropped; resetting Alembic to 0001_initial before upgrade...")
+        subprocess.run(["alembic", "stamp", "0001_initial"], check=True)
+        # Refresh current_rev after stamping
+        current_rev = "0001_initial"
+        jobs_exists = False
 
     if jobs_exists and (current_rev is None or current_rev == "0001_initial"):
         print("Detected existing 'jobs' table with outdated Alembic version; stamping to 0002_add_jobs_table...")
