@@ -22,51 +22,7 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 
-// Contenu de l'architecture pour le Dialog principal
-const architectureDetails = {
-    title: "High-Performance Trading Platform - Détails de l'Architecture",
-    description:
-        "Aperçu complet des choix technologiques et d'infrastructure, alignés sur vos compétences Full Stack (FastAPI, Vue.js, Terraform, AWS).",
-    sections: [
-        {
-            title: "Stack Applicative (Full Stack)",
-            icon: "Zap",
-            points: [
-                "**Frontend (HMI)**: Vue.js + Vite. Utilise shadcn/vue (Composants Dialog, Card) pour une interface utilisateur professionnelle et accessible.",
-                "**Backend (API)**: FastAPI avec Uvicorn. Choix axé sur la **performance** et l'**asynchronisme** (Python), parfait pour le trading et aligné avec votre expertise Python/Fast API récente.",
-                "**Reverse Proxy**: Nginx. Gère les requêtes statiques et le routage `/api` vers FastAPI (docker-compose).",
-            ],
-        },
-        {
-            title: "Infrastructure & Déploiement (IaC & DevOps)",
-            icon: "Shield",
-            points: [
-                "**Provisionnement**: **Terraform** sur AWS. Permet l'automatisation de la création de l'instance EC2 t2.micro, Security Group et Key Pair.",
-                "**Orchestration Initiale**: **Docker Compose**. Permet le déploiement multi-conteneurs (Frontend, Backend, PostgreSQL) sur la mono-instance EC2, optimisant les **coûts** (Free Tier).",
-                "**Processus de CI/CD**: Utilisation du script `deploy.sh` pour la copie, le build et le démarrage des conteneurs (expérience pertinente en **GitHub Actions** pour un Pipeline futur).",
-                "**Sécurité**: Restriction de l'accès SSH (port 22) à une adresse IP spécifique, ports Backend/DB **non exposés**.",
-            ],
-        },
-        {
-            title: "Base de Données & Caching",
-            icon: "BarChart3",
-            points: [
-                "**Base de Données**: PostgreSQL 16 (conteneur). Volume Docker pour la **persistance des données** (ordres, transactions).",
-                "**Évolution Cache (Projetée)**: Intégration de **Redis** comme sidecar sur **ECS Fargate** (architecture de production).",
-                "**Détail Redis**: Cache applicatif $\text{maxmemory}=256 \text{mb}$, politique d'éviction $\text{allkeys-lru}$. Montre votre intérêt pour le **backend haute performance** et l'optimisation Cloud.",
-            ],
-        },
-        {
-            title: "Alignement Rôle Architecte/Lead",
-            icon: "TrendingUp",
-            points: [
-                "**System Design**: La documentation couvre le design initial (EC2 mono-instance) et l'évolution vers le Cloud natif (**ECS, RDS, Load Balancer**), démontrant une vision stratégique.",
-                "**Expertise Technique**: Mise en œuvre des concepts de **Clean Architecture**, **DDD** (mentionnés dans votre profil), via la structuration de FastAPI et la gestion des données.",
-                "**High-Performance/Fintech**: Le choix de FastAPI et la planification de l'intégration Redis/Rust (future) confirment votre intérêt pour le secteur **fintech**.",
-            ],
-        },
-    ],
-};
+// Supprimé: objet non utilisé provoquant TS6133
 
 const { t } = useI18n();
 const { navigate } = useRouter();
