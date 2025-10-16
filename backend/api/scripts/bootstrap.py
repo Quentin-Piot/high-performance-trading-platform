@@ -166,6 +166,70 @@ def ensure_database_exists(dsn: str) -> None:
             time.sleep(2)
 
 
+def reset_database(dsn: str) -> bool:
+    """Drop and recreate the target database (or at least clear the public schema).
+
+    Returns True if a reset was performed successfully.
+    """
+    parsed = urlparse(dsn)
+    if not parsed.scheme.startswith("postgresql"):
+        return False
+
+    dbname = (parsed.path or "/").lstrip("/") or "postgres"
+    host = parsed.hostname or "localhost"
+    port = parsed.port or 5432
+    user = parsed.username or "postgres"
+    password = parsed.password or "postgres"
+
+    admin_dsn = f"postgresql://{user}:{password}@{host}:{port}/postgres"
+    target_dsn = _to_psycopg_dsn(dsn)
+
+    print(f"RESET_DB: dropping database '{dbname}' and recreating it...")
+    try:
+        # Connect to admin DB to terminate sessions and drop the database
+        with psycopg.connect(admin_dsn) as conn:
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                # Terminate any other connections to the target DB
+                try:
+                    cur.execute(
+                        """
+                        SELECT pg_terminate_backend(pid)
+                        FROM pg_stat_activity
+                        WHERE datname = %s AND pid <> pg_backend_pid()
+                        """,
+                        (dbname,),
+                    )
+                except Exception as e:
+                    print(f"Failed to terminate sessions for '{dbname}': {e}", file=sys.stderr)
+
+                try:
+                    cur.execute(f'DROP DATABASE "{dbname}"')
+                    print(f"Database '{dbname}' dropped.")
+                except Exception as e:
+                    print(f"DROP DATABASE failed: {e}. Falling back to clearing schema.", file=sys.stderr)
+                    # Fallback: clear the public schema inside target DB
+                    try:
+                        with psycopg.connect(target_dsn) as tconn:
+                            tconn.autocommit = True
+                            with tconn.cursor() as tcur:
+                                tcur.execute("DROP SCHEMA IF EXISTS public CASCADE;")
+                                tcur.execute("CREATE SCHEMA public;")
+                                print("Public schema recreated.")
+                    except Exception as ee:
+                        print(f"Failed to clear public schema: {ee}", file=sys.stderr)
+                        raise
+                else:
+                    # Recreate the database if we successfully dropped it
+                    cur.execute(f'CREATE DATABASE "{dbname}"')
+                    print(f"Database '{dbname}' recreated.")
+
+        return True
+    except Exception as e:
+        print(f"RESET_DB failed: {e}", file=sys.stderr)
+        return False
+
+
 def run_alembic_migrations(dsn: str) -> None:
     # Detect and repair corrupted 'jobs' table if necessary
     dropped = _repair_jobs_table_if_corrupted(dsn)
@@ -186,7 +250,15 @@ def run_alembic_migrations(dsn: str) -> None:
         subprocess.run(["alembic", "stamp", "0002_add_jobs_table"], check=True)
 
     print("Running Alembic migrations to head...")
-    subprocess.run(["alembic", "upgrade", "head"], check=True)
+    try:
+        subprocess.run(["alembic", "upgrade", "head"], check=True)
+    except Exception as e:
+        print(f"Alembic upgrade failed: {e}. Attempting full database reset...", file=sys.stderr)
+        if reset_database(dsn):
+            # After full reset, run migrations fresh
+            subprocess.run(["alembic", "upgrade", "head"], check=True)
+        else:
+            raise
 
 
 def start_uvicorn_process() -> subprocess.Popen:
@@ -213,6 +285,12 @@ def main() -> None:
     # Ensure Alembic uses psycopg v3 driver and not asyncpg.
     os.environ["DATABASE_URL"] = dsn
     ensure_database_exists(dsn)
+    # Optional hard reset trigger via env var
+    reset_requested = os.getenv("RESET_DB", "false").lower() in ("1", "true", "yes")
+    if reset_requested:
+        ok = reset_database(dsn)
+        if not ok:
+            print("Requested DB reset failed; continuing startup, migrations may still fail.", file=sys.stderr)
     run_alembic_migrations(dsn)
     run_worker = os.getenv("RUN_WORKER", "false").lower() in ("1", "true", "yes")
 
