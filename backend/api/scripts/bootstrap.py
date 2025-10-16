@@ -8,6 +8,54 @@ import subprocess
 import psycopg
 from dotenv import load_dotenv
 
+# --- Alembic stamping helpers ---
+def _to_psycopg_dsn(dsn: str) -> str:
+    """Convert SQLAlchemy DSN to psycopg-compatible DSN."""
+    if dsn.startswith("postgresql+"):
+        return dsn.replace("postgresql+psycopg", "postgresql").replace("postgresql+asyncpg", "postgresql")
+    return dsn
+
+def _table_exists(dsn: str, table_name: str, schema: str = "public") -> bool:
+    try:
+        with psycopg.connect(_to_psycopg_dsn(dsn)) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_schema = %s AND table_name = %s
+                    )
+                    """,
+                    (schema, table_name),
+                )
+                row = cur.fetchone()
+                return bool(row and row[0])
+    except Exception:
+        return False
+
+def _alembic_version(dsn: str) -> str | None:
+    try:
+        with psycopg.connect(_to_psycopg_dsn(dsn)) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_schema = 'public' AND table_name = 'alembic_version'
+                    )
+                    """
+                )
+                exists = bool(cur.fetchone()[0])
+                if not exists:
+                    return None
+                cur.execute("SELECT version_num FROM alembic_version LIMIT 1")
+                row = cur.fetchone()
+                return row[0] if row else None
+    except Exception:
+        return None
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -53,6 +101,14 @@ def ensure_database_exists(dsn: str) -> None:
 
 
 def run_alembic_migrations(dsn: str) -> None:
+    # If schema was created out-of-band, align Alembic state to avoid DuplicateTable errors.
+    current_rev = _alembic_version(dsn)
+    jobs_exists = _table_exists(dsn, "jobs")
+
+    if jobs_exists and (current_rev is None or current_rev == "0001_initial"):
+        print("Detected existing 'jobs' table with outdated Alembic version; stamping to 0002_add_jobs_table...")
+        subprocess.run(["alembic", "stamp", "0002_add_jobs_table"], check=True)
+
     print("Running Alembic migrations to head...")
     subprocess.run(["alembic", "upgrade", "head"], check=True)
 
