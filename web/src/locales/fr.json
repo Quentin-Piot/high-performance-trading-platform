@@ -41,6 +41,63 @@
       "ready": "Prêt à commencer ?",
       "startSimulation": "Commencer une simulation"
     },
+    "architecture": {
+      "open": "Ouvrir les détails d'architecture",
+      "dialog": {
+        "title": "Aperçu de l'Architecture Système",
+        "description": "Choix haut niveau pour stack, infrastructure, données et alignement."
+      },
+      "sections": {
+        "stack": {
+          "title": "Stack Applicative (Full Stack)",
+          "points": {
+            "0": "Frontend : Vue.js + Vite avec shadcn/vue pour une UI professionnelle et accessible.",
+            "1": "Backend : FastAPI avec Uvicorn, orienté performance et asynchronisme.",
+            "2": "Reverse Proxy : Nginx routant /api vers FastAPI."
+          }
+        },
+        "infra": {
+          "title": "Infrastructure & Déploiement (IaC & DevOps)",
+          "points": {
+            "0": "Provisionnement : Terraform sur AWS pour EC2, Security Group et Key Pair automatisés.",
+            "1": "Orchestration initiale : Docker Compose pour le déploiement multi-conteneurs sur une EC2 unique.",
+            "2": "CI/CD : deploy.sh pour build et démarrage ; pipeline GitHub Actions futur.",
+            "3": "Sécurité : SSH restreint à une IP spécifique ; ports DB non exposés."
+          }
+        },
+        "data_cache": {
+          "title": "Base de Données & Caching",
+          "points": {
+            "0": "Base de données : PostgreSQL 16 avec volume Docker pour la persistance des données.",
+            "1": "Évolution du cache : Redis en sidecar sur ECS Fargate en production.",
+            "2": "Détail Redis : maxmemory=256mb, éviction allkeys-lru pour backend haute performance."
+          }
+        },
+        "alignment": {
+          "title": "Alignement Rôle Architecte/Lead",
+          "points": {
+            "0": "System Design : évolution d'une EC2 unique vers cloud natif (ECS, RDS, ALB).",
+            "1": "Expertise technique : Clean Architecture et DDD reflétés dans l'API et la conception des données.",
+            "2": "Haute performance/Fintech : feuille de route FastAPI + Redis/Rust adaptée aux charges financières."
+          }
+        }
+      },
+      "frontend": {
+        "title": "Architecture Frontend (Vue)",
+        "description": "Structure du projet, composants UI, et i18n pour une UX soignée.",
+        "points_title": "Points clés",
+        "experience": "Composants prêts pour la production et DX moderne"
+      },
+      "backend": {
+        "title": "Backend (FastAPI) & Architecture",
+        "description": "Performance, Clean Architecture, DDD et options de montée en charge.",
+        "points_title": "Points clés"
+      },
+      "infra_dialog": {
+        "title": "Infrastructure (AWS & Terraform)",
+        "description": "Infrastructure as Code, déploiement multi-conteneurs, évolution Cloud."
+      }
+    },
     "project": {
       "title": "Architecture du Projet",
       "description": "Plateforme de trading full-stack moderne construite avec des technologies de pointe",
@@ -56,6 +113,9 @@
         "title": "Infrastructure AWS",
         "description": "ECS Fargate, CDN CloudFront, stockage S3, et Application Load Balancer"
       },
+      "frontend.click_to_architecture": "Cliquer pour l'architecture du frontend",
+      "backend.click_to_system_design": "Cliquer pour le System Design",
+      "infrastructure.click_to_iac_cloud": "Cliquer pour l'IaC et Cloud",
       "features": {
         "title": "Fonctionnalités Clés",
         "items": [
@@ -129,7 +189,8 @@
       "title": "Résultats",
       "monte_carlo": {
         "title": "Résultats de Simulation Monte Carlo",
-        "description": "Affichage de l'enveloppe d'équité avec bandes de confiance"
+        "description": "Affichage de l'enveloppe d'équité avec bandes de confiance",
+        "progress_title": "Progression de la Simulation Monte Carlo"
       }
     },
     "loading": "Chargement...",

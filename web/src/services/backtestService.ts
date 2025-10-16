@@ -12,6 +12,8 @@ export type BacktestRequest = {
   method?: 'bootstrap' | 'gaussian';  // default: 'bootstrap'
   sample_fraction?: number;  // 0.1-2.0, default: 1.0
   gaussian_scale?: number;   // 0.1-5.0, default: 1.0
+  // Optional job id to let backend stream progress to WS
+  job_id?: string;
 }
 
 // Monte Carlo specific types
@@ -241,6 +243,9 @@ function buildQuery(req: BacktestRequest, includeAggregated: boolean = false): s
   }
   if (req.gaussian_scale !== undefined) {
     q.set('gaussian_scale', String(req.gaussian_scale))
+  }
+  if (req.job_id) {
+    q.set('job_id', req.job_id)
   }
   
   if (includeAggregated) q.set('include_aggregated', 'true')

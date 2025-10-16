@@ -1,4 +1,4 @@
-tes<script setup lang="ts">
+<script setup lang="ts">
 import BacktestForm from "@/components/backtest/BacktestForm.vue";
 import BacktestChart from "@/components/backtest/BacktestChart.vue";
 import MultiLineChart from "@/components/backtest/MultiLineChart.vue";
@@ -7,7 +7,7 @@ import MetricsCard from "@/components/common/MetricsCard.vue";
 import DistributionMetricsCard from "@/components/common/DistributionMetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { useBacktestStore } from "@/stores/backtestStore";
-import { computed, ref } from "vue";
+import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { buildEquityPoints } from "@/composables/useEquitySeries";
+import { buildWsUrl } from "@/services/apiClient";
+import { toast } from "vue-sonner";
 // Local chart types avoiding dependency on lightweight-charts TS exports
 type BusinessDay = { year: number; month: number; day: number };
 type ChartTime = number | BusinessDay;
@@ -104,6 +106,228 @@ const displaySeries = computed<EquitySeries>(() => {
     return downsample(ranged, selectedResolution.value);
 });
 
+// --- Monte Carlo progress via WebSocket ---
+const mcWs = ref<WebSocket | null>(null);
+const mcConnected = ref(false);
+const mcConnecting = ref(false);
+const mcActiveJobId = ref<string | null>(null);
+const mcStatus = ref("");
+const mcPercent = ref(0);
+const mcCurrent = ref(0);
+const mcTotal = ref(0);
+const mcEtaSeconds = ref<number | null>(null);
+const mcProgressVisible = computed(() => !!store.monteCarloJobId);
+
+function formatEta(sec: number | null): string {
+    if (sec == null) return "";
+    const s = Math.max(0, Math.round(sec));
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${m}m ${rem}s`;
+}
+
+const mcStatusLabel = computed(() => {
+    const s = (mcStatus.value || "").toUpperCase();
+    if (s.includes("RUNNING")) return "En cours";
+    if (s.includes("QUEUED") || s.includes("PENDING")) return "En file";
+    if (s.includes("COMPLETED")) return "Terminé";
+    if (s.includes("FAILED")) return "Échec";
+    if (s.includes("CANCELLED")) return "Annulé";
+    return mcStatus.value || "";
+});
+
+function connectMonteCarloWs(jobId: string) {
+    try {
+        const url = buildWsUrl(`/monte-carlo/jobs/${jobId}/progress`);
+        // Guard: avoid multiple simultaneous connection attempts for the same job
+        if (mcConnecting.value) {
+            console.log("Skipping WebSocket connect: already connecting");
+            return;
+        }
+        if (
+            mcWs.value &&
+            (mcWs.value.readyState === WebSocket.OPEN ||
+                mcWs.value.readyState === WebSocket.CONNECTING) &&
+            mcActiveJobId.value === jobId
+        ) {
+            console.log("WebSocket already open/connecting for this job, skipping");
+            return;
+        }
+
+        console.log(`Connecting to WebSocket: ${url}`);
+
+        // Close any previous socket if it was for a different job or is closed
+        if (mcWs.value && mcActiveJobId.value !== jobId) {
+            try {
+                mcWs.value.close();
+            } catch {
+                /* ignore */
+            }
+            mcWs.value = null;
+            mcConnected.value = false;
+        }
+        
+        mcConnecting.value = true;
+        mcActiveJobId.value = jobId;
+        mcWs.value = new WebSocket(url);
+        
+        mcWs.value.onopen = () => {
+            console.log("WebSocket connected successfully");
+            mcConnected.value = true;
+            mcConnecting.value = false;
+            toast.success("Worker Monte Carlo connecté", {
+                description: "Streaming de la progression en temps réel.",
+            });
+        };
+        
+        mcWs.value.onmessage = (evt) => {
+            try {
+                const msg = JSON.parse(evt.data);
+                console.log("WebSocket message received:", msg);
+                
+                mcStatus.value = String(msg.status || "");
+                const p = Number(msg.progress ?? 0);
+                mcPercent.value = Math.max(
+                    0,
+                    Math.min(100, Math.round(p * 100)),
+                );
+                mcCurrent.value = Number(msg.current_run ?? 0);
+                mcTotal.value = Number(msg.total_runs ?? 0);
+                
+                // Support both eta_seconds and estimated_completion_time
+                if (typeof msg.eta_seconds === "number") {
+                    mcEtaSeconds.value = msg.eta_seconds;
+                } else if (msg.estimated_completion_time) {
+                    const etaMs = Date.parse(
+                        String(msg.estimated_completion_time),
+                    );
+                    if (!Number.isNaN(etaMs)) {
+                        const diffSec = Math.max(
+                            0,
+                            Math.round((etaMs - Date.now()) / 1000),
+                        );
+                        mcEtaSeconds.value = diffSec;
+                    } else {
+                        mcEtaSeconds.value = null;
+                    }
+                } else {
+                    mcEtaSeconds.value = null;
+                }
+
+                const term = (mcStatus.value || "").toUpperCase();
+                if (mcCurrent.value === 1 && mcTotal.value > 0) {
+                    toast.info("Job Monte Carlo démarré", {
+                        description: `${mcTotal.value} runs en cours…`,
+                    });
+                }
+                if (
+                    term.includes("COMPLETED") ||
+                    term.includes("FAILED") ||
+                    term.includes("CANCELLED")
+                ) {
+                    try {
+                        mcWs.value?.close();
+                    } catch {
+                        /* ignore */
+                    }
+                    
+                    // Clear the job ID to hide progress bar and prevent reconnection
+                    store.monteCarloJobId = null;
+                    mcActiveJobId.value = null;
+                    
+                    if (term.includes("COMPLETED")) {
+                        toast.success("Monte Carlo terminé", {
+                            description: `${mcTotal.value} runs terminés`,
+                        });
+                    } else if (term.includes("FAILED")) {
+                        toast.error("Monte Carlo échoué", {
+                            description:
+                                "Consultez les logs du worker pour plus de détails.",
+                        });
+                    } else if (term.includes("CANCELLED")) {
+                        toast.warning("Monte Carlo annulé", {
+                            description: "Le job a été interrompu.",
+                        });
+                    }
+                    
+                    // Return early to prevent retry logic from running
+                    return;
+                }
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
+            }
+        };
+        
+        mcWs.value.onclose = (event) => {
+            console.log("WebSocket closed:", event.code, event.reason);
+            mcConnected.value = false;
+            mcConnecting.value = false;
+            
+            // Don't retry if job is cleared (terminal state reached)
+            if (!store.monteCarloJobId) {
+                console.log("Job completed, not retrying WebSocket connection");
+                return;
+            }
+        };
+        
+        mcWs.value.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            mcConnecting.value = false;
+            toast.error("Erreur de connexion WebSocket", {
+                description: "Impossible de se connecter au serveur. Vérifiez que le backend est démarré.",
+            });
+        };
+        
+        // Retry connection after a delay if it fails (only if job is still active)
+        setTimeout(() => {
+            if (
+                !mcConnected.value &&
+                mcWs.value?.readyState !== WebSocket.OPEN &&
+                store.monteCarloJobId &&
+                !mcConnecting.value
+            ) {
+                console.log("WebSocket connection failed, retrying...");
+                toast.warning("Reconnexion au worker…", {
+                    description: "Tentative de reconnexion en cours.",
+                });
+                // Retry once after 2 seconds
+                setTimeout(() => {
+                    if (!mcConnected.value && store.monteCarloJobId && !mcConnecting.value) {
+                        connectMonteCarloWs(jobId);
+                    }
+                }, 2000);
+            }
+        }, 1500);
+    } catch (error) {
+        console.error("Error creating WebSocket connection:", error);
+        mcConnecting.value = false;
+        toast.error("Erreur WebSocket", {
+            description: "Impossible de créer la connexion WebSocket.",
+        });
+    }
+}
+
+watch(
+    () => store.monteCarloJobId,
+    (jobId) => {
+        if (jobId && jobId !== mcActiveJobId.value) connectMonteCarloWs(jobId);
+    },
+);
+watch(loading, (isLoading) => {
+    if (isLoading && store.monteCarloJobId && !mcConnected.value && !mcConnecting.value) {
+        connectMonteCarloWs(store.monteCarloJobId);
+    }
+});
+
+onBeforeUnmount(() => {
+    try {
+        mcWs.value?.close();
+    } catch {
+        /* ignore */
+    }
+});
+
 const chartSeries = computed<LinePoint[]>(() =>
     displaySeries.value.map((p) => ({
         time: timeToSeconds(p),
@@ -112,22 +336,27 @@ const chartSeries = computed<LinePoint[]>(() =>
 );
 
 // Computed properties pour le graphique multi-lignes
-const hasMultipleResults = computed(() => store.isMultipleResults && store.results.length > 1)
+const hasMultipleResults = computed(
+    () => store.isMultipleResults && store.results.length > 1,
+);
 const hasMonteCarloResults = computed(() => {
-  return store.isMonteCarloResults && store.monteCarloResults.length > 0
-})
+    return store.isMonteCarloResults && store.monteCarloResults.length > 0;
+});
 
 // Données agrégées pour le graphique multi-lignes
 const aggregatedData = computed<LinePoint[]>(() => {
     if (!hasMultipleResults.value || !store.results.length) return [];
-    
+
     // Créer un map des timestamps vers les valeurs moyennes
     const timestampMap = new Map<number, { sum: number; count: number }>();
-    
+
     // Parcourir tous les résultats pour calculer les moyennes
-    store.results.forEach(result => {
-        const points = buildEquityPoints(result.timestamps, result.equity_curve);
-        points.forEach(point => {
+    store.results.forEach((result) => {
+        const points = buildEquityPoints(
+            result.timestamps,
+            result.equity_curve,
+        );
+        points.forEach((point) => {
             const existing = timestampMap.get(point.time);
             if (existing) {
                 existing.sum += point.value;
@@ -137,21 +366,21 @@ const aggregatedData = computed<LinePoint[]>(() => {
             }
         });
     });
-    
+
     // Convertir en points de ligne avec moyennes
     let aggregatedPoints = Array.from(timestampMap.entries())
         .map(([time, { sum, count }]) => ({
             time,
-            value: sum / count
+            value: sum / count,
         }))
         .sort((a, b) => a.time - b.time);
-    
+
     // Appliquer le filtrage par plage temporelle
     if (activeRange.value !== "All" && aggregatedPoints.length > 0) {
-        const times = aggregatedPoints.map(p => p.time);
+        const times = aggregatedPoints.map((p) => p.time);
         const maxTime = Math.max(...times);
         let cutoff = maxTime;
-        
+
         if (activeRange.value === "1W") cutoff = maxTime - 7 * 86400;
         else if (activeRange.value === "1M") cutoff = maxTime - 30 * 86400;
         else if (activeRange.value === "YTD") {
@@ -159,10 +388,10 @@ const aggregatedData = computed<LinePoint[]>(() => {
             const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
             cutoff = jan1;
         }
-        
-        aggregatedPoints = aggregatedPoints.filter(p => p.time >= cutoff);
+
+        aggregatedPoints = aggregatedPoints.filter((p) => p.time >= cutoff);
     }
-    
+
     return aggregatedPoints;
 });
 
@@ -405,41 +634,87 @@ function downloadCsv() {
                         </div>
                     </CardHeader>
 
-                    <CardContent class="p-3 sm:p-4">
+                    <CardContent class="p-3 sm:p-4 relative">
+                        <!-- Overlay de progression Monte Carlo (visible même hors état de chargement) -->
                         <div
-                            v-if="loading"
-                            class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center"
+                            v-if="mcProgressVisible"
+                            class="absolute inset-x-0 top-0 z-10 p-3 sm:p-4"
                         >
-                            <!-- Spinner moderne -->
-                            <div class="flex flex-col items-center gap-3">
-                                <Spinner class="h-8 w-8 text-trading-blue" />
-                                <span class="text-sm text-muted-foreground">{{ t("simulate.loading") }}</span>
+                            <div
+                                class="rounded-lg bg-gradient-to-r from-trading-blue/10 to-trading-purple/10 border border-secondary/40 shadow-soft"
+                            >
+                                <div
+                                    class="flex items-center justify-between gap-3 p-2"
+                                >
+                                    <div
+                                        class="text-xs sm:text-sm text-muted-foreground"
+                                    >
+                                        {{
+                                            t(
+                                                "simulate.results.monte_carlo.progress_title",
+                                            ) || "Monte Carlo en cours"
+                                        }}
+                                    </div>
+                                    <div class="text-xs font-semibold">
+                                        {{ mcPercent }}%
+                                    </div>
+                                </div>
+                                <div
+                                    class="mx-2 mb-2 h-2 bg-secondary/50 rounded-full overflow-hidden"
+                                >
+                                    <div
+                                        class="h-full bg-trading-blue"
+                                        :style="{
+                                            width: mcPercent + '%',
+                                        }"
+                                    ></div>
+                                </div>
+                                <div
+                                    class="px-2 pb-2 text-[11px] text-muted-foreground"
+                                >
+                                    {{ mcCurrent }}/{{ mcTotal }} runs ·
+                                    {{ mcStatusLabel }}
+                                    <span v-if="mcEtaSeconds != null">
+                                        · ETA {{ formatEta(mcEtaSeconds) }}</span
+                                    >
+                                </div>
                             </div>
                         </div>
-                        <!-- Monte Carlo Results with Equity Envelope -->
-                        <div v-if="hasMonteCarloResults" class="space-y-4">
-                            <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
-                                <h3 class="text-lg font-semibold text-foreground">{{ t('simulate.results.monte_carlo.title') }}</h3>
-                                <p class="text-sm text-muted-foreground">
-                                    {{ t('simulate.results.monte_carlo.description') }}
-                                </p>
+                        <template v-if="loading">
+                            <div
+                                class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center"
+                            >
+                                <!-- Spinner moderne -->
+                                <div class="flex flex-col items-center gap-3">
+                                    <Spinner
+                                        class="h-8 w-8 text-trading-blue"
+                                    />
+                                    <span
+                                        class="text-sm text-muted-foreground"
+                                        >{{ t("simulate.loading") }}</span
+                                    >
+                                </div>
                             </div>
-                            <EquityEnvelopeChart 
-                                :equity-envelope="store.equityEnvelope || undefined" 
+                        </template>
+                        <template v-else>
+                            <!-- Monte Carlo Results with Equity Envelope -->
+                            <div v-if="hasMonteCarloResults" class="space-y-4">
+                                <EquityEnvelopeChart
+                                    :equity-envelope="
+                                        store.equityEnvelope || undefined
+                                    "
+                                    :active-range="activeRange"
+                                />
+                            </div>
+                            <MultiLineChart
+                                v-else-if="hasMultipleResults"
+                                :results="store.results"
+                                :aggregated-data="aggregatedData"
                                 :active-range="activeRange"
                             />
-                        </div>
-                        <MultiLineChart
-                            v-else-if="hasMultipleResults"
-                            :results="store.results"
-                            :aggregated-data="aggregatedData"
-                            :active-range="activeRange"
-                        />
-                        <!-- Graphique simple pour un seul résultat -->
-                        <BacktestChart 
-                            v-else
-                            :series="chartSeries" 
-                        />
+                            <!-- Graphique simple pour un seul résultat -->
+                            <BacktestChart v-else :series="chartSeries" />
+                        </template>
                     </CardContent>
                 </Card>
 
@@ -448,31 +723,42 @@ function downloadCsv() {
                     <!-- Monte Carlo Metrics Display -->
                     <div v-if="hasMonteCarloResults" class="col-span-full mb-4">
                         <div class="text-center mb-4">
-                            <h3 class="text-lg font-semibold text-foreground">Distribution Statistics</h3>
+                            <h3 class="text-lg font-semibold text-foreground">
+                                Distribution Statistics
+                            </h3>
                             <p class="text-sm text-muted-foreground">
                                 Showing median values with distribution ranges
                             </p>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                        <div
+                            class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4"
+                        >
                             <DistributionMetricsCard
                                 :label="t('simulate.metrics.pnl')"
-                                :distribution="store.metricsDistribution?.pnl || null"
+                                :distribution="
+                                    store.metricsDistribution?.pnl || null
+                                "
                                 percentage
                             />
                             <DistributionMetricsCard
                                 :label="t('simulate.metrics.drawdown')"
-                                :distribution="store.metricsDistribution?.drawdown || null"
+                                :distribution="
+                                    store.metricsDistribution?.drawdown || null
+                                "
                                 percentage
                             />
                             <DistributionMetricsCard
                                 :label="t('simulate.metrics.sharpe')"
-                                :distribution="store.metricsDistribution?.sharpe || null"
+                                :distribution="
+                                    store.metricsDistribution?.sharpe || null
+                                "
                             />
                         </div>
                     </div>
 
                     <!-- Regular Metrics Display -->
-                    <div v-if="!hasMonteCarloResults"
+                    <div
+                        v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-green/5"
                     >
                         <div
@@ -486,7 +772,8 @@ function downloadCsv() {
                         />
                     </div>
 
-                    <div v-if="!hasMonteCarloResults"
+                    <div
+                        v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-red/5"
                     >
                         <div
@@ -500,7 +787,8 @@ function downloadCsv() {
                         />
                     </div>
 
-                    <div v-if="!hasMonteCarloResults"
+                    <div
+                        v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-blue/5"
                     >
                         <div
@@ -593,7 +881,6 @@ function downloadCsv() {
         gap: 0.625rem;
     }
 }
-
 
 /* Optimisation de la grille KPI sur très petits écrans */
 @media (max-width: 480px) {
