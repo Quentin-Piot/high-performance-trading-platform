@@ -45,3 +45,8 @@ cloudfront_price_class = "PriceClass_100" # Europe + US, plus économique
 # CIDR block allowed for SSH access (replace with your IP for security)
 # Example: "203.0.113.0/32" for a specific IP
 allowed_ssh_cidr = "0.0.0.0/0"
+
+# ------------- Custom Domain -------------
+# Configure a custom domain for CloudFront using an existing ACM certificate
+frontend_alias_domain = "hptp.quentinpiot.com"
+acm_certificate_arn   = "<arn>"

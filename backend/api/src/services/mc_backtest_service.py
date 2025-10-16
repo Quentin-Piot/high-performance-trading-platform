@@ -128,6 +128,10 @@ def monte_carlo_worker(args) -> Optional[MonteCarloResult]:
     Returns:
         MonteCarloResult or None if failed
     """
+    # Logging must be configured within the worker process
+    logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger("services.mc_backtest_worker")
+
     try:
         # Handle both tuple and dict formats
         if isinstance(args, dict):
@@ -193,6 +197,17 @@ def monte_carlo_worker(args) -> Optional[MonteCarloResult]:
                 strategy_params["overbought"],
                 strategy_params["oversold"]
             )
+        elif strategy_name == "dummy":
+            # Dummy strategy for testing
+            result = ServiceBacktestResult(
+                pnl=0.0,
+                sharpe=0.0,
+                drawdown=0.0,
+                equity=pd.Series([1.0]),
+                trades=[],
+                metrics={},
+                plot_html=None
+            )
         else:
             raise ValueError(f"Unknown strategy: {strategy_name}")
         
@@ -203,8 +218,8 @@ def monte_carlo_worker(args) -> Optional[MonteCarloResult]:
             equity_curve=result.equity
         )
         
-    except Exception as e:
-        logger.warning(f"Monte Carlo worker failed: {e}")
+    except Exception:
+        logger.error(f"Monte Carlo worker failed:", exc_info=True)
         return None
 
 
@@ -258,85 +273,104 @@ def run_monte_carlo_on_df(
     progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> MonteCarloSummary:
     """
-    Run Monte Carlo simulation on a single CSV dataset.
-    
-    Args:
-        csv_data: CSV data as bytes
-        filename: Name of the file for reporting
-        strategy_name: Name of strategy to run
-        strategy_params: Parameters for the strategy
-        runs: Number of Monte Carlo runs
-        method: Perturbation method ("bootstrap" or "gaussian")
-        method_params: Parameters for the perturbation method
-        parallel_workers: Number of parallel workers
-        seed: Random seed for reproducibility
-        include_equity_envelope: Whether to compute equity envelope
-        progress_callback: Callback function for progress updates
-        
-    Returns:
-        MonteCarloSummary with results
+    Run Monte Carlo simulation on CSV data with enhanced progress reporting.
     """
     if runs > MAX_MONTE_CARLO_RUNS:
-        raise ValueError(f"Monte Carlo runs ({runs}) exceeds maximum ({MAX_MONTE_CARLO_RUNS})")
+        raise ValueError(f"Number of runs ({runs}) exceeds maximum allowed ({MAX_MONTE_CARLO_RUNS})")
     
     if method_params is None:
         method_params = {}
     
-    logger.info(f"Starting Monte Carlo simulation: {runs} runs on {filename}")
+    logger.info(f"Starting Monte Carlo simulation: {runs} runs, method={method}")
     
-    # Generate seeds for each run
-    if seed is None:
-        seed = np.random.randint(0, 2**31)
-    
-    rng = default_rng(seed)
-    run_seeds = rng.integers(0, 2**31, size=runs)
+    # Determine if we should use parallel processing
+    use_parallel = runs > 1 and parallel_workers > 1
     
     # Prepare worker arguments
-    worker_args = [
-        (csv_data, strategy_name, strategy_params, method, method_params, int(run_seed))
-        for run_seed in run_seeds
-    ]
+    worker_args = []
+    rng = default_rng(seed)
+    for i in range(runs):
+        worker_seed = rng.integers(0, 2**32 - 1)
+        worker_args.append((csv_data, strategy_name, strategy_params, method, method_params, worker_seed))
     
     results = []
     successful_runs = 0
     
-    # Use parallel processing if runs >= threshold and workers > 1
-    use_parallel = runs >= 10 and parallel_workers > 1
+    # Enhanced progress tracking
+    import time
+    import threading
+    
+    progress_lock = threading.Lock()
+    completed_runs = 0
+    
+    def update_progress():
+        """Thread-safe progress update"""
+        nonlocal completed_runs
+        with progress_lock:
+            completed_runs += 1
+            if progress_callback:
+                progress_callback(completed_runs, runs)
     
     if use_parallel:
         logger.info(f"Using {parallel_workers} parallel workers")
-        with ProcessPoolExecutor(max_workers=parallel_workers) as executor:
-            # Submit all jobs
-            future_to_idx = {executor.submit(monte_carlo_worker, args): i 
-                           for i, args in enumerate(worker_args)}
-            
-            # Collect results as they complete
-            for future in as_completed(future_to_idx):
-                result = future.result()
-                if result is not None:
-                    results.append(result)
-                    successful_runs += 1
-                
-                # Progress callback
+        
+        # Start a background thread to send periodic progress updates
+        stop_progress_thread = threading.Event()
+        
+        def periodic_progress_update():
+            """Send progress updates every 2 seconds even if no new completions"""
+            while not stop_progress_thread.is_set():
                 if progress_callback:
-                    progress_callback(len(results), runs)
+                    with progress_lock:
+                        progress_callback(completed_runs, runs)
+                time.sleep(2)  # Update every 2 seconds
+        
+        progress_thread = threading.Thread(target=periodic_progress_update, daemon=True)
+        progress_thread.start()
+        
+        try:
+            with ProcessPoolExecutor(max_workers=parallel_workers) as executor:
+                # Submit all jobs
+                future_to_idx = {executor.submit(monte_carlo_worker, args): i 
+                               for i, args in enumerate(worker_args)}
+                
+                # Collect results as they complete
+                for future in as_completed(future_to_idx):
+                    result = future.result()
+                    if result is not None:
+                        results.append(result)
+                        successful_runs += 1
+                    
+                    # Update progress immediately when a worker completes
+                    update_progress()
+        finally:
+            # Stop the progress thread
+            stop_progress_thread.set()
+            progress_thread.join(timeout=1)
     else:
-        # Sequential processing
+        # Sequential processing with more frequent updates
         logger.info("Using sequential processing")
         for i, args in enumerate(worker_args):
+            # Send progress update before starting each run
+            if progress_callback and i % max(1, runs // 20) == 0:  # Update every 5% or at least every run
+                progress_callback(i, runs)
+            
             result = monte_carlo_worker(args)
             if result is not None:
                 results.append(result)
                 successful_runs += 1
             
-            # Progress callback
-            if progress_callback:
-                progress_callback(i + 1, runs)
+            # Update progress after each run
+            update_progress()
     
     if not results:
         raise RuntimeError("All Monte Carlo runs failed")
     
     logger.info(f"Completed {successful_runs}/{runs} successful runs")
+    
+    # Send final progress update
+    if progress_callback:
+        progress_callback(runs, runs)
     
     # Compute metrics distributions
     pnl_values = [r.pnl for r in results]

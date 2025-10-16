@@ -67,6 +67,16 @@ class Job(Generic[T]):
         self.error = error
         self.metadata.updated_at = datetime.now(UTC)
     
+    def update_progress(self, progress: float) -> None:
+        """Update job progress (clamped between 0.0 and 1.0) and timestamp"""
+        try:
+            # Clamp progress and ensure float type
+            clamped = max(0.0, min(1.0, float(progress)))
+        except (TypeError, ValueError):
+            clamped = 0.0
+        self.progress = clamped
+        self.metadata.updated_at = datetime.now(UTC)
+
     def increment_retry(self) -> bool:
         """Increment retry count and return True if retries available"""
         self.metadata.retry_count += 1
@@ -190,6 +200,21 @@ class QueueInterface(ABC, Generic[T]):
         
         Returns:
             Current queue metrics
+        """
+        pass
+
+    @abstractmethod
+    async def get_job_progress(self, job_id: str) -> Optional[Any]:
+        """
+        Get real-time progress information for a job from the queue system.
+        Implementations may return an adapter-specific object with at least
+        attributes: status, progress, error, retry_count, worker_id, message.
+        
+        Args:
+            job_id: Job ID to query
+        
+        Returns:
+            Progress info object or None if not available
         """
         pass
 

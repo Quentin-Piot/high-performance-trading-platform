@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from domain.queue import (
     QueueInterface, Job, JobStatus, JobMetadata, QueueMetrics,
-    MonteCarloJobPayload
+    MonteCarloJobPayload, JobPriority
 )
 from config.queue_config import SQSConfig
 from infrastructure.security import CredentialManager
@@ -294,6 +294,37 @@ class SQSQueueAdapter(QueueInterface[MonteCarloJobPayload]):
                 throughput_per_minute=0.0,
                 last_updated=datetime.now(UTC)
             )
+
+    async def get_job_progress(self, job_id: str) -> Optional[Any]:
+        """Return real-time job progress from the in-memory cache.
+
+        This provides a minimal progress view used by the JobManager.
+        """
+        try:
+            job = self._job_cache.get(job_id)
+            if not job:
+                return None
+
+            class ProgressInfo:
+                def __init__(self, status, progress, message, error, retry_count, worker_id):
+                    self.status = status
+                    self.progress = progress
+                    self.message = message
+                    self.error = error
+                    self.retry_count = retry_count
+                    self.worker_id = worker_id
+
+            return ProgressInfo(
+                status=job.status,
+                progress=job.progress,
+                message=None,
+                error=getattr(job, 'error', None),
+                retry_count=job.metadata.retry_count,
+                worker_id=None,
+            )
+        except Exception as e:
+            logger.error(f"Failed to get job progress for {job_id}: {e}")
+            return None
     
     def _serialize_job(self, job: Job[MonteCarloJobPayload]) -> str:
         """Serialize job to JSON string"""

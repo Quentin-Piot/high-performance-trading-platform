@@ -4,6 +4,7 @@ import sys
 import json
 from datetime import datetime, UTC
 import contextvars
+from logging.handlers import RotatingFileHandler
 
 DEFAULT_LOG_RECORD_ATTRS = {
     "name",
@@ -231,5 +232,18 @@ def setup_logging():
         for h in list(lg.handlers):
             lg.removeHandler(h)
         lg.propagate = True
+
+    # Add a file handler if LOG_FILE is set
+    log_file = os.getenv("LOG_FILE")
+    if log_file:
+        file_handler = RotatingFileHandler(log_file, maxBytes=1024 * 1024 * 5, backupCount=5) # 5 MB per file, 5 backups
+        file_handler.setLevel(level)
+        if log_format == "console":
+            file_handler.setFormatter(ConsoleFormatter())
+        else:
+            file_handler.setFormatter(JSONFormatter())
+        file_handler.addFilter(RequestIdFilter())
+        file_handler.addFilter(SecretsFilter())
+        root.addHandler(file_handler)
 
     logging.getLogger("app").info("Logging initialized", extra={"level": level_name})

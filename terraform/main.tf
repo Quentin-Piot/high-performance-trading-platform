@@ -92,6 +92,18 @@ variable "vpc_cidr" {
 # Data
 
 # -------------------
+ 
+# CloudFront custom domain settings
+variable "frontend_alias_domain" {
+  description = "Alias domain for CloudFront (e.g., hptp.quentinpiot.com)"
+  type        = string
+}
+
+# ACM certificate ARN in us-east-1 (preexisting)
+variable "acm_certificate_arn" {
+  description = "ARN of the existing ACM certificate in us-east-1"
+  type        = string
+}
 
 data "aws_caller_identity" "current" {}
 
@@ -540,11 +552,13 @@ resource "aws_cloudfront_distribution" "frontend" {
 
   viewer_certificate {
 
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
 
   }
 
-  #  aliases = ["hptp.quentinpiot.com"]
+  aliases = [var.frontend_alias_domain]
 
   tags = {
 
@@ -552,6 +566,29 @@ resource "aws_cloudfront_distribution" "frontend" {
 
   }
 
+}
+
+# -------------------
+# Route 53 alias for CloudFront
+# -------------------
+
+# Use the pre-existing hosted zone delegated for hptp.quentinpiot.com
+data "aws_route53_zone" "hptp" {
+  name         = "hptp.quentinpiot.com."
+  private_zone = false
+}
+
+# Create A record alias pointing the subdomain to CloudFront
+resource "aws_route53_record" "alias_frontend" {
+  zone_id = data.aws_route53_zone.hptp.zone_id
+  name    = var.frontend_alias_domain
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
+    evaluate_target_health = false
+  }
 }
 
 
@@ -1033,7 +1070,10 @@ resource "aws_ecs_task_definition" "backend_task" {
         { name = "S3_ARTIFACTS_BUCKET", value = aws_s3_bucket.monte_carlo_artifacts.bucket },
 
         # Application configuration
-        { name = "ENVIRONMENT", value = var.env }
+        { name = "ENVIRONMENT", value = var.env },
+
+        # Worker configuration
+        { name = "RUN_WORKER", value = "true" }
       ]
       dependsOn = [
         { containerName = "postgres", condition = "START" },

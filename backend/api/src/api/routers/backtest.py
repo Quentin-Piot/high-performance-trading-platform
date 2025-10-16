@@ -1,4 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Query, HTTPException
+import asyncio
+from datetime import datetime
 from typing import List
 import os
 
@@ -54,6 +56,8 @@ async def backtest(
     parallel_workers: int = Query(os.cpu_count() or 1, ge=1, le=16, description="Number of parallel workers"),
     include_equity_percentiles: bool = Query(True, description="Include equity curve percentiles"),
     stream: bool = Query(False, description="Stream progress updates (future feature)"),
+    # Optional job_id to report progress to JobRepository for WS streaming
+    job_id: str | None = Query(None, description="Monte Carlo job ID for progress tracking"),
 ):
     # Handle single file or multiple files
     files = csv if isinstance(csv, list) else [csv]
@@ -121,6 +125,7 @@ async def backtest(
             parallel_workers=parallel_workers,
             include_equity_percentiles=include_equity_percentiles,
             include_aggregated=include_aggregated,
+            job_id=job_id,
         )
     else:
         # Regular backtest mode (existing logic)
@@ -215,9 +220,17 @@ async def run_monte_carlo_backtest(
     parallel_workers: int,
     include_equity_percentiles: bool,
     include_aggregated: bool,
+    job_id: str | None,
 ) -> MonteCarloResponse:
     """Run Monte Carlo backtesting on multiple CSV files."""
     results = []
+    total_units = max(1, monte_carlo_runs * max(1, len(files)))
+    completed_units = 0
+    started_sent = False
+    
+    # Lazy import to avoid circulars
+    from infrastructure.db import SessionLocal
+    from infrastructure.repositories.jobs import JobRepository
     
     # Process each CSV file
     for file in files:
@@ -227,10 +240,41 @@ async def run_monte_carlo_backtest(
             source = CsvBytesPriceSeriesSource(csv_bytes)
             df = source.to_dataframe()
             
-            # Progress callback (placeholder for now)
+            # Progress callback: updates JobRepository so WS can stream progress
             def progress_callback(processed: int, total: int):
-                # Future: implement streaming progress
-                pass
+                if not job_id:
+                    return
+                # Compute global progress across all files
+                try:
+                    local_progress_units = completed_units + processed
+                    progress_ratio = float(local_progress_units) / float(total_units)
+                except Exception:
+                    progress_ratio = 0.0
+
+                # Build a human-friendly message
+                msg = f"Processing {file.filename or 'file'}: {processed}/{total} runs"
+
+                async def _report():
+                    async with SessionLocal() as session:
+                        repo = JobRepository(session)
+                        started_at = None
+                        nonlocal started_sent
+                        if not started_sent:
+                            started_at = datetime.utcnow()
+                            started_sent = True
+                            # Also mark status running on first progress
+                            try:
+                                await repo.update_job_status(job_id, "running")
+                            except Exception:
+                                pass
+                        await repo.update_job_progress(job_id, progress_ratio, msg, started_at=started_at)
+
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(_report())
+                except RuntimeError:
+                    # No running loop (unlikely in FastAPI), fallback to synchronous run
+                    asyncio.run(_report())
             
             # Run Monte Carlo simulation
             mc_result = run_monte_carlo_on_df(
@@ -245,6 +289,24 @@ async def run_monte_carlo_backtest(
                 include_equity_envelope=include_equity_percentiles,
                 progress_callback=progress_callback,
             )
+
+            # After finishing this file, advance the global completed units
+            try:
+                completed_units += monte_carlo_runs
+                if job_id:
+                    # Send a final per-file progress tick to ensure smooth WS updates
+                    final_msg = f"Completed {file.filename or 'file'} ({monte_carlo_runs}/{monte_carlo_runs} runs)"
+                    async def _final_report():
+                        async with SessionLocal() as session:
+                            repo = JobRepository(session)
+                            await repo.update_job_progress(job_id, min(1.0, float(completed_units)/float(total_units)), final_msg)
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(_final_report())
+                    except RuntimeError:
+                        asyncio.run(_final_report())
+            except Exception:
+                pass
             
             # Convert to response format - no conversion needed, types are already compatible
             monte_carlo_result = MonteCarloBacktestResult(
@@ -276,7 +338,22 @@ async def run_monte_carlo_backtest(
             average_drawdown=avg_drawdown,
             total_files_processed=len(results),
         )
-    
+    # Mark job completed in repository
+    if job_id:
+        async def _mark_completed():
+            async with SessionLocal() as session:
+                repo = JobRepository(session)
+                try:
+                    await repo.update_job_status(job_id, "completed", progress=1.0, completed_at=datetime.utcnow())
+                except Exception:
+                    # If status update fails, still try to set progress to 1
+                    await repo.update_job_progress(job_id, 1.0, "Monte Carlo completed", completed_at=datetime.utcnow())
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(_mark_completed())
+        except RuntimeError:
+            asyncio.run(_mark_completed())
+
     return MonteCarloResponse(
         results=results,
         aggregated_metrics=aggregated_metrics,

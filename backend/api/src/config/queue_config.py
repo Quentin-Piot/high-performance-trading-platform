@@ -180,7 +180,7 @@ class QueueSystemConfig:
             message_retention_period=int(os.getenv("SQS_MESSAGE_RETENTION", "1209600")),
             max_receive_count=int(os.getenv("SQS_MAX_RECEIVE_COUNT", "3")),
             aws_credentials=aws_credentials,
-            endpoint_url=os.getenv("SQS_ENDPOINT_URL")  # For LocalStack
+            endpoint_url=os.getenv("AWS_ENDPOINT_URL") or os.getenv("SQS_ENDPOINT_URL")  # For LocalStack
         )
         
         # Worker Configuration
@@ -283,25 +283,18 @@ class QueueSystemConfig:
 # Environment-specific configurations
 def get_development_config() -> QueueSystemConfig:
     """Get development configuration with LocalStack defaults"""
-    return QueueSystemConfig(
-        environment=Environment.DEVELOPMENT,
-        sqs=SQSConfig(
-            queue_url=os.getenv("SQS_QUEUE_URL", "http://localhost:4566/000000000000/monte-carlo-jobs"),
-            region_name="us-east-1",
-            endpoint_url="http://localhost:4566",  # LocalStack default
-            visibility_timeout=60,  # Shorter for development
-            max_receive_count=2
-        ),
-        worker=WorkerConfig(
-            max_concurrent_jobs=2,
-            poll_interval=0.5,  # More frequent polling for development
-            health_check_interval=10.0
-        ),
-        job=JobConfig(
-            default_timeout_seconds=600,  # 10 minutes for development
-            max_runs_per_job=1000  # Smaller for development
-        )
-    )
+    config = QueueSystemConfig.from_environment("development")
+
+    # Development-specific overrides
+    config.sqs.visibility_timeout = 60
+    config.sqs.max_receive_count = 2
+    config.worker.max_concurrent_jobs = 2
+    config.worker.poll_interval = 0.5
+    config.worker.health_check_interval = 10.0
+    config.job.default_timeout_seconds = 600
+    config.job.max_runs_per_job = 1000
+    
+    return config
 
 
 def get_testing_config() -> QueueSystemConfig:
@@ -316,32 +309,23 @@ def get_testing_config() -> QueueSystemConfig:
         source=CredentialSource.ENVIRONMENT
     )
     
-    return QueueSystemConfig(
-        environment=Environment.TESTING,
-        sqs=SQSConfig(
-            queue_url=os.getenv("SQS_QUEUE_URL", "http://localhost:4566/000000000000/test-monte-carlo-jobs"),
-            region_name="us-east-1",
-            endpoint_url="http://localhost:4566",  # LocalStack for testing
-            visibility_timeout=30,  # Short for testing
-            message_retention_period=3600,  # 1 hour for testing
-            max_receive_count=1,
-            aws_credentials=test_credentials
-        ),
-        worker=WorkerConfig(
-            max_concurrent_jobs=1,
-            poll_interval=0.1,  # Fast polling for tests
-            health_check_interval=5.0
-        ),
-        job=JobConfig(
-            default_timeout_seconds=300,  # 5 minutes for testing
-            default_max_retries=1,
-            max_runs_per_job=100  # Small for testing
-        ),
-        monitoring=MonitoringConfig(
-            metrics_retention_hours=1,
-            performance_window_size=10
-        )
-    )
+    config = QueueSystemConfig.from_environment("testing")
+    
+    # Testing-specific overrides
+    config.sqs.aws_credentials = test_credentials
+    config.sqs.visibility_timeout = 30
+    config.sqs.message_retention_period = 3600
+    config.sqs.max_receive_count = 1
+    config.worker.max_concurrent_jobs = 1
+    config.worker.poll_interval = 0.1
+    config.worker.health_check_interval = 5.0
+    config.job.default_timeout_seconds = 300
+    config.job.default_max_retries = 1
+    config.job.max_runs_per_job = 100
+    config.monitoring.metrics_retention_hours = 1
+    config.monitoring.performance_window_size = 10
+    
+    return config
 
 
 def get_production_config() -> QueueSystemConfig:
