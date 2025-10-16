@@ -41,6 +41,63 @@
       "ready": "Ready to start?",
       "startSimulation": "Start a simulation"
     },
+    "architecture": {
+      "open": "Open Architecture Details",
+      "dialog": {
+        "title": "System Architecture Overview",
+        "description": "High-level choices for stack, infrastructure, data, and alignment."
+      },
+      "sections": {
+        "stack": {
+          "title": "Application Stack (Full Stack)",
+          "points": {
+            "0": "Frontend: Vue.js + Vite with shadcn/vue for professional, accessible UI.",
+            "1": "Backend: FastAPI with Uvicorn focused on performance and async.",
+            "2": "Reverse Proxy: Nginx routing /api to FastAPI."
+          }
+        },
+        "infra": {
+          "title": "Infrastructure & Deployment (IaC & DevOps)",
+          "points": {
+            "0": "Provisioning: Terraform on AWS for automated EC2, Security Group, Key Pair.",
+            "1": "Initial Orchestration: Docker Compose for multi-container deployment on single EC2.",
+            "2": "CI/CD: deploy.sh for build and start; future GitHub Actions pipeline.",
+            "3": "Security: Restrict SSH to a specific IP; do not expose DB ports."
+          }
+        },
+        "data_cache": {
+          "title": "Database & Caching",
+          "points": {
+            "0": "Database: PostgreSQL 16 with Docker volume for data persistence.",
+            "1": "Cache Evolution: Redis sidecar on ECS Fargate in production.",
+            "2": "Redis Detail: maxmemory=256mb, allkeys-lru eviction for high-performance backend."
+          }
+        },
+        "alignment": {
+          "title": "Architect/Lead Alignment",
+          "points": {
+            "0": "System Design: Path from single EC2 to cloud-native (ECS, RDS, ALB).",
+            "1": "Technical Expertise: Clean Architecture and DDD reflected in API and data design.",
+            "2": "High-Performance/Fintech: FastAPI + Redis/Rust roadmap fit financial workloads."
+          }
+        }
+      },
+      "frontend": {
+        "title": "Frontend (Vue) Architecture",
+        "description": "Project structure, UI components, and i18n for a clean UX.",
+        "points_title": "Highlights",
+        "experience": "Production-ready components and modern DX"
+      },
+      "backend": {
+        "title": "Backend (FastAPI) & Architecture",
+        "description": "Performance, Clean Architecture, DDD, and scale-out options.",
+        "points_title": "Highlights"
+      },
+      "infra_dialog": {
+        "title": "Infrastructure (AWS & Terraform)",
+        "description": "Infrastructure as Code, multi-container deployment, cloud evolution."
+      }
+    },
     "project": {
       "title": "Project Architecture",
       "description": "Modern full-stack trading platform built with cutting-edge technologies",
@@ -56,6 +113,9 @@
         "title": "AWS Infrastructure",
         "description": "ECS Fargate, CloudFront CDN, S3 storage, and Application Load Balancer"
       },
+      "frontend.click_to_architecture": "Click to view frontend architecture",
+      "backend.click_to_system_design": "Click to view system design",
+      "infrastructure.click_to_iac_cloud": "Click to view IaC & Cloud",
       "features": {
         "title": "Key Features",
         "items": [
@@ -129,7 +189,8 @@
       "title": "Results",
       "monte_carlo": {
         "title": "Monte Carlo Simulation Results",
-        "description": "Showing equity envelope with confidence bands"
+        "description": "Showing equity envelope with confidence bands",
+        "progress_title": "Monte Carlo Simulation Progress"
       }
     },
     "loading": "Loading...",

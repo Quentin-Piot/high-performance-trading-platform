@@ -8,6 +8,7 @@ import RegisterView from "@/pages/RegisterView.vue";
 import SimulateView from "@/pages/SimulateView.vue";
 import Dashboard from "@/pages/Dashboard.vue";
 import LandingView from "@/pages/LandingView.vue";
+import Sonner from "@/components/ui/sonner/Sonner.vue";
 const { currentPath } = useRouter();
 const i18n = useI18n();
 const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } })
@@ -36,6 +37,8 @@ const View = computed(() => {
 
 <template>
     <component :is="View" />
+    <!-- Toaster global pour les notifications -->
+    <Sonner position="top-right" richColors closeButton :duration="4000" />
 </template>
 
 <style scoped>

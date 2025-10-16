@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { Button } from "@/components/ui/button";
+
 import {
     Card,
     CardContent,
@@ -8,9 +9,64 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { TrendingUp, BarChart3, Zap, Shield, Star } from "lucide-vue-next";
+// Tous les composants Lucide Vue sont importés pour le rendu dynamique
+import { TrendingUp, BarChart3, Zap, Shield, FileText } from "lucide-vue-next";
 import { useRouter } from "@/router";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
+import {
+    Dialog,
+    DialogTrigger,
+    DialogScrollContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
+
+// Contenu de l'architecture pour le Dialog principal
+const architectureDetails = {
+    title: "High-Performance Trading Platform - Détails de l'Architecture",
+    description:
+        "Aperçu complet des choix technologiques et d'infrastructure, alignés sur vos compétences Full Stack (FastAPI, Vue.js, Terraform, AWS).",
+    sections: [
+        {
+            title: "Stack Applicative (Full Stack)",
+            icon: "Zap",
+            points: [
+                "**Frontend (HMI)**: Vue.js + Vite. Utilise shadcn/vue (Composants Dialog, Card) pour une interface utilisateur professionnelle et accessible.",
+                "**Backend (API)**: FastAPI avec Uvicorn. Choix axé sur la **performance** et l'**asynchronisme** (Python), parfait pour le trading et aligné avec votre expertise Python/Fast API récente.",
+                "**Reverse Proxy**: Nginx. Gère les requêtes statiques et le routage `/api` vers FastAPI (docker-compose).",
+            ],
+        },
+        {
+            title: "Infrastructure & Déploiement (IaC & DevOps)",
+            icon: "Shield",
+            points: [
+                "**Provisionnement**: **Terraform** sur AWS. Permet l'automatisation de la création de l'instance EC2 t2.micro, Security Group et Key Pair.",
+                "**Orchestration Initiale**: **Docker Compose**. Permet le déploiement multi-conteneurs (Frontend, Backend, PostgreSQL) sur la mono-instance EC2, optimisant les **coûts** (Free Tier).",
+                "**Processus de CI/CD**: Utilisation du script `deploy.sh` pour la copie, le build et le démarrage des conteneurs (expérience pertinente en **GitHub Actions** pour un Pipeline futur).",
+                "**Sécurité**: Restriction de l'accès SSH (port 22) à une adresse IP spécifique, ports Backend/DB **non exposés**.",
+            ],
+        },
+        {
+            title: "Base de Données & Caching",
+            icon: "BarChart3",
+            points: [
+                "**Base de Données**: PostgreSQL 16 (conteneur). Volume Docker pour la **persistance des données** (ordres, transactions).",
+                "**Évolution Cache (Projetée)**: Intégration de **Redis** comme sidecar sur **ECS Fargate** (architecture de production).",
+                "**Détail Redis**: Cache applicatif $\text{maxmemory}=256 \text{mb}$, politique d'éviction $\text{allkeys-lru}$. Montre votre intérêt pour le **backend haute performance** et l'optimisation Cloud.",
+            ],
+        },
+        {
+            title: "Alignement Rôle Architecte/Lead",
+            icon: "TrendingUp",
+            points: [
+                "**System Design**: La documentation couvre le design initial (EC2 mono-instance) et l'évolution vers le Cloud natif (**ECS, RDS, Load Balancer**), démontrant une vision stratégique.",
+                "**Expertise Technique**: Mise en œuvre des concepts de **Clean Architecture**, **DDD** (mentionnés dans votre profil), via la structuration de FastAPI et la gestion des données.",
+                "**High-Performance/Fintech**: Le choix de FastAPI et la planification de l'intégration Redis/Rust (future) confirment votre intérêt pour le secteur **fintech**.",
+            ],
+        },
+    ],
+};
 
 const { t } = useI18n();
 const { navigate } = useRouter();
@@ -25,7 +81,6 @@ function goToSimulate() {
         class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900"
     >
         <BaseLayout main-class="flex-1 flex flex-col" container-class="">
-            <!-- Hero Section -->
             <section
                 class="flex-1 flex items-center justify-center relative overflow-hidden pt-8 md:pt-12"
             >
@@ -45,6 +100,7 @@ function goToSimulate() {
                             >
                                 {{ t("landing.title") }}
                             </h1>
+
                             <p
                                 class="text-lg sm:text-xl lg:text-2xl hero-description max-w-3xl mx-auto leading-relaxed"
                             >
@@ -63,12 +119,86 @@ function goToSimulate() {
                                 <TrendingUp class="mr-2 h-5 w-5" />
                                 {{ t("landing.cta.startBacktest") }}
                             </Button>
+
+                            <Dialog>
+                                <DialogTrigger as-child>
+                                    <Button
+                                        size="lg"
+                                        variant="outline"
+                                        class="px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                                    >
+                                        <FileText class="mr-2 h-5 w-5" />
+                                        {{ t("landing.architecture.open") }}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogScrollContent class="sm:max-w-[800px]">
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            {{ t("landing.architecture.dialog.title") }}
+                                        </DialogTitle>
+                                        <DialogDescription class="pt-2">
+                                            {{ t("landing.architecture.dialog.description") }}
+                                        </DialogDescription>
+                                    </DialogHeader>
+
+                                    <div class="py-4 space-y-8">
+                                        <!-- Stack Applicative -->
+                                        <div>
+                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
+                                                <Zap class="h-6 w-6 mr-3 text-blue-500" />
+                                                {{ t("landing.architecture.sections.stack.title") }}
+                                            </h3>
+                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                                                <li>{{ t("landing.architecture.sections.stack.points.0") }}</li>
+                                                <li>{{ t("landing.architecture.sections.stack.points.1") }}</li>
+                                                <li>{{ t("landing.architecture.sections.stack.points.2") }}</li>
+                                            </ul>
+                                        </div>
+                                        <!-- Infrastructure & Déploiement -->
+                                        <div>
+                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
+                                                <Shield class="h-6 w-6 mr-3 text-blue-500" />
+                                                {{ t("landing.architecture.sections.infra.title") }}
+                                            </h3>
+                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                                                <li>{{ t("landing.architecture.sections.infra.points.0") }}</li>
+                                                <li>{{ t("landing.architecture.sections.infra.points.1") }}</li>
+                                                <li>{{ t("landing.architecture.sections.infra.points.2") }}</li>
+                                                <li>{{ t("landing.architecture.sections.infra.points.3") }}</li>
+                                            </ul>
+                                        </div>
+                                        <!-- Base de Données & Caching -->
+                                        <div>
+                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
+                                                <BarChart3 class="h-6 w-6 mr-3 text-blue-500" />
+                                                {{ t("landing.architecture.sections.data_cache.title") }}
+                                            </h3>
+                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                                                <li>{{ t("landing.architecture.sections.data_cache.points.0") }}</li>
+                                                <li>{{ t("landing.architecture.sections.data_cache.points.1") }}</li>
+                                                <li>{{ t("landing.architecture.sections.data_cache.points.2") }}</li>
+                                            </ul>
+                                        </div>
+                                        <!-- Alignement Rôle Architecte/Lead -->
+                                        <div>
+                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
+                                                <TrendingUp class="h-6 w-6 mr-3 text-blue-500" />
+                                                {{ t("landing.architecture.sections.alignment.title") }}
+                                            </h3>
+                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                                                <li>{{ t("landing.architecture.sections.alignment.points.0") }}</li>
+                                                <li>{{ t("landing.architecture.sections.alignment.points.1") }}</li>
+                                                <li>{{ t("landing.architecture.sections.alignment.points.2") }}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </DialogScrollContent>
+                            </Dialog>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Project Architecture Section -->
             <section class="py-16 px-4 sm:px-6 lg:px-8">
                 <div class="max-w-7xl mx-auto">
                     <div class="text-center mb-12">
@@ -85,130 +215,212 @@ function goToSimulate() {
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                        <!-- Frontend Card -->
-                        <Card
-                            class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg"
-                        >
-                            <CardHeader class="text-center pb-4">
-                                <div
-                                    class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                        <Dialog>
+                            <DialogTrigger as-child>
+                                <Card
+                                    class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg cursor-pointer"
                                 >
-                                    <Zap class="h-8 w-8 text-white" />
+                                    <CardHeader class="text-center pb-4">
+                                        <div
+                                            class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                        >
+                                            <Zap class="h-8 w-8 text-white" />
+                                        </div>
+                                        <CardTitle
+                                            class="text-xl font-bold text-gray-900 dark:text-white"
+                                        >
+                                            {{
+                                                t(
+                                                    "landing.project.frontend.title",
+                                                )
+                                            }}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <CardDescription
+                                            class="text-gray-600 dark:text-gray-300 text-center"
+                                        >
+                                            {{
+                                                t(
+                                                    "landing.project.frontend.description",
+                                                )
+                                            }}
+                                            <span class="block mt-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                                {{ t("landing.project.frontend.click_to_architecture") }}
+                                            </span>
+                                        </CardDescription>
+                                    </CardContent>
+                                </Card>
+                            </DialogTrigger>
+                            <DialogScrollContent class="sm:max-w-[600px]">
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        {{ t("landing.architecture.frontend.title") }}
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        {{ t("landing.architecture.frontend.description") }}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div class="py-4 space-y-4">
+                                    <h4 class="text-lg font-bold">
+                                        {{ t("landing.architecture.frontend.points_title") }}
+                                    </h4>
+                                    <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                                        <li>{{ t("landing.architecture.sections.stack.points.0") }}</li>
+                                        <li>{{ t("landing.architecture.frontend.experience") }}</li>
+                                    </ul>
                                 </div>
-                                <CardTitle
-                                    class="text-xl font-bold text-gray-900 dark:text-white"
-                                >
-                                    {{ t("landing.project.frontend.title") }}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription
-                                    class="text-gray-600 dark:text-gray-300 text-center"
-                                >
-                                    {{
-                                        t(
-                                            "landing.project.frontend.description",
-                                        )
-                                    }}
-                                </CardDescription>
-                            </CardContent>
-                        </Card>
+                            </DialogScrollContent>
+                        </Dialog>
 
-                        <!-- Backend Card -->
-                        <Card
-                            class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg"
-                        >
-                            <CardHeader class="text-center pb-4">
-                                <div
-                                    class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                        <Dialog>
+                            <DialogTrigger as-child>
+                                <Card
+                                    class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg cursor-pointer"
                                 >
-                                    <BarChart3 class="h-8 w-8 text-white" />
+                                    <CardHeader class="text-center pb-4">
+                                        <div
+                                            class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                        >
+                                            <BarChart3
+                                                class="h-8 w-8 text-white"
+                                            />
+                                        </div>
+                                        <CardTitle
+                                            class="text-xl font-bold text-gray-900 dark:text-white"
+                                        >
+                                            {{
+                                                t(
+                                                    "landing.project.backend.title",
+                                                )
+                                            }}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <CardDescription
+                                            class="text-gray-600 dark:text-gray-300 text-center"
+                                        >
+                                            {{
+                                                t(
+                                                    "landing.project.backend.description",
+                                                )
+                                            }}
+                                            <span class="block mt-2 text-sm font-semibold text-purple-600 dark:text-purple-400">
+                                                {{ t("landing.project.backend.click_to_system_design") }}
+                                            </span>
+                                        </CardDescription>
+                                    </CardContent>
+                                </Card>
+                            </DialogTrigger>
+                            <DialogScrollContent class="sm:max-w-[600px]">
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        {{ t("landing.architecture.backend.title") }}
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        {{ t("landing.architecture.backend.description") }}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div class="py-4 space-y-4">
+                                    <h4 class="text-lg font-bold">
+                                        {{ t("landing.architecture.backend.points_title") }}
+                                    </h4>
+                                    <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                                        <li>{{ t("landing.architecture.sections.stack.points.1") }}</li>
+                                        <li>{{ t("landing.architecture.sections.data_cache.points.1") }}</li>
+                                        <li>{{ t("landing.architecture.sections.alignment.points.0") }}</li>
+                                        <li>{{ t("landing.architecture.sections.alignment.points.1") }}</li>
+                                    </ul>
                                 </div>
-                                <CardTitle
-                                    class="text-xl font-bold text-gray-900 dark:text-white"
-                                >
-                                    {{ t("landing.project.backend.title") }}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription
-                                    class="text-gray-600 dark:text-gray-300 text-center"
-                                >
-                                    {{
-                                        t("landing.project.backend.description")
-                                    }}
-                                </CardDescription>
-                            </CardContent>
-                        </Card>
+                            </DialogScrollContent>
+                        </Dialog>
 
-                        <!-- Infrastructure Card -->
-                        <Card
-                            class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg"
-                        >
-                            <CardHeader class="text-center pb-4">
-                                <div
-                                    class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                        <Dialog>
+                            <DialogTrigger as-child>
+                                <Card
+                                    class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg cursor-pointer"
                                 >
-                                    <Shield class="h-8 w-8 text-white" />
+                                    <CardHeader class="text-center pb-4">
+                                        <div
+                                            class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                        >
+                                            <Shield
+                                                class="h-8 w-8 text-white"
+                                            />
+                                        </div>
+                                        <CardTitle
+                                            class="text-xl font-bold text-gray-900 dark:text-white"
+                                        >
+                                            {{
+                                                t(
+                                                    "landing.project.infrastructure.title",
+                                                )
+                                            }}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <CardDescription
+                                            class="text-gray-600 dark:text-gray-300 text-center"
+                                        >
+                                            {{
+                                                t(
+                                                    "landing.project.infrastructure.description",
+                                                )
+                                            }}
+                                            <span class="block mt-2 text-sm font-semibold text-red-600 dark:text-red-400">
+                                                {{ t("landing.project.infrastructure.click_to_iac_cloud") }}
+                                            </span>
+                                        </CardDescription>
+                                    </CardContent>
+                                </Card>
+                            </DialogTrigger>
+                            <DialogScrollContent class="sm:max-w-[600px]">
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        {{ t("landing.architecture.infra_dialog.title") }}
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        {{ t("landing.architecture.infra_dialog.description") }}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div class="py-4 space-y-4">
+                                    <h4 class="text-lg font-bold">
+                                        {{ t("landing.architecture.sections.infra.title") }}
+                                    </h4>
+                                    <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                                        <li>{{ t("landing.architecture.sections.infra.points.0") }}</li>
+                                        <li>{{ t("landing.architecture.sections.infra.points.1") }}</li>
+                                        <li>{{ t("landing.architecture.sections.infra.points.2") }}</li>
+                                        <li>{{ t("landing.architecture.sections.infra.points.3") }}</li>
+                                    </ul>
                                 </div>
-                                <CardTitle
-                                    class="text-xl font-bold text-gray-900 dark:text-white"
-                                >
-                                    {{
-                                        t(
-                                            "landing.project.infrastructure.title",
-                                        )
-                                    }}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription
-                                    class="text-gray-600 dark:text-gray-300 text-center"
-                                >
-                                    {{
-                                        t(
-                                            "landing.project.infrastructure.description",
-                                        )
-                                    }}
-                                </CardDescription>
-                            </CardContent>
-                        </Card>
+                            </DialogScrollContent>
+                        </Dialog>
                     </div>
-
-                    <!-- Features Section -->
-                    <Card
-                        class="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-0 shadow-lg"
-                    >
-                        <CardHeader class="text-center">
-                            <CardTitle
-                                class="text-2xl font-bold text-gray-900 dark:text-white mb-4"
-                            >
-                                {{ t("landing.project.features.title") }}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div
-                                    v-for="(feature, index) in $tm(
-                                        'landing.project.features.items',
-                                    )"
-                                    :key="index"
-                                    class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50/50 dark:bg-slate-700/50"
-                                >
-                                    <Star
-                                        class="h-5 w-5 text-yellow-500 flex-shrink-0"
-                                    />
-                                    <span
-                                        class="text-gray-700 dark:text-gray-300"
-                                        >{{ feature }}</span
-                                    >
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
             </section>
         </BaseLayout>
+        <footer class="relative mt-4 sm:mt-6">
+            <div class="liquid-glass-hero">
+                <div class="liquid-glass-bg"></div>
+                <div class="liquid-glass-overlay"></div>
+                <div class="liquid-glass-reflection"></div>
+                <div class="liquid-glass-shimmer"></div>
+                <div class="liquid-glass-noise"></div>
+                <div
+                    class="relative z-10 max-w-7xl mx-auto flex items-center justify-between py-3 px-4 sm:py-4 sm:px-6"
+                >
+                    <div class="text-xs sm:text-sm text-white/80">
+                        <span class="text-white/90 font-semibold"
+                            >Quentin Piot</span
+                        >
+                    </div>
+                    <div class="text-xs text-white/60 font-semibold">
+                        © 2025 HPTP
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 </template>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBacktestStore } from '@/stores/backtestStore'
 import { Label } from '@/components/ui/label'
@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button'
 import { ToggleGroupItem, MultiLineToggleGroup } from '@/components/ui/toggle-group'
 import { BACKTEST_STRATEGIES, type StrategyId } from '@/config/backtestStrategies'
 import { AVAILABLE_DATASETS, fetchDatasetFile } from '@/config/datasets'
+import { 
+  fetchSymbolDateRanges, 
+  getIntersectionDateRange,
+  type DateRangesResponse 
+} from '@/services/dateValidationService'
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -36,6 +41,11 @@ const endDate = ref<string>('')
 const error = ref<string | null>(null)
 const dragActive = ref(false)
 const inputEl = ref<HTMLInputElement | null>(null)
+
+// Date validation state
+const dateRanges = ref<DateRangesResponse | null>(null)
+const dateValidationError = ref<string | null>(null)
+const isLoadingDateRanges = ref(false)
 
 // Monte Carlo parameters
 const monteCarloRuns = ref<number>(1)
@@ -92,6 +102,113 @@ function initParams() {
 initParams()
 watch(strategy, () => initParams())
 
+// Load available date ranges on component mount
+onMounted(async () => {
+  try {
+    isLoadingDateRanges.value = true
+    dateRanges.value = await fetchSymbolDateRanges()
+  } catch (err) {
+    console.error('Failed to load date ranges:', err)
+    dateValidationError.value = 'Failed to load available date ranges'
+  } finally {
+    isLoadingDateRanges.value = false
+  }
+})
+
+// Watch for date changes to validate them
+watch([startDate, endDate, selectedDatasets], () => {
+  dateValidationError.value = null
+  
+  if (!dateRanges.value || selectedDatasets.value.length === 0) {
+    return
+  }
+  
+  // Only validate if both dates are provided
+  if (!startDate.value || !endDate.value) {
+    return
+  }
+  
+  // Get intersection of date ranges for all selected datasets
+  const intersectionRange = getIntersectionDateRange(selectedDatasets.value, dateRanges.value)
+  
+  if (!intersectionRange) {
+    dateValidationError.value = 'No valid date intersection found for selected datasets'
+    return
+  }
+  
+  // Validate against the intersection range
+  const requestedStart = new Date(startDate.value)
+  const requestedEnd = new Date(endDate.value)
+  const availableStart = new Date(intersectionRange.min_date)
+  const availableEnd = new Date(intersectionRange.max_date)
+  
+  if (requestedStart < availableStart || requestedEnd > availableEnd) {
+    dateValidationError.value = `Date range must be between ${intersectionRange.min_date} and ${intersectionRange.max_date} for selected datasets`
+  }
+})
+
+// Watch for dataset selection changes to auto-adjust dates
+watch(selectedDatasets, (newDatasets) => {
+  if (!dateRanges.value || newDatasets.length === 0) {
+    return
+  }
+  
+  // Get intersection of date ranges for selected datasets
+  const intersectionRange = getIntersectionDateRange(newDatasets, dateRanges.value)
+  
+  if (intersectionRange) {
+    // Auto-set dates to the intersection range if not already set or if current dates are outside the range
+    const currentStart = startDate.value ? new Date(startDate.value) : null
+    const currentEnd = endDate.value ? new Date(endDate.value) : null
+    const availableStart = new Date(intersectionRange.min_date)
+    const availableEnd = new Date(intersectionRange.max_date)
+    
+    // Calculate intelligent date ranges based on available data
+    const totalDays = Math.floor((availableEnd.getTime() - availableStart.getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Smart date selection logic:
+    // - For datasets with < 6 months of data: use full range
+    // - For datasets with 6 months - 2 years: use last 6 months
+    // - For datasets with > 2 years: use last 1 year
+    let smartStartDate: Date
+    const smartEndDate: Date = availableEnd
+    
+    if (totalDays < 180) { // Less than 6 months
+      smartStartDate = availableStart
+    } else if (totalDays < 730) { // 6 months to 2 years
+      smartStartDate = new Date(availableEnd)
+      smartStartDate.setMonth(smartStartDate.getMonth() - 6)
+      // Ensure we don't go before available start
+      if (smartStartDate < availableStart) {
+        smartStartDate = availableStart
+      }
+    } else { // More than 2 years
+      smartStartDate = new Date(availableEnd)
+      smartStartDate.setFullYear(smartStartDate.getFullYear() - 1)
+      // Ensure we don't go before available start
+      if (smartStartDate < availableStart) {
+        smartStartDate = availableStart
+      }
+    }
+    
+    // Set start date if not set or outside range
+    if (!currentStart || currentStart < availableStart || currentStart > availableEnd) {
+      const smartStartDateISO = smartStartDate.toISOString().split('T')[0]
+      if (smartStartDateISO) {
+        startDate.value = smartStartDateISO
+      }
+    }
+    
+    // Set end date if not set or outside range
+    if (!currentEnd || currentEnd > availableEnd || currentEnd < availableStart) {
+      const smartEndDateISO = smartEndDate.toISOString().split('T')[0]
+      if (smartEndDateISO) {
+        endDate.value = smartEndDateISO
+      }
+    }
+  }
+})
+
 const validation = computed(() => currentCfg.value.validate(params))
 const validParams = computed(() => validation.value.ok)
 const canSubmit = computed(() => 
@@ -99,7 +216,9 @@ const canSubmit = computed(() =>
   validParams.value && 
   store.status !== 'loading' &&
   // Add validation for Monte Carlo method when Monte Carlo is enabled
-  (!isMonteCarloEnabled.value || (isMonteCarloEnabled.value && monteCarloMethod.value))
+  (!isMonteCarloEnabled.value || (isMonteCarloEnabled.value && monteCarloMethod.value)) &&
+  // Add date validation
+  !dateValidationError.value
 )
 
 function onFileChange(e: Event) {
@@ -215,8 +334,43 @@ async function onSubmit() {
     gaussian_scale: gaussianScale.value
   }
   
+  // Soumettre un job Monte Carlo au worker pour la progression via WebSocket
+  if (isMonteCarloEnabled.value) {
+    const today = new Date().toISOString().slice(0, 10)
+    const addDays = (iso: string, days: number) => {
+      const d = new Date(iso)
+      d.setDate(d.getDate() + days)
+      return d.toISOString().slice(0, 10)
+    }
+    const symbolGuess = selectedDatasets.value[0] 
+      || (selectedFiles.value[0]?.name?.replace(/\.[^/.]+$/, '') ?? 'SIM')
+    const start = startDate.value || today
+    let end = endDate.value || addDays(today, 1)
+    // Ensure end_date is strictly after start_date
+    if (new Date(end) <= new Date(start)) {
+      end = addDays(start, 1)
+    }
+    await store.submitMonteCarloJob({
+      symbol: symbolGuess,
+      start_date: start,
+      end_date: end,
+      initial_capital: 10000,
+      num_runs: monteCarloRuns.value,
+      strategy_params: { ...params },
+      method: monteCarloMethod.value || undefined,
+      sample_fraction: sampleFraction.value,
+      gaussian_scale: gaussianScale.value,
+      priority: 2,
+    })
+  }
+  
+  // Inject job_id into request if Monte Carlo job was submitted
+  const reqWithJobId = {
+    ...req,
+    job_id: store.monteCarloJobId || undefined,
+  }
   // Use the new unified backtest function that handles both single and multiple files
-  await store.runBacktestUnified(allFiles, req)
+  await store.runBacktestUnified(allFiles, reqWithJobId)
 }
 
 function onReset() {
@@ -560,6 +714,15 @@ function onReset() {
             <AlertTriangle class="size-4" />
           </div>
           <span class="text-sm font-medium">{{ validation.message || t('errors.invalid_params') }}</span>
+        </div>
+      </div>
+      
+      <div v-if="dateValidationError" class="rounded-xl border border-trading-red/20 bg-gradient-to-r from-trading-red/5 to-red-50/30 text-trading-red p-4 shadow-soft animate-slide-up">
+        <div class="flex items-center gap-3">
+          <div class="rounded-full bg-trading-red/10 p-2">
+            <Calendar class="size-4" />
+          </div>
+          <span class="text-sm font-medium">{{ dateValidationError }}</span>
         </div>
       </div>
       
