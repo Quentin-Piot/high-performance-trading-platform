@@ -261,6 +261,21 @@ async def generic_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "internal server error"})
 
 
+from starlette.routing import Route, WebSocketRoute
+
+# Add this endpoint for debugging
+@app.get("/routes")
+def list_routes():
+    """List all available routes in the application."""
+    routes = []
+    for route in app.routes:
+        if isinstance(route, Route):
+            routes.append({"path": route.path, "name": route.name, "methods": list(route.methods)})
+        elif isinstance(route, WebSocketRoute):
+            routes.append({"path": route.path, "name": route.name, "methods": ["WEBSOCKET"]})
+    return routes
+
+
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")
 app.include_router(performance_router, prefix="/api/v1")

@@ -6,6 +6,7 @@ and status tracking in the Monte Carlo queue system.
 """
 import json
 import logging
+import base64
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from sqlalchemy import select, update, and_, or_, text
@@ -49,6 +50,18 @@ class JobRepository:
         Raises:
             IntegrityError: If dedup_key already exists
         """
+        # Ensure payload is JSON-serializable (convert bytes to base64 if present)
+        try:
+            if payload is not None:
+                if isinstance(payload.get("csv_data"), (bytes, bytearray)):
+                    safe_payload = payload.copy()
+                    safe_payload["csv_data"] = base64.b64encode(payload["csv_data"]).decode("ascii")
+                    safe_payload["encoding"] = "base64"
+                    payload = safe_payload
+        except Exception:
+            # If any unexpected issue occurs, coerce payload to a string to avoid crashing
+            payload = {"raw": str(payload)}
+
         job = Job(
             id=job_id,
             payload=payload,
@@ -71,7 +84,7 @@ class JobRepository:
         
         # Invalidate cache if job is completed or failed
         if job and job.status in ["completed", "failed"]:
-            cache_key = await cache_manager._generate_key("job", "get_job_by_id", args=str((job_id,)), kwargs=[])
+            cache_key = cache_manager._generate_key("job", "get_job_by_id", args=str((job_id,)), kwargs=[])
             await cache_manager.delete(cache_key)
         
         return job
@@ -178,15 +191,15 @@ class JobRepository:
             
             # Build update values
             update_data = {
-                Job.progress: progress,
-                Job.updated_at: datetime.utcnow()
+                "progress": progress,
+                "updated_at": datetime.utcnow()
             }
             
             # Add timing fields if provided
             if started_at is not None:
-                update_data[Job.started_at] = started_at
+                update_data["started_at"] = started_at
             if completed_at is not None:
-                update_data[Job.completed_at] = completed_at
+                update_data["completed_at"] = completed_at
             
             # Store progress message in payload if provided
             if message:
@@ -199,7 +212,7 @@ class JobRepository:
                 if job:
                     payload = job.payload.copy() if job.payload else {}
                     payload["progress_message"] = message
-                    update_data[Job.payload] = payload
+                    update_data["payload"] = payload
             
             result = await self.session.execute(
                 update(Job)
@@ -241,20 +254,20 @@ class JobRepository:
         """
         try:
             update_data = {
-                Job.status: status,
-                Job.updated_at: datetime.utcnow()
+                "status": status,
+                "updated_at": datetime.utcnow()
             }
             
             if worker_id is not None:
-                update_data[Job.worker_id] = worker_id
+                update_data["worker_id"] = worker_id
             if error is not None:
-                update_data[Job.error] = error
+                update_data["error"] = error
             if progress is not None:
-                update_data[Job.progress] = max(0.0, min(1.0, progress))
+                update_data["progress"] = max(0.0, min(1.0, progress))
             if artifact_url is not None:
-                update_data[Job.artifact_url] = artifact_url
+                update_data["artifact_url"] = artifact_url
             if completed_at is not None:
-                update_data[Job.completed_at] = completed_at
+                update_data["completed_at"] = completed_at
             
             result = await self.session.execute(
                 update(Job)

@@ -8,7 +8,8 @@ import logging
 import os
 import json
 import hashlib
-from datetime import datetime, UTC
+import base64
+from datetime import datetime, UTC, timedelta
 from typing import Any, Dict, List, Optional, BinaryIO
 import uuid
 import asyncio
@@ -66,6 +67,14 @@ class MonteCarloJobManager(JobManagerInterface):
             SHA256 hash of normalized payload
         """
         # Create normalized payload for hashing (exclude non-deterministic fields)
+        csv_data = payload.get("csv_data", b"")
+        if isinstance(csv_data, str):
+            # If already base64 encoded, use as is
+            csv_hash = hashlib.sha256(csv_data.encode()).hexdigest()
+        else:
+            # If bytes, hash directly
+            csv_hash = hashlib.sha256(csv_data).hexdigest()
+            
         normalized = {
             "strategy_name": payload.get("strategy_name"),
             "strategy_params": payload.get("strategy_params"),
@@ -74,7 +83,7 @@ class MonteCarloJobManager(JobManagerInterface):
             "method_params": payload.get("method_params"),
             "seed": payload.get("seed"),
             # Include CSV data hash for uniqueness
-            "csv_hash": hashlib.sha256(payload.get("csv_data", b"")).hexdigest()
+            "csv_hash": csv_hash
         }
         
         # Sort keys for consistent hashing
@@ -98,8 +107,33 @@ class MonteCarloJobManager(JobManagerInterface):
         if runs > self.max_runs:
             raise ValueError(f"Number of runs ({runs}) exceeds maximum allowed ({self.max_runs})")
         
-        # Validate payload size
-        payload_size = len(json.dumps(payload).encode())
+        # Handle CSV data for size validation
+        csv_data = payload.get("csv_data", b"")
+        if isinstance(csv_data, str):
+            # If base64 encoded, decode for size calculation
+            try:
+                csv_bytes = base64.b64decode(csv_data)
+            except Exception:
+                raise ValueError("Invalid base64 encoded CSV data")
+        else:
+            csv_bytes = csv_data
+        
+        csv_size = len(csv_bytes)
+        max_csv_size = self.max_payload_size // 2  # Reserve half payload size for CSV data
+        if csv_size > max_csv_size:
+            raise ValueError(f"CSV data size ({csv_size} bytes) exceeds maximum allowed ({max_csv_size} bytes)")
+        
+        # Create a test payload for size validation (with base64 encoded CSV)
+        test_payload = payload.copy()
+        if isinstance(csv_data, bytes):
+            test_payload["csv_data"] = base64.b64encode(csv_data).decode('utf-8')
+        
+        # Validate total payload size
+        try:
+            payload_size = len(json.dumps(test_payload).encode())
+        except TypeError as e:
+            raise ValueError(f"Payload contains non-serializable data: {e}")
+            
         if payload_size > self.max_payload_size:
             raise ValueError(f"Payload size ({payload_size} bytes) exceeds maximum allowed ({self.max_payload_size} bytes)")
         
@@ -109,15 +143,6 @@ class MonteCarloJobManager(JobManagerInterface):
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
         
-        # Validate CSV data size specifically
-        csv_data = payload.get("csv_data", b"")
-        if isinstance(csv_data, str):
-            csv_data = csv_data.encode()
-        csv_size = len(csv_data)
-        max_csv_size = self.max_payload_size // 2  # Reserve half payload size for CSV data
-        if csv_size > max_csv_size:
-            raise ValueError(f"CSV data size ({csv_size} bytes) exceeds maximum allowed ({max_csv_size} bytes)")
-        
         # Validate strategy parameters
         strategy_params = payload.get("strategy_params", {})
         if not isinstance(strategy_params, dict):
@@ -126,7 +151,8 @@ class MonteCarloJobManager(JobManagerInterface):
         logger.debug(f"Payload validation passed: runs={runs}, size={payload_size} bytes, csv_size={csv_size} bytes")
     
     async def _get_job_repository(self) -> JobRepository:
-        """Get job repository with database session"""
+        """Get job repository with async database session"""
+        from infrastructure.db import SessionLocal
         session = SessionLocal()
         return JobRepository(session)
     
@@ -202,9 +228,16 @@ class MonteCarloJobManager(JobManagerInterface):
             if dedup_key is None:
                 dedup_key = self._generate_dedup_key(payload_dict)
             
-            # Check for existing job with same dedup_key
-            job_repo = await self._get_job_repository()
-            try:
+            # Encode CSV data as base64 for database storage
+            payload_for_db = payload_dict.copy()
+            payload_for_db["csv_data"] = base64.b64encode(csv_data).decode('utf-8')
+            
+            # Use session context manager for database operations
+            from infrastructure.db import SessionLocal
+            async with SessionLocal() as session:
+                job_repo = JobRepository(session)
+                
+                # Check for existing job with same dedup_key
                 existing_job = await job_repo.find_existing_job(dedup_key)
                 if existing_job:
                     logger.info(f"Found existing job {existing_job.id} for dedup_key {dedup_key}")
@@ -215,14 +248,26 @@ class MonteCarloJobManager(JobManagerInterface):
                 
                 db_job = await job_repo.create_job(
                     job_id=job_id,
-                    payload=payload_dict,
+                    payload=payload_for_db,
                     status="pending",
                     priority=priority.name.lower(),
                     dedup_key=dedup_key
                 )
                 
-                # Create job payload for queue (only job_id)
-                queue_payload = {"job_id": job_id}
+                # Create MonteCarloJobPayload for queue
+                from domain.queue import MonteCarloJobPayload
+                queue_payload = MonteCarloJobPayload(
+                    csv_data=csv_data,
+                    filename=filename,
+                    strategy_name=strategy_name,
+                    strategy_params=strategy_params,
+                    runs=runs,
+                    method=method,
+                    method_params=method_params or {},
+                    seed=seed,
+                    include_equity_envelope=include_equity_envelope,
+                    parallel_workers=1
+                )
                 
                 # Create job metadata
                 metadata = JobMetadata(
@@ -246,9 +291,6 @@ class MonteCarloJobManager(JobManagerInterface):
                 
                 logger.info(f"Submitted Monte Carlo job {job_id} with {runs} runs")
                 return job_id
-                
-            finally:
-                await job_repo.session.close()
                 
         except Exception as e:
             logger.error(f"Failed to submit Monte Carlo job: {e}")
@@ -279,6 +321,16 @@ class MonteCarloJobManager(JobManagerInterface):
         job = Job(payload=payload, metadata=metadata)
         return await self.queue.enqueue(job)
     
+    def _map_priority_to_enum(self, priority_str: str) -> JobPriority:
+        """Map database priority string to JobPriority enum"""
+        priority_mapping = {
+            "low": JobPriority.LOW,
+            "normal": JobPriority.NORMAL,
+            "high": JobPriority.HIGH,
+            "critical": JobPriority.CRITICAL
+        }
+        return priority_mapping.get(priority_str.lower(), JobPriority.NORMAL)
+
     async def get_job(self, job_id: str) -> Optional[Job]:
         """
         Get job by ID.
@@ -289,34 +341,101 @@ class MonteCarloJobManager(JobManagerInterface):
         Returns:
             Job or None if not found
         """
+        # First try to get from database
+        async with SessionLocal() as session:
+            job_repo = JobRepository(session)
+            db_job = await job_repo.get_job_by_id(job_id)
+            
+            if db_job:
+                # Convert database job to domain Job object
+                metadata = JobMetadata(
+                    job_id=db_job.id,
+                    user_id=None,  # Not stored in database model
+                    correlation_id=None,  # Not stored in database model
+                    priority=self._map_priority_to_enum(db_job.priority),
+                    timeout_seconds=3600,  # Default value
+                    max_retries=3,  # Default value
+                    retry_count=db_job.attempts,
+                    created_at=db_job.created_at,
+                    updated_at=db_job.updated_at,
+                    tags={}  # Not stored in database model
+                )
+                
+                # Parse payload from JSON, filtering out non-MonteCarloJobPayload fields
+                payload_data = db_job.payload.copy()
+                # Remove fields that are not part of MonteCarloJobPayload
+                payload_data.pop('progress_message', None)
+                payload = MonteCarloJobPayload(**payload_data)
+                
+                # Create Job object with generic payload (not MonteCarloJobPayload)
+                job = Job[Any](
+                    payload=db_job.payload,  # This will be the payload dict
+                    metadata=metadata,
+                    status=JobStatus(db_job.status),
+                    result=None,  # Not stored in DB
+                    error=db_job.error,
+                    progress=db_job.progress or 0.0
+                )
+                
+                return job
+        
+        # Fallback to queue cache if not found in database
         return await self.queue.get_job_status(job_id)
     
     async def list_jobs(
         self,
         status: Optional[JobStatus] = None,
-        user_id: Optional[str] = None,
         limit: int = 100,
         offset: int = 0
-    ) -> List[Job]:
+    ) -> List[Job[Any]]:
         """
         List jobs with optional filtering.
         
-        Note: This is a simplified implementation. In a production system,
-        you would typically store job metadata in a database for efficient querying.
-        
         Args:
             status: Filter by status
-            user_id: Filter by user
             limit: Maximum number of jobs
             offset: Pagination offset
             
         Returns:
             List of jobs
         """
-        # This is a placeholder implementation
-        # In practice, you would query a job database or cache
-        logger.warning("list_jobs is not fully implemented - requires job database")
-        return []
+        async with SessionLocal() as session:
+            job_repo = JobRepository(session)
+            
+            # Get jobs from database
+            db_jobs = await job_repo.list_jobs(
+                status=status.value if status else None,
+                limit=limit,
+                offset=offset
+            )
+            
+            jobs = []
+            for db_job in db_jobs:
+                # Create JobMetadata from database job
+                metadata = JobMetadata(
+                    job_id=db_job.id,
+                    created_at=db_job.created_at,
+                    updated_at=db_job.updated_at,
+                    priority=self._map_priority_to_enum(db_job.priority),
+                    max_retries=3,  # Default value
+                    retry_count=db_job.attempts,
+                    timeout_seconds=None,  # Not stored in DB
+                    tags={}  # Default empty dict
+                )
+                
+                # Create Job object with generic payload (not MonteCarloJobPayload)
+                job = Job[Any](
+                    payload=db_job.payload,  # This will be the payload dict
+                    metadata=metadata,
+                    status=JobStatus(db_job.status),
+                    result=None,  # Not stored in database model
+                    error=db_job.error,
+                    progress=db_job.progress or 0.0
+                )
+                
+                jobs.append(job)
+            
+            return jobs
     
     async def cancel_job(self, job_id: str) -> bool:
         """
@@ -392,87 +511,87 @@ class MonteCarloJobManager(JobManagerInterface):
     
     async def get_job_progress(self, job_id: str) -> Dict[str, Any]:
         """
-        Get job progress and status with artifact information and duration tracking.
-        Uses caching for completed jobs to improve performance.
-        
+        Get job progress and status from the database, enriched with counters and ETA.
+
         Args:
             job_id: Job identifier
-            
+
         Returns:
-            Job progress information including artifacts and timing data
+            Job progress information.
         """
         try:
-            # Check cache first for completed jobs
-            cache_key = await cache_manager._generate_key("job_progress", job_id)
-            cached_progress = await cache_manager.get(cache_key)
-            
-            if cached_progress and cached_progress.get("status") in ["completed", "failed"]:
-                logger.debug("Cache hit for job progress", extra={"job_id": job_id})
-                return cached_progress
-            
-            # Get progress from queue (real-time)
-            queue_progress = await self.queue.get_job_progress(job_id)
-            
-            # Get job from database (persistent data)
             job_repo = await self._get_job_repository()
             try:
                 db_job = await job_repo.get_job_by_id(job_id)
-                
+
+                if not db_job:
+                    return {"job_id": job_id, "status": "not_found"}
+
                 # Calculate duration if timing data is available
                 duration_seconds = None
-                if db_job and db_job.started_at:
+                if db_job.started_at:
                     end_time = db_job.completed_at or datetime.utcnow()
                     duration_seconds = (end_time - db_job.started_at).total_seconds()
-                
-                # Merge information from both sources
+
+                # Derive message from payload
+                message_value = None
+                if db_job.payload:
+                    try:
+                        message_value = db_job.payload.get("progress_message")
+                    except Exception:
+                        message_value = None
+
+                # Compute run counters from payload (if available)
+                total_runs = None
+                current_run = None
+                if db_job.payload:
+                    try:
+                        total_runs = db_job.payload.get("runs")
+                        if isinstance(total_runs, int) and total_runs > 0:
+                            current_run = int(max(0, min(total_runs, round((db_job.progress or 0.0) * total_runs))))
+                    except Exception:
+                        total_runs = None
+                        current_run = None
+
+                # Estimated completion time based on elapsed/progress
+                estimated_completion_time = None
+                if db_job.started_at and (db_job.progress or 0.0) > 0 and (not db_job.completed_at):
+                    try:
+                        elapsed = (datetime.utcnow() - db_job.started_at).total_seconds()
+                        remaining = (elapsed / float(db_job.progress)) * (1 - float(db_job.progress))
+                        eta_dt = datetime.utcnow() + timedelta(seconds=max(0.0, remaining))
+                        estimated_completion_time = eta_dt.isoformat()
+                    except Exception:
+                        estimated_completion_time = None
+
                 progress_info = {
                     "job_id": job_id,
-                    "status": queue_progress.status if queue_progress else (db_job.status if db_job else "unknown"),
-                    "progress": queue_progress.progress if queue_progress else 0.0,
-                    "message": queue_progress.message if queue_progress else None,
-                    "created_at": db_job.created_at.isoformat() if db_job else None,
-                    "updated_at": db_job.updated_at.isoformat() if db_job else None,
-                    "started_at": db_job.started_at.isoformat() if db_job and db_job.started_at else None,
-                    "completed_at": db_job.completed_at.isoformat() if db_job and db_job.completed_at else None,
+                    "status": db_job.status,
+                    "progress": db_job.progress or 0.0,
+                    "message": message_value,
+                    "created_at": db_job.created_at.isoformat() if db_job.created_at else None,
+                    "updated_at": db_job.updated_at.isoformat() if db_job.updated_at else None,
+                    "started_at": db_job.started_at.isoformat() if db_job.started_at else None,
+                    "completed_at": db_job.completed_at.isoformat() if db_job.completed_at else None,
                     "duration_seconds": duration_seconds,
-                    "error": queue_progress.error if queue_progress else (db_job.error if db_job else None),
-                    "retry_count": queue_progress.retry_count if queue_progress else (db_job.attempts if db_job else 0),
-                    "worker_id": queue_progress.worker_id if queue_progress else (db_job.worker_id if db_job else None),
-                    "artifact_url": db_job.artifact_url if db_job else None,
-                    "artifacts": []
+                    "error": db_job.error,
+                    "retry_count": db_job.attempts,
+                    "worker_id": db_job.worker_id,
+                    "artifact_url": db_job.artifact_url,
+                    "artifacts": [],
+                    "current_run": current_run,
+                    "total_runs": total_runs,
+                    "estimated_completion_time": estimated_completion_time,
+                    "last_updated": (db_job.updated_at.isoformat() if db_job.updated_at else datetime.utcnow().isoformat())
                 }
-                
-                # If job is completed and has artifacts, get artifact list
-                if (progress_info["status"] == "completed" and 
-                    hasattr(self, 'storage_adapter') and 
-                    self.storage_adapter):
-                    try:
-                        artifacts = await self.storage_adapter.list_job_artifacts(job_id)
-                        progress_info["artifacts"] = artifacts
-                    except Exception as e:
-                        logger.warning("Failed to list artifacts for job", extra={
-                            "job_id": job_id,
-                            "error": str(e)
-                        })
-                
-                # Cache completed/failed jobs for 15 minutes
-                if progress_info["status"] in ["completed", "failed"]:
-                    await cache_manager.set(cache_key, progress_info, ttl=900)
-                    logger.debug("Cached job progress", extra={
-                        "job_id": job_id,
-                        "status": progress_info["status"]
-                    })
-                
+
                 return progress_info
-                
+
             finally:
                 await job_repo.session.close()
-            
+
         except Exception as e:
-            logger.error("Failed to get job progress", extra={
-                "job_id": job_id,
-                "error": str(e)
-            })
+            logger.error("Failed to get job progress", extra={"job_id": job_id, "error": str(e)})
             raise
     
     async def get_queue_metrics(self) -> Dict[str, Any]:

@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 import signal
-import sys
+import os
 import random
 import math
 from datetime import datetime, UTC
@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from io import StringIO
 
+
 from domain.queue import (
     WorkerInterface, JobProcessorInterface, ProgressCallbackInterface,
     Job, JobStatus, MonteCarloJobPayload, QueueInterface
@@ -26,6 +27,9 @@ from services.mc_backtest_service import run_monte_carlo_on_df
 from core.logging import setup_logging
 from infrastructure.repositories.jobs import JobRepository
 from infrastructure.storage.s3_adapter import S3StorageAdapter
+
+# Configure logging to show stack traces
+
 
 logger = logging.getLogger(__name__)
 
@@ -178,17 +182,21 @@ class MonteCarloJobProcessor(JobProcessorInterface[MonteCarloJobPayload, Dict[st
                     metric: {
                         "mean": dist.mean,
                         "std": dist.std,
-                        "min": dist.min,
-                        "max": dist.max,
-                        "percentiles": dist.percentiles
+                        "p5": dist.p5,
+                        "p25": dist.p25,
+                        "median": dist.median,
+                        "p75": dist.p75,
+                        "p95": dist.p95
                     }
                     for metric, dist in result.metrics_distribution.items()
                 },
                 "equity_envelope": {
                     "timestamps": result.equity_envelope.timestamps,
-                    "upper_bound": result.equity_envelope.upper_bound,
-                    "lower_bound": result.equity_envelope.lower_bound,
-                    "median": result.equity_envelope.median
+                    "p5": result.equity_envelope.p5,
+                    "p25": result.equity_envelope.p25,
+                    "median": result.equity_envelope.median,
+                    "p75": result.equity_envelope.p75,
+                    "p95": result.equity_envelope.p95
                 } if result.equity_envelope else None
             }
             
@@ -236,9 +244,11 @@ class MonteCarloJobProcessor(JobProcessorInterface[MonteCarloJobPayload, Dict[st
                 envelope = result["equity_envelope"]
                 df = pd.DataFrame({
                     "timestamp": envelope["timestamps"],
-                    "upper_bound": envelope["upper_bound"],
-                    "lower_bound": envelope["lower_bound"],
-                    "median": envelope["median"]
+                    "p5": envelope["p5"],
+                    "p25": envelope["p25"],
+                    "median": envelope["median"],
+                    "p75": envelope["p75"],
+                    "p95": envelope["p95"]
                 })
                 
                 csv_buffer = StringIO()
@@ -265,9 +275,11 @@ class MonteCarloJobProcessor(JobProcessorInterface[MonteCarloJobPayload, Dict[st
                         "metric": metric,
                         "mean": dist["mean"],
                         "std": dist["std"],
-                        "min": dist["min"],
-                        "max": dist["max"],
-                        **{f"p{p}": v for p, v in dist["percentiles"].items()}
+                        "p5": dist["p5"],
+                        "p25": dist["p25"],
+                        "median": dist["median"],
+                        "p75": dist["p75"],
+                        "p95": dist["p95"]
                     })
                 
                 metrics_df = pd.DataFrame(metrics_data)
@@ -442,67 +454,42 @@ class MonteCarloWorker(WorkerInterface):
                 await asyncio.sleep(self.poll_interval)
     
     async def _process_job(self, job: Job[MonteCarloJobPayload]) -> None:
-        """Process a single job with exponential backoff retry logic"""
-        job_id = job.metadata.job_id
-        
+        """Process a single job, with error handling and status updates."""
         try:
-            logger.info(f"Processing job {job_id}")
-            
-            # Process the job
+            # Mark job as running and set start time in DB
+            async with self.progress_callback._get_repo() as repo:
+                try:
+                    await repo.update_job_status(
+                        job.metadata.job_id,
+                        "running",
+                        worker_id=self.worker_id
+                    )
+                except Exception:
+                    # Non-fatal; continue processing
+                    pass
+
+                try:
+                    await repo.update_job_progress(
+                        job.metadata.job_id,
+                        0.0,
+                        "Job started",
+                        started_at=datetime.utcnow()
+                    )
+                except Exception:
+                    # Non-fatal; continue processing
+                    pass
+
+            # Also publish initial progress message for any listeners
+            await self.progress_callback.report_progress(job.metadata.job_id, 0.0, "Job started")
             result = await self.processor.process(job)
-            
-            # Update job with result
-            job.result = result
-            job.update_status(JobStatus.COMPLETED)
-            job.progress = 1.0
-            
-            # Acknowledge successful completion
-            await self.queue.acknowledge(job_id)
-            
-            logger.info(f"Successfully completed job {job_id}")
-            
+            await self.progress_callback.report_completion(job.metadata.job_id, result)
         except Exception as e:
-            error_msg = f"Failed to process job {job_id}: {str(e)}"
-            logger.error(error_msg)
-            
-            # Update job with error
-            job.update_status(JobStatus.FAILED, error_msg)
-            
-            # Determine if we should retry based on error type and attempt count
-            should_retry = self._should_retry_job(job, e)
-            
-            if should_retry:
-                # Calculate exponential backoff delay
-                delay = self._calculate_retry_delay(job.metadata.retry_count)
-                
-                logger.info(f"Retrying job {job_id} after {delay:.2f}s delay (attempt {job.metadata.retry_count + 1})")
-                
-                # Wait for backoff delay before rejecting (which will requeue)
-                await asyncio.sleep(delay)
-                
-                # Reject job with requeue=True to trigger retry
-                await self.queue.reject(job_id, requeue=True)
-            else:
-                logger.warning(f"Job {job_id} will not be retried: max attempts reached or non-retryable error")
-                
-                # Reject job without requeue (will go to DLQ if configured)
-                await self.queue.reject(job_id, requeue=False)
-            
-        finally:
-            # Remove from active jobs
-            self._active_jobs.pop(job_id, None)
-    
-    def _should_retry_job(self, job: Job[MonteCarloJobPayload], error: Exception) -> bool:
-        """
-        Determine if a job should be retried based on error type and attempt count.
-        
-        Args:
-            job: The failed job
-            error: The exception that caused the failure
-            
-        Returns:
-            True if the job should be retried, False otherwise
-        """
+            error_msg = f"{type(e).__name__}: {str(e)}"
+            logger.error(f"Failed to process job {job.metadata.job_id}: {error_msg}", exc_info=True)
+            await self.progress_callback.report_error(job.metadata.job_id, error_msg)
+
+    async def _should_retry_job(self, job: Job, error: Exception) -> bool:
+        """Determine if a job should be retried based on its state and error type."""
         # Check if we've exceeded max retries
         max_retries = job.metadata.max_retries or 3
         if job.metadata.retry_count >= max_retries:
@@ -556,7 +543,7 @@ class MonteCarloWorker(WorkerInterface):
                 try:
                     await task
                 except Exception as e:
-                    logger.error(f"Job {job_id} completed with exception: {str(e)}")
+                    logger.error(f"Job {job_id} completed with exception: {str(e)}", exc_info=True)
         
         # Remove completed jobs
         for job_id in completed_jobs:
@@ -591,31 +578,43 @@ class WorkerProgressCallback(ProgressCallbackInterface):
     
     def __init__(
         self, 
-        queue: QueueInterface[MonteCarloJobPayload],
-        job_repository: Optional['JobRepository'] = None
+        queue: QueueInterface[MonteCarloJobPayload]
     ):
         self.queue = queue
-        self.job_repository = job_repository
-        
-        # Import here to avoid circular imports
-        if not job_repository:
-            from infrastructure.db import SessionLocal
-            from infrastructure.repositories.jobs import JobRepository
-            session = SessionLocal()
-            self.job_repository = JobRepository(session)
-    
+
+    @asynccontextmanager
+    async def _get_repo(self) -> 'JobRepository':
+        from infrastructure.db import SessionLocal
+        from infrastructure.repositories.jobs import JobRepository
+        async with SessionLocal() as session:
+            try:
+                yield JobRepository(session)
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
     async def report_progress(self, job_id: str, progress: float, message: Optional[str] = None) -> None:
         """Report job progress to queue and database"""
         try:
-            # Update job in queue
+            # Update progress in the database
+            async with self._get_repo() as repo:
+                await repo.update_job_progress(job_id, progress, message)
+
+            # Update job in queue (optional, if queue needs real-time progress)
             job = await self.queue.get_job_status(job_id)
             if job:
                 job.update_progress(progress)
-            
-            # Update progress in database
-            if self.job_repository:
-                await self.job_repository.update_job_progress(job_id, progress, message)
-                
+
+            # Publish real-time notification via Redis pub/sub
+            from infrastructure.cache import cache_manager
+            await cache_manager.publish(f"job_progress:{job_id}", {
+                "job_id": job_id,
+                "progress": progress,
+                "message": message,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+
         except Exception as e:
             logger.error(f"Failed to report progress for job {job_id}: {str(e)}")
     
@@ -628,12 +627,16 @@ class WorkerProgressCallback(ProgressCallbackInterface):
                 job.update_status(JobStatus.COMPLETED)
                 job.update_progress(1.0)
             
+            # Acknowledge the job in SQS (remove from queue)
+            await self.queue.acknowledge(job_id)
+            
             # Update status in database
-            if self.job_repository:
-                await self.job_repository.update_job_status(
+            async with self._get_repo() as repo:
+                await repo.update_job_status(
                     job_id, 
                     "completed", 
-                    progress=1.0
+                    progress=1.0,
+                    completed_at=datetime.utcnow()
                 )
                 
         except Exception as e:
@@ -647,63 +650,17 @@ class WorkerProgressCallback(ProgressCallbackInterface):
             if job:
                 job.update_status(JobStatus.FAILED)
             
+            # Reject the job in SQS (remove from queue or requeue for retry)
+            await self.queue.reject(job_id, requeue=False)
+            
             # Update status in database
-            if self.job_repository:
-                await self.job_repository.update_job_status(
+            async with self._get_repo() as repo:
+                await repo.update_job_status(
                     job_id, 
                     "failed", 
-                    error=error
+                    error=error,
+                    completed_at=datetime.utcnow()
                 )
                 
         except Exception as e:
             logger.error(f"Failed to report error for job {job_id}: {str(e)}")
-
-
-async def main():
-    """Main entry point for running a Monte Carlo worker"""
-    import os
-    from infrastructure.queue import SQSQueueAdapter
-    
-    # Setup logging
-    setup_logging()
-    
-    # Configuration from environment
-    worker_id = os.getenv("WORKER_ID", f"mc-worker-{os.getpid()}")
-    queue_url = os.getenv("SQS_QUEUE_URL")
-    aws_region = os.getenv("AWS_REGION", "us-east-1")
-    max_concurrent_jobs = int(os.getenv("MAX_CONCURRENT_JOBS", "1"))
-    
-    if not queue_url:
-        logger.error("SQS_QUEUE_URL environment variable is required")
-        sys.exit(1)
-    
-    try:
-        # Initialize components
-        queue = SQSQueueAdapter(queue_url=queue_url, region_name=aws_region)
-        progress_callback = WorkerProgressCallback(queue)
-        processor = MonteCarloJobProcessor(
-            processor_id=f"{worker_id}-processor",
-            progress_callback=progress_callback
-        )
-        
-        # Create and start worker
-        worker = MonteCarloWorker(
-            worker_id=worker_id,
-            queue=queue,
-            processor=processor,
-            progress_callback=progress_callback,
-            max_concurrent_jobs=max_concurrent_jobs
-        )
-        
-        logger.info(f"Starting Monte Carlo worker: {worker_id}")
-        await worker.start()
-        
-    except KeyboardInterrupt:
-        logger.info("Received keyboard interrupt, shutting down")
-    except Exception as e:
-        logger.error(f"Worker failed: {str(e)}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

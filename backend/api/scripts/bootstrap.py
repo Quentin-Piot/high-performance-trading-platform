@@ -1,10 +1,15 @@
 import os
 import sys
 import time
+import signal
 from urllib.parse import urlparse
 import subprocess
 
 import psycopg
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def _normalize_dsn(url: str) -> str:
@@ -52,11 +57,22 @@ def run_alembic_migrations(dsn: str) -> None:
     subprocess.run(["alembic", "upgrade", "head"], check=True)
 
 
-def start_uvicorn() -> None:
+def start_uvicorn_process() -> subprocess.Popen:
     host = os.getenv("HOST", "0.0.0.0")
     port = os.getenv("PORT", "8000")
     print(f"Starting API on {host}:{port}...")
-    subprocess.run(["uvicorn", "api.main:app", "--host", host, "--port", str(port), "--app-dir", "src"], check=True)
+    return subprocess.Popen([
+        "uvicorn", "api.main:app", "--host", host, "--port", str(port), "--app-dir", "src"
+    ])
+
+
+def start_worker_process() -> subprocess.Popen:
+    """Start the Monte Carlo worker as a sidecar process."""
+    # Ensure PYTHONPATH includes src when running locally
+    env = os.environ.copy()
+    env.setdefault("PYTHONPATH", os.pathsep.join(filter(None, [env.get("PYTHONPATH"), "src"])))
+    print("Starting Monte Carlo worker sidecar...")
+    return subprocess.Popen([sys.executable, "src/workers/main.py"], env=env)
 
 
 def main() -> None:
@@ -66,7 +82,56 @@ def main() -> None:
     os.environ["DATABASE_URL"] = dsn
     ensure_database_exists(dsn)
     run_alembic_migrations(dsn)
-    start_uvicorn()
+    run_worker = os.getenv("RUN_WORKER", "false").lower() in ("1", "true", "yes")
+
+    api_proc = start_uvicorn_process()
+    worker_proc = None
+
+    if run_worker:
+        worker_proc = start_worker_process()
+
+    # Graceful shutdown on signals
+    def _shutdown(signum, frame):
+        print(f"Received signal {signum}, shutting down processes...")
+        try:
+            if worker_proc and worker_proc.poll() is None:
+                worker_proc.terminate()
+        except Exception:
+            pass
+        try:
+            if api_proc and api_proc.poll() is None:
+                api_proc.terminate()
+        except Exception:
+            pass
+
+    signal.signal(signal.SIGINT, _shutdown)
+    signal.signal(signal.SIGTERM, _shutdown)
+
+    # Monitor child processes; if one exits, stop the other
+    try:
+        while True:
+            api_code = api_proc.poll()
+            worker_code = worker_proc.poll() if worker_proc else None
+
+            if api_code is not None:
+                print(f"API process exited with code {api_code}")
+                if worker_proc and worker_proc.poll() is None:
+                    print("Stopping worker sidecar since API exited...")
+                    worker_proc.terminate()
+                break
+
+            if worker_proc and worker_code is not None:
+                print(f"Worker process exited with code {worker_code}")
+                # Keep API running, but log the event
+                worker_proc = None
+
+            time.sleep(1)
+    finally:
+        # Ensure processes are cleaned up
+        if worker_proc and worker_proc.poll() is None:
+            worker_proc.terminate()
+        if api_proc and api_proc.poll() is None:
+            api_proc.terminate()
 
 
 if __name__ == "__main__":

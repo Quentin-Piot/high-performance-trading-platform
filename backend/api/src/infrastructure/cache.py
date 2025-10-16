@@ -70,7 +70,12 @@ class CacheManager:
         """Disconnect from Redis"""
         if self._redis:
             await self._redis.close()
+            self._redis = None
             logger.info("Disconnected from Redis cache")
+    
+    def is_connected(self) -> bool:
+        """Check if Redis is connected and available"""
+        return self.enabled and self._redis is not None
     
     def _generate_key(self, prefix: str, identifier: str, **kwargs) -> str:
         """Generate cache key with consistent hashing"""
@@ -264,26 +269,101 @@ class CacheManager:
     async def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
         if not self.enabled or not self._redis:
-            return {"enabled": False}
+            return {
+                "enabled": False,
+                "connected": False
+            }
         
         try:
             info = await self._redis.info()
             return {
                 "enabled": True,
-                "connected_clients": info.get("connected_clients", 0),
+                "connected": True,
                 "used_memory": info.get("used_memory", 0),
                 "used_memory_human": info.get("used_memory_human", "0B"),
+                "connected_clients": info.get("connected_clients", 0),
+                "total_commands_processed": info.get("total_commands_processed", 0),
                 "keyspace_hits": info.get("keyspace_hits", 0),
                 "keyspace_misses": info.get("keyspace_misses", 0),
-                "total_commands_processed": info.get("total_commands_processed", 0),
-                "uptime_in_seconds": info.get("uptime_in_seconds", 0)
+                "hit_rate": info.get("keyspace_hits", 0) / max(1, info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0))
             }
-            
         except Exception as e:
-            logger.warning("Failed to get cache stats", extra={
+            logger.error("Failed to get cache stats", extra={"error": str(e)})
+            return {
+                "enabled": True,
+                "connected": False,
+                "error": str(e)
+            }
+    
+    async def publish(self, channel: str, message: Any) -> int:
+        """
+        Publish a message to a Redis channel.
+        
+        Args:
+            channel: Channel name
+            message: Message to publish (will be JSON serialized)
+            
+        Returns:
+            Number of subscribers that received the message
+        """
+        if not self.enabled or not self._redis:
+            return 0
+            
+        try:
+            serialized_message = json.dumps(message) if not isinstance(message, str) else message
+            return await self._redis.publish(channel, serialized_message)
+        except Exception as e:
+            logger.error("Failed to publish message", extra={
+                "channel": channel,
                 "error": str(e)
             })
-            return {"enabled": True, "error": str(e)}
+            return 0
+    
+    async def subscribe(self, *channels: str):
+        """
+        Subscribe to Redis channels and return an async iterator.
+        
+        Args:
+            channels: Channel names to subscribe to
+            
+        Yields:
+            Dict with 'channel' and 'data' keys for each message
+        """
+        if not self.enabled or not self._redis:
+            logger.warning("Redis not available for pub/sub subscription")
+            # Return empty async generator
+            return
+            yield  # This makes it an async generator but never yields anything
+            
+        pubsub = None
+        try:
+            pubsub = self._redis.pubsub()
+            await pubsub.subscribe(*channels)
+            
+            async for message in pubsub.listen():
+                if message['type'] == 'message':
+                    try:
+                        # Try to parse as JSON, fallback to string
+                        data = json.loads(message['data'])
+                    except (json.JSONDecodeError, TypeError):
+                        data = message['data']
+                    
+                    yield {
+                        'channel': message['channel'],
+                        'data': data
+                    }
+        except Exception as e:
+            logger.error("Failed to subscribe to channels", extra={
+                "channels": channels,
+                "error": str(e)
+            })
+        finally:
+            if pubsub:
+                try:
+                    await pubsub.unsubscribe(*channels)
+                    await pubsub.close()
+                except Exception:
+                    pass
 
 
 # Global cache manager instance
