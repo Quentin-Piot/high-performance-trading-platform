@@ -46,10 +46,11 @@ def get_csv_date_range(csv_file_path: str) -> Tuple[datetime, datetime]:
 
 
 def validate_date_range_for_symbol(
-    symbol: str, 
-    start_date: datetime, 
+    symbol: str,
+    start_date: datetime,
     end_date: datetime,
-    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/web/public/data/datasets"
+    # Use backend datasets by default; we'll refine this later via env/config
+    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
 ) -> Dict[str, any]:
     """
     Validate if the requested date range is available for a given symbol.
@@ -137,7 +138,8 @@ def validate_date_range_for_symbol(
 
 
 def get_all_symbols_date_ranges(
-    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/web/public/data/datasets"
+    # Use backend datasets by default; we'll refine this later via env/config
+    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
 ) -> Dict[str, Dict[str, datetime]]:
     """
     Get date ranges for all available symbols.

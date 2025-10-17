@@ -14,6 +14,8 @@ from typing import Any, Dict, List, Optional, BinaryIO
 import uuid
 import asyncio
 
+from sqlalchemy.exc import IntegrityError
+
 from domain.queue import (
     JobManagerInterface, Job, JobStatus, JobMetadata, JobPriority,
     MonteCarloJobPayload, QueueInterface
@@ -173,7 +175,8 @@ class MonteCarloJobManager(JobManagerInterface):
         timeout_seconds: Optional[int] = None,
         max_retries: Optional[int] = None,
         tags: Optional[Dict[str, str]] = None,
-        dedup_key: Optional[str] = None
+        dedup_key: Optional[str] = None,
+        total_runs: Optional[int] = None
     ) -> str:
         """
         Submit a Monte Carlo simulation job with database persistence and deduplication.
@@ -218,7 +221,8 @@ class MonteCarloJobManager(JobManagerInterface):
                 "method_params": method_params or {},
                 "seed": seed,
                 "include_equity_envelope": include_equity_envelope,
-                "parallel_workers": 1
+                "parallel_workers": 1,
+                "total_runs": total_runs or runs,
             }
             
             # Validate payload
@@ -237,23 +241,35 @@ class MonteCarloJobManager(JobManagerInterface):
             async with SessionLocal() as session:
                 job_repo = JobRepository(session)
                 
-                # Check for existing job with same dedup_key
-                existing_job = await job_repo.find_existing_job(dedup_key)
-                if existing_job:
-                    logger.info(f"Found existing job {existing_job.id} for dedup_key {dedup_key}")
-                    return existing_job.id
+                # Check for existing job with the same dedup_key
+                if dedup_key:
+                    existing_job = await job_repo.find_existing_job(dedup_key)
+                    if existing_job:
+                        logger.info(f"Found existing job {existing_job.id} for dedup_key {dedup_key}")
+                        return existing_job.id
                 
                 # Create new job in database
                 job_id = str(uuid.uuid4())
                 
-                db_job = await job_repo.create_job(
-                    job_id=job_id,
-                    payload=payload_for_db,
-                    status="pending",
-                    priority=priority.name.lower(),
-                    dedup_key=dedup_key
-                )
-                
+                try:
+                    db_job = await job_repo.create_job(
+                        job_id=job_id,
+                        payload=payload_for_db,
+                        status="pending",
+                        priority=priority.name.lower(),
+                        dedup_key=dedup_key
+                    )
+                except IntegrityError:
+                    logger.warning(f"Job with dedup_key {dedup_key} already exists. Fetching it.")
+                    await session.rollback() # Rollback the session to clear the error state
+                    # If it already exists due to a race condition, fetch the existing job
+                    existing_job = await job_repo.get_job_by_dedup_key(dedup_key)
+                    if not existing_job:
+                        # This should be a very rare condition
+                        logger.error(f"Could not fetch job with dedup_key {dedup_key} after IntegrityError.")
+                        raise
+                    return existing_job.id
+
                 # Create MonteCarloJobPayload for queue
                 from domain.queue import MonteCarloJobPayload
                 queue_payload = MonteCarloJobPayload(
@@ -527,6 +543,16 @@ class MonteCarloJobManager(JobManagerInterface):
                 if not db_job:
                     return {"job_id": job_id, "status": "not_found"}
 
+                # Safely parse payload from JSON string if needed
+                payload = {}
+                if isinstance(db_job.payload, str):
+                    try:
+                        payload = json.loads(db_job.payload)
+                    except json.JSONDecodeError:
+                        logger.warning(f"Could not decode payload for job {job_id}")
+                elif isinstance(db_job.payload, dict):
+                    payload = db_job.payload
+
                 # Calculate duration if timing data is available
                 duration_seconds = None
                 if db_job.started_at:
@@ -534,62 +560,32 @@ class MonteCarloJobManager(JobManagerInterface):
                     duration_seconds = (end_time - db_job.started_at).total_seconds()
 
                 # Derive message from payload
-                message_value = None
-                if db_job.payload:
-                    try:
-                        message_value = db_job.payload.get("progress_message")
-                    except Exception:
-                        message_value = None
+                message_value = payload.get("progress_message")
 
-                # Compute run counters from payload (if available)
-                total_runs = None
-                current_run = None
-                if db_job.payload:
-                    try:
-                        total_runs = db_job.payload.get("runs")
-                        if isinstance(total_runs, int) and total_runs > 0:
-                            current_run = int(max(0, min(total_runs, round((db_job.progress or 0.0) * total_runs))))
-                    except Exception:
-                        total_runs = None
-                        current_run = None
+                # Get total runs from payload
+                total_runs = payload.get("runs", 0)
 
-                # Estimated completion time based on elapsed/progress
-                estimated_completion_time = None
-                if db_job.started_at and (db_job.progress or 0.0) > 0 and (not db_job.completed_at):
-                    try:
-                        elapsed = (datetime.utcnow() - db_job.started_at).total_seconds()
-                        remaining = (elapsed / float(db_job.progress)) * (1 - float(db_job.progress))
-                        eta_dt = datetime.utcnow() + timedelta(seconds=max(0.0, remaining))
-                        estimated_completion_time = eta_dt.isoformat()
-                    except Exception:
-                        estimated_completion_time = None
+                # Estimate ETA based on progress and duration
+                eta_seconds = None
+                if db_job.progress and db_job.progress > 0 and duration_seconds:
+                    if db_job.status == "running":
+                        remaining_progress = 1.0 - db_job.progress
+                        time_per_progress_unit = duration_seconds / db_job.progress
+                        eta_seconds = remaining_progress * time_per_progress_unit
 
-                progress_info = {
-                    "job_id": job_id,
+                return {
+                    "job_id": db_job.id,
                     "status": db_job.status,
                     "progress": db_job.progress or 0.0,
-                    "message": message_value,
-                    "created_at": db_job.created_at.isoformat() if db_job.created_at else None,
-                    "updated_at": db_job.updated_at.isoformat() if db_job.updated_at else None,
-                    "started_at": db_job.started_at.isoformat() if db_job.started_at else None,
-                    "completed_at": db_job.completed_at.isoformat() if db_job.completed_at else None,
-                    "duration_seconds": duration_seconds,
-                    "error": db_job.error,
-                    "retry_count": db_job.attempts,
-                    "worker_id": db_job.worker_id,
-                    "artifact_url": db_job.artifact_url,
-                    "artifacts": [],
-                    "current_run": current_run,
+                    "current_run": int((db_job.progress or 0.0) * total_runs),
                     "total_runs": total_runs,
-                    "estimated_completion_time": estimated_completion_time,
-                    "last_updated": (db_job.updated_at.isoformat() if db_job.updated_at else datetime.utcnow().isoformat())
+                    "eta_seconds": eta_seconds,
+                    "duration_seconds": duration_seconds,
+                    "message": message_value,
+                    "last_updated": db_job.updated_at.isoformat() if db_job.updated_at else None,
                 }
-
-                return progress_info
-
             finally:
-                await job_repo.session.close()
-
+                await job_repo.close()
         except Exception as e:
             logger.error("Failed to get job progress", extra={"job_id": job_id, "error": str(e)})
             raise
@@ -681,12 +677,14 @@ class MonteCarloJobManager(JobManagerInterface):
             List of job IDs
         """
         job_ids = []
-        
+        total_runs = sum(job_request.get('runs', 0) for job_request in job_requests)
+
         for i in range(0, len(job_requests), batch_size):
             batch = job_requests[i:i + batch_size]
             batch_tasks = []
-            
+
             for job_request in batch:
+                job_request['total_runs'] = total_runs  # Add total_runs to each job request
                 task = self.submit_monte_carlo_job(**job_request)
                 batch_tasks.append(task)
             

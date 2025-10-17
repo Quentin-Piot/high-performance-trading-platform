@@ -9,8 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-// Tous les composants Lucide Vue sont importés pour le rendu dynamique
-import { TrendingUp, BarChart3, Zap, Shield, FileText } from "lucide-vue-next";
+import { TrendingUp, BarChart3, Zap, Shield } from "lucide-vue-next";
 import { useRouter } from "@/router";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import {
@@ -75,81 +74,6 @@ function goToSimulate() {
                                 <TrendingUp class="mr-2 h-5 w-5" />
                                 {{ t("landing.cta.startBacktest") }}
                             </Button>
-
-                            <Dialog>
-                                <DialogTrigger as-child>
-                                    <Button
-                                        size="lg"
-                                        variant="outline"
-                                        class="px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                                    >
-                                        <FileText class="mr-2 h-5 w-5" />
-                                        {{ t("landing.architecture.open") }}
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogScrollContent class="sm:max-w-[800px]">
-                                    <DialogHeader>
-                                        <DialogTitle>
-                                            {{ t("landing.architecture.dialog.title") }}
-                                        </DialogTitle>
-                                        <DialogDescription class="pt-2">
-                                            {{ t("landing.architecture.dialog.description") }}
-                                        </DialogDescription>
-                                    </DialogHeader>
-
-                                    <div class="py-4 space-y-8">
-                                        <!-- Stack Applicative -->
-                                        <div>
-                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
-                                                <Zap class="h-6 w-6 mr-3 text-blue-500" />
-                                                {{ t("landing.architecture.sections.stack.title") }}
-                                            </h3>
-                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-                                                <li>{{ t("landing.architecture.sections.stack.points.0") }}</li>
-                                                <li>{{ t("landing.architecture.sections.stack.points.1") }}</li>
-                                                <li>{{ t("landing.architecture.sections.stack.points.2") }}</li>
-                                            </ul>
-                                        </div>
-                                        <!-- Infrastructure & Déploiement -->
-                                        <div>
-                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
-                                                <Shield class="h-6 w-6 mr-3 text-blue-500" />
-                                                {{ t("landing.architecture.sections.infra.title") }}
-                                            </h3>
-                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-                                                <li>{{ t("landing.architecture.sections.infra.points.0") }}</li>
-                                                <li>{{ t("landing.architecture.sections.infra.points.1") }}</li>
-                                                <li>{{ t("landing.architecture.sections.infra.points.2") }}</li>
-                                                <li>{{ t("landing.architecture.sections.infra.points.3") }}</li>
-                                            </ul>
-                                        </div>
-                                        <!-- Base de Données & Caching -->
-                                        <div>
-                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
-                                                <BarChart3 class="h-6 w-6 mr-3 text-blue-500" />
-                                                {{ t("landing.architecture.sections.data_cache.title") }}
-                                            </h3>
-                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-                                                <li>{{ t("landing.architecture.sections.data_cache.points.0") }}</li>
-                                                <li>{{ t("landing.architecture.sections.data_cache.points.1") }}</li>
-                                                <li>{{ t("landing.architecture.sections.data_cache.points.2") }}</li>
-                                            </ul>
-                                        </div>
-                                        <!-- Alignement Rôle Architecte/Lead -->
-                                        <div>
-                                            <h3 class="text-2xl font-bold mb-3 flex items-center text-primary dark:text-blue-400">
-                                                <TrendingUp class="h-6 w-6 mr-3 text-blue-500" />
-                                                {{ t("landing.architecture.sections.alignment.title") }}
-                                            </h3>
-                                            <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-                                                <li>{{ t("landing.architecture.sections.alignment.points.0") }}</li>
-                                                <li>{{ t("landing.architecture.sections.alignment.points.1") }}</li>
-                                                <li>{{ t("landing.architecture.sections.alignment.points.2") }}</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </DialogScrollContent>
-                            </Dialog>
                         </div>
                     </div>
                 </div>
@@ -201,8 +125,14 @@ function goToSimulate() {
                                                     "landing.project.frontend.description",
                                                 )
                                             }}
-                                            <span class="block mt-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                                {{ t("landing.project.frontend.click_to_architecture") }}
+                                            <span
+                                                class="block mt-2 text-sm font-semibold text-blue-600 dark:text-blue-400"
+                                            >
+                                                {{
+                                                    t(
+                                                        "landing.project.frontend.click_to_architecture",
+                                                    )
+                                                }}
                                             </span>
                                         </CardDescription>
                                     </CardContent>
@@ -210,21 +140,87 @@ function goToSimulate() {
                             </DialogTrigger>
                             <DialogScrollContent class="sm:max-w-[600px]">
                                 <DialogHeader>
-                                    <DialogTitle>
-                                        {{ t("landing.architecture.frontend.title") }}
+                                    <DialogTitle
+                                        class="text-blue-600 dark:text-blue-400"
+                                    >
+                                        {{
+                                            t(
+                                                "landing.architecture.frontend.title",
+                                            )
+                                        }}
                                     </DialogTitle>
                                     <DialogDescription>
-                                        {{ t("landing.architecture.frontend.description") }}
+                                        {{
+                                            t(
+                                                "landing.architecture.frontend.description",
+                                            )
+                                        }}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div class="py-4 space-y-4">
-                                    <h4 class="text-lg font-bold">
-                                        {{ t("landing.architecture.frontend.points_title") }}
-                                    </h4>
-                                    <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-                                        <li>{{ t("landing.architecture.sections.stack.points.0") }}</li>
-                                        <li>{{ t("landing.architecture.frontend.experience") }}</li>
-                                    </ul>
+                                    <!-- Stack Applicative -->
+                                    <div class="mt-6">
+                                        <h4
+                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
+                                        >
+                                            <Zap
+                                                class="h-5 w-5 mr-2 text-blue-500"
+                                            />
+                                            {{
+                                                t(
+                                                    "landing.architecture.sections.stack.title",
+                                                )
+                                            }}
+                                        </h4>
+                                        <ul
+                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
+                                        >
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.stack.points.0",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.stack.points.1",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.stack.points.2",
+                                                    )
+                                                }}
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Expérience Utilisateur -->
+                                    <div class="mt-6">
+                                        <h4
+                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
+                                        >
+                                            <TrendingUp
+                                                class="h-5 w-5 mr-2 text-blue-500"
+                                            />
+                                            Expérience Utilisateur
+                                        </h4>
+                                        <ul
+                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
+                                        >
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.frontend.experience",
+                                                    )
+                                                }}
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </DialogScrollContent>
                         </Dialog>
@@ -261,8 +257,14 @@ function goToSimulate() {
                                                     "landing.project.backend.description",
                                                 )
                                             }}
-                                            <span class="block mt-2 text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                                {{ t("landing.project.backend.click_to_system_design") }}
+                                            <span
+                                                class="block mt-2 text-sm font-semibold text-purple-600 dark:text-purple-400"
+                                            >
+                                                {{
+                                                    t(
+                                                        "landing.project.backend.click_to_system_design",
+                                                    )
+                                                }}
                                             </span>
                                         </CardDescription>
                                     </CardContent>
@@ -270,23 +272,105 @@ function goToSimulate() {
                             </DialogTrigger>
                             <DialogScrollContent class="sm:max-w-[600px]">
                                 <DialogHeader>
-                                    <DialogTitle>
-                                        {{ t("landing.architecture.backend.title") }}
+                                    <DialogTitle
+                                        class="text-blue-600 dark:text-blue-400"
+                                    >
+                                        {{
+                                            t(
+                                                "landing.architecture.backend.title",
+                                            )
+                                        }}
                                     </DialogTitle>
                                     <DialogDescription>
-                                        {{ t("landing.architecture.backend.description") }}
+                                        {{
+                                            t(
+                                                "landing.architecture.backend.description",
+                                            )
+                                        }}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div class="py-4 space-y-4">
-                                    <h4 class="text-lg font-bold">
-                                        {{ t("landing.architecture.backend.points_title") }}
-                                    </h4>
-                                    <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-                                        <li>{{ t("landing.architecture.sections.stack.points.1") }}</li>
-                                        <li>{{ t("landing.architecture.sections.data_cache.points.1") }}</li>
-                                        <li>{{ t("landing.architecture.sections.alignment.points.0") }}</li>
-                                        <li>{{ t("landing.architecture.sections.alignment.points.1") }}</li>
-                                    </ul>
+                                    <!-- Base de Données & Caching -->
+                                    <div class="mt-6">
+                                        <h4
+                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
+                                        >
+                                            <BarChart3
+                                                class="h-5 w-5 mr-2 text-blue-500"
+                                            />
+                                            {{
+                                                t(
+                                                    "landing.architecture.sections.data_cache.title",
+                                                )
+                                            }}
+                                        </h4>
+                                        <ul
+                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
+                                        >
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.data_cache.points.0",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.data_cache.points.1",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.data_cache.points.2",
+                                                    )
+                                                }}
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Alignement Rôle Architecte/Lead -->
+                                    <div class="mt-6">
+                                        <h4
+                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
+                                        >
+                                            <TrendingUp
+                                                class="h-5 w-5 mr-2 text-blue-500"
+                                            />
+                                            {{
+                                                t(
+                                                    "landing.architecture.sections.alignment.title",
+                                                )
+                                            }}
+                                        </h4>
+                                        <ul
+                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
+                                        >
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.alignment.points.0",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.alignment.points.1",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.alignment.points.2",
+                                                    )
+                                                }}
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </DialogScrollContent>
                         </Dialog>
@@ -323,8 +407,14 @@ function goToSimulate() {
                                                     "landing.project.infrastructure.description",
                                                 )
                                             }}
-                                            <span class="block mt-2 text-sm font-semibold text-red-600 dark:text-red-400">
-                                                {{ t("landing.project.infrastructure.click_to_iac_cloud") }}
+                                            <span
+                                                class="block mt-2 text-sm font-semibold text-red-600 dark:text-red-400"
+                                            >
+                                                {{
+                                                    t(
+                                                        "landing.project.infrastructure.click_to_iac_cloud",
+                                                    )
+                                                }}
                                             </span>
                                         </CardDescription>
                                     </CardContent>
@@ -332,23 +422,71 @@ function goToSimulate() {
                             </DialogTrigger>
                             <DialogScrollContent class="sm:max-w-[600px]">
                                 <DialogHeader>
-                                    <DialogTitle>
-                                        {{ t("landing.architecture.infra_dialog.title") }}
+                                    <DialogTitle
+                                        class="text-blue-600 dark:text-blue-400"
+                                    >
+                                        {{
+                                            t(
+                                                "landing.architecture.infra_dialog.title",
+                                            )
+                                        }}
                                     </DialogTitle>
                                     <DialogDescription>
-                                        {{ t("landing.architecture.infra_dialog.description") }}
+                                        {{
+                                            t(
+                                                "landing.architecture.infra_dialog.description",
+                                            )
+                                        }}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div class="py-4 space-y-4">
-                                    <h4 class="text-lg font-bold">
-                                        {{ t("landing.architecture.sections.infra.title") }}
-                                    </h4>
-                                    <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-                                        <li>{{ t("landing.architecture.sections.infra.points.0") }}</li>
-                                        <li>{{ t("landing.architecture.sections.infra.points.1") }}</li>
-                                        <li>{{ t("landing.architecture.sections.infra.points.2") }}</li>
-                                        <li>{{ t("landing.architecture.sections.infra.points.3") }}</li>
-                                    </ul>
+                                    <!-- Infrastructure & Déploiement -->
+                                    <div class="mt-6">
+                                        <h4
+                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
+                                        >
+                                            <Shield
+                                                class="h-5 w-5 mr-2 text-blue-500"
+                                            />
+                                            {{
+                                                t(
+                                                    "landing.architecture.sections.infra.title",
+                                                )
+                                            }}
+                                        </h4>
+                                        <ul
+                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
+                                        >
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.infra.points.0",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.infra.points.1",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.infra.points.2",
+                                                    )
+                                                }}
+                                            </li>
+                                            <li>
+                                                {{
+                                                    t(
+                                                        "landing.architecture.sections.infra.points.3",
+                                                    )
+                                                }}
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </DialogScrollContent>
                         </Dialog>

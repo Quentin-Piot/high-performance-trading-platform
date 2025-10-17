@@ -169,6 +169,8 @@ class JobRepository:
         job_id: str,
         progress: float,
         message: Optional[str] = None,
+        current_run: Optional[int] = None,
+        total_runs: Optional[int] = None,
         started_at: Optional[datetime] = None,
         completed_at: Optional[datetime] = None
     ) -> bool:
@@ -179,6 +181,8 @@ class JobRepository:
             job_id: Job identifier
             progress: Progress value (0.0 to 1.0)
             message: Optional progress message
+            current_run: Current run number
+            total_runs: Total number of runs
             started_at: Job start timestamp
             completed_at: Job completion timestamp
             
@@ -201,18 +205,21 @@ class JobRepository:
             if completed_at is not None:
                 update_data["completed_at"] = completed_at
             
-            # Store progress message in payload if provided
-            if message:
-                # Get current job to update payload
-                result = await self.session.execute(
-                    select(Job).where(Job.id == job_id)
-                )
-                job = result.scalar_one_or_none()
-                
-                if job:
-                    payload = job.payload.copy() if job.payload else {}
+            # Get current job to update payload
+            result = await self.session.execute(
+                select(Job).where(Job.id == job_id)
+            )
+            job = result.scalar_one_or_none()
+            
+            if job:
+                payload = job.payload.copy() if job.payload else {}
+                if message:
                     payload["progress_message"] = message
-                    update_data["payload"] = payload
+                if current_run is not None:
+                    payload["current_run"] = current_run
+                if total_runs is not None:
+                    payload["total_runs"] = total_runs
+                update_data["payload"] = payload
             
             result = await self.session.execute(
                 update(Job)
