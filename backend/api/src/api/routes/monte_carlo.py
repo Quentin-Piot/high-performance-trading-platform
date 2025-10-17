@@ -681,6 +681,11 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                 "worker_id": progress.get("worker_id"),
                 "artifact_url": progress.get("artifact_url"),
                 "artifacts": progress.get("artifacts", []),
+                # Include counters and ETA for frontend display
+                "current_run": progress.get("current_run"),
+                "total_runs": progress.get("total_runs"),
+                "estimated_completion_time": progress.get("estimated_completion_time"),
+                "last_updated": progress.get("last_updated"),
             }
             await websocket.send_json(payload)
             
@@ -729,6 +734,11 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                                 "worker_id": current_progress.get("worker_id"),
                                 "artifact_url": current_progress.get("artifact_url"),
                                 "artifacts": current_progress.get("artifacts", []),
+                                # Include counters and ETA for frontend display
+                                "current_run": current_progress.get("current_run"),
+                                "total_runs": current_progress.get("total_runs"),
+                                "estimated_completion_time": current_progress.get("estimated_completion_time"),
+                                "last_updated": current_progress.get("last_updated"),
                             }
                             
                             try:
@@ -770,6 +780,11 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                         "worker_id": current_progress.get("worker_id"),
                         "artifact_url": current_progress.get("artifact_url"),
                         "artifacts": current_progress.get("artifacts", []),
+                        # Include counters and ETA for frontend display
+                        "current_run": current_progress.get("current_run"),
+                        "total_runs": current_progress.get("total_runs"),
+                        "estimated_completion_time": current_progress.get("estimated_completion_time"),
+                        "last_updated": current_progress.get("last_updated"),
                     }
                     
                     try:

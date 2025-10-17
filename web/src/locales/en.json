@@ -103,15 +103,18 @@
       "description": "Modern full-stack trading platform built with cutting-edge technologies",
       "frontend": {
         "title": "Frontend",
-        "description": "Vue.js 3 with TypeScript, Vite, and modern UI components"
+        "description": "Vue.js 3 with TypeScript, Vite, and modern UI components",
+        "click_to_architecture": "Click to view frontend architecture"
       },
       "backend": {
         "title": "Backend API",
-        "description": "FastAPI with Python, PostgreSQL database, and robust data processing"
+        "description": "FastAPI with Python, PostgreSQL database, and robust data processing",
+        "click_to_system_design": "Click to view system design"
       },
       "infrastructure": {
         "title": "AWS Infrastructure",
-        "description": "ECS Fargate, CloudFront CDN, S3 storage, and Application Load Balancer"
+        "description": "ECS Fargate, CloudFront CDN, S3 storage, and Application Load Balancer",
+        "click_to_iac_cloud": "Click to view IaC & Cloud"
       },
       "frontend.click_to_architecture": "Click to view frontend architecture",
       "backend.click_to_system_design": "Click to view system design",
@@ -143,11 +146,18 @@
         "datasets": "Select Datasets",
         "datasets_description": "Choose from pre-loaded market datasets",
         "strategy_params": "Strategy Parameters",
-        "analysis_period": "Analysis Period"
+        "analysis_period": "Analysis Period",
+        "date_range": "Date Range",
+        "start_date": "Start Date",
+        "end_date": "End Date"
       },
       "buttons": {
         "run": "Run",
         "reset": "Reset"
+      },
+      "placeholders": {
+        "select_start_date": "Select start date",
+        "select_end_date": "Select end date"
       },
       "csv": {
         "drop_hint": "Drag and drop your file or click to select.",

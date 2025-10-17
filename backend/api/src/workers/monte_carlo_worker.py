@@ -151,10 +151,10 @@ class MonteCarloJobProcessor(JobProcessorInterface[MonteCarloJobPayload, Dict[st
         # Progress tracking wrapper
         def sync_progress_callback(processed: int, total: int):
             if progress_callback:
-                progress = processed / total if total > 0 else 0.0
-                message = f"Completed {processed}/{total} simulations"
+                progress = processed / payload.total_runs if payload.total_runs > 0 else 0.0
+                message = f"Completed {processed}/{payload.total_runs} simulations"
                 # Create task for async callback
-                asyncio.create_task(progress_callback(progress, message))
+                asyncio.create_task(progress_callback(progress, message, processed, payload.total_runs))
         
         # Execute simulation using existing service
         try:
@@ -594,12 +594,12 @@ class WorkerProgressCallback(ProgressCallbackInterface):
                 await session.rollback()
                 raise
 
-    async def report_progress(self, job_id: str, progress: float, message: Optional[str] = None) -> None:
+    async def report_progress(self, job_id: str, progress: float, message: Optional[str] = None, current_run: Optional[int] = None, total_runs: Optional[int] = None) -> None:
         """Report job progress to queue and database"""
         try:
             # Update progress in the database
             async with self._get_repo() as repo:
-                await repo.update_job_progress(job_id, progress, message)
+                await repo.update_job_progress(job_id, progress, message, current_run, total_runs)
 
             # Update job in queue (optional, if queue needs real-time progress)
             job = await self.queue.get_job_status(job_id)
@@ -612,6 +612,8 @@ class WorkerProgressCallback(ProgressCallbackInterface):
                 "job_id": job_id,
                 "progress": progress,
                 "message": message,
+                "current_run": current_run,
+                "total_runs": total_runs,
                 "timestamp": datetime.utcnow().isoformat()
             })
 

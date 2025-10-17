@@ -103,15 +103,18 @@
       "description": "Plateforme de trading full-stack moderne construite avec des technologies de pointe",
       "frontend": {
         "title": "Frontend",
-        "description": "Vue.js 3 avec TypeScript, Vite, et composants UI modernes"
+        "description": "Vue.js 3 avec TypeScript, Vite, et composants UI modernes",
+        "click_to_architecture": "Cliquer pour l'architecture du frontend"
       },
       "backend": {
         "title": "API Backend",
-        "description": "FastAPI avec Python, base de données PostgreSQL, et traitement de données robuste"
+        "description": "FastAPI avec Python, base de données PostgreSQL, et traitement de données robuste",
+        "click_to_system_design": "Cliquer pour le System Design"
       },
       "infrastructure": {
         "title": "Infrastructure AWS",
-        "description": "ECS Fargate, CDN CloudFront, stockage S3, et Application Load Balancer"
+        "description": "ECS Fargate, CDN CloudFront, stockage S3, et Application Load Balancer",
+        "click_to_iac_cloud": "Cliquer pour l'IaC et Cloud"
       },
       "frontend.click_to_architecture": "Cliquer pour l'architecture du frontend",
       "backend.click_to_system_design": "Cliquer pour le System Design",
@@ -143,11 +146,18 @@
         "datasets": "Sélectionner les Jeux de Données",
         "datasets_description": "Choisissez parmi les jeux de données de marché pré-chargés",
         "strategy_params": "Paramètres de stratégie",
-        "analysis_period": "Période d'analyse"
+        "analysis_period": "Période d'analyse",
+        "date_range": "Plage de Dates",
+        "start_date": "Date de Début",
+        "end_date": "Date de Fin"
       },
       "buttons": {
         "run": "Lancer",
         "reset": "Réinitialiser"
+      },
+      "placeholders": {
+        "select_start_date": "Sélectionner la date de début",
+        "select_end_date": "Sélectionner la date de fin"
       },
       "csv": {
         "drop_hint": "Glissez-déposez votre fichier ou cliquez pour sélectionner.",
