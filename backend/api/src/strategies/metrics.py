@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import numpy as np
 import pandas as pd
-from typing import Dict
 
 
 def sharpe_ratio(returns: pd.Series, annualization: int = 252) -> float:
@@ -12,7 +12,6 @@ def sharpe_ratio(returns: pd.Series, annualization: int = 252) -> float:
         return 0.0  # Return 0 instead of NaN for JSON compatibility
     return float((mean / std) * (annualization**0.5))
 
-
 def max_drawdown(equity: pd.Series) -> float:
     # equity: cumulative portfolio value
     roll_max = equity.cummax()
@@ -20,12 +19,10 @@ def max_drawdown(equity: pd.Series) -> float:
     # Return the minimum drawdown (negative value)
     return float(drawdown.min())
 
-
 def total_return(equity: pd.Series) -> float:
     if equity.empty:
         return 0.0
     return float(equity.iloc[-1] / equity.iloc[0] - 1.0)
-
 
 def trade_summary_from_positions(
     positions: pd.Series, price: pd.Series

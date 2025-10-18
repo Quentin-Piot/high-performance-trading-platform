@@ -36,6 +36,22 @@ hypothesis = ">=6.92,<7.0"
 pytest-asyncio = ">=0.21.0,<1.0.0"
 moto = ">=4.2.0,<5.0.0"
 httpx = ">=0.28.1,<0.29.0"
+websockets = "^15.0.1"
+aiohttp = "^3.13.1"
+ruff = "^0.14.1"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+extend-select = ["B", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/api/routers/*.py" = ["B008"]
+"src/api/routes/*.py" = ["B008"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-import pandas as pd
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any
+
+import pandas as pd
 
 
 @dataclass
@@ -13,11 +15,10 @@ class BacktestParams:
 
     start_date: datetime
     end_date: datetime
-    strategy_params: Dict[
+    strategy_params: dict[
         str, Any
     ]  # Ex: {"short_window": 20, "long_window": 50} pour MovingAverage
     symbol: str  # Ex: "AAPL"
-
 
 @dataclass
 class BacktestResult:
@@ -43,7 +44,7 @@ class BacktestResult:
     sharpe_ratio: float
 
     # Champs additionnels, renseignés par certaines stratégies
-    returns: Optional[pd.Series] = None
-    metrics: Optional[Dict[str, Any]] = None
-    signals: Optional[pd.Series] = None
-    trades: Optional[pd.DataFrame] = None
+    returns: pd.Series | None = None
+    metrics: dict[str, Any] | None = None
+    signals: pd.Series | None = None
+    trades: pd.DataFrame | None = None

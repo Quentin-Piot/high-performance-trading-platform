@@ -2,16 +2,14 @@
 Initial schema migration: users, strategies, backtests.
 """
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0001_initial"
 down_revision = None
 branch_labels = None
 depends_on = None
-
 
 def upgrade() -> None:
     # users table
@@ -39,7 +37,6 @@ def upgrade() -> None:
         sa.Column("strategy_id", sa.Integer(), sa.ForeignKey("strategies.id"), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-
 
 def downgrade() -> None:
     op.drop_table("backtests")

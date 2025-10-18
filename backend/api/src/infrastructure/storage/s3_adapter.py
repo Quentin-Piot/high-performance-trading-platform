@@ -4,37 +4,35 @@ S3 adapter for artifact storage.
 This module provides S3 storage functionality for Monte Carlo job artifacts,
 including result files, charts, and reports with lifecycle management.
 """
-import json
-import logging
-from datetime import datetime, UTC, timedelta
-from typing import Any, Dict, Optional, List, BinaryIO, Union
-import boto3
-from botocore.exceptions import ClientError, BotoCoreError
 import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-import uuid
+from typing import Any, BinaryIO
+
+import boto3
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
-
 class S3StorageAdapter:
     """S3 implementation for artifact storage"""
-    
+
     def __init__(
         self,
         bucket_name: str,
         region_name: str = "us-east-1",
         prefix: str = "monte-carlo-artifacts",
-        aws_access_key_id: Optional[str] = None,
-        aws_secret_access_key: Optional[str] = None,
-        endpoint_url: Optional[str] = None,  # For LocalStack testing
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
+        endpoint_url: str | None = None,  # For LocalStack testing
         lifecycle_days: int = 30,  # Days before artifacts are moved to IA
         expiration_days: int = 365  # Days before artifacts are deleted
     ):
         """
         Initialize S3 storage adapter.
-        
+
         Args:
             bucket_name: S3 bucket name
             region_name: AWS region
@@ -49,7 +47,7 @@ class S3StorageAdapter:
         self.prefix = prefix.strip("/")
         self.lifecycle_days = lifecycle_days
         self.expiration_days = expiration_days
-        
+
         # Initialize S3 client
         session_kwargs = {"region_name": region_name}
         if aws_access_key_id and aws_secret_access_key:
@@ -57,37 +55,37 @@ class S3StorageAdapter:
                 "aws_access_key_id": aws_access_key_id,
                 "aws_secret_access_key": aws_secret_access_key
             })
-        
+
         self.session = boto3.Session(**session_kwargs)
         client_kwargs = {}
         if endpoint_url:
             client_kwargs["endpoint_url"] = endpoint_url
-            
+
         self.s3_client = self.session.client("s3", **client_kwargs)
-        
+
         # Thread pool for async operations
         self.executor = ThreadPoolExecutor(max_workers=5, thread_name_prefix="s3-adapter")
-        
+
         logger.info(f"Initialized S3 adapter for bucket: {bucket_name}")
 
     async def upload_artifact(
         self,
         job_id: str,
         artifact_name: str,
-        content: Union[bytes, str, BinaryIO],
+        content: bytes | str | BinaryIO,
         content_type: str = "application/octet-stream",
-        metadata: Optional[Dict[str, str]] = None
+        metadata: dict[str, str] | None = None
     ) -> str:
         """
         Upload an artifact to S3.
-        
+
         Args:
             job_id: Job identifier
             artifact_name: Name of the artifact file
             content: File content (bytes, string, or file-like object)
             content_type: MIME type of the content
             metadata: Additional metadata to store with the object
-            
+
         Returns:
             S3 URL of the uploaded artifact
         """
@@ -95,7 +93,7 @@ class S3StorageAdapter:
             # Generate S3 key
             timestamp = datetime.now(UTC).strftime("%Y/%m/%d")
             key = f"{self.prefix}/{timestamp}/{job_id}/{artifact_name}"
-            
+
             # Prepare metadata
             upload_metadata = {
                 "job-id": job_id,
@@ -104,7 +102,7 @@ class S3StorageAdapter:
             }
             if metadata:
                 upload_metadata.update(metadata)
-            
+
             # Convert content to bytes if needed
             if isinstance(content, str):
                 content_bytes = content.encode('utf-8')
@@ -112,7 +110,7 @@ class S3StorageAdapter:
                 content_bytes = content.read()
             else:
                 content_bytes = content
-            
+
             # Upload to S3
             await asyncio.get_event_loop().run_in_executor(
                 self.executor,
@@ -122,13 +120,13 @@ class S3StorageAdapter:
                 content_type,
                 upload_metadata
             )
-            
+
             # Generate URL
             url = f"https://{self.bucket_name}.s3.amazonaws.com/{key}"
-            
+
             logger.info(f"Uploaded artifact {artifact_name} for job {job_id} to {url}")
             return url
-            
+
         except Exception as e:
             logger.error(f"Failed to upload artifact {artifact_name} for job {job_id}: {str(e)}")
             raise
@@ -137,14 +135,14 @@ class S3StorageAdapter:
         self,
         job_id: str,
         artifact_name: str
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """
         Download an artifact from S3.
-        
+
         Args:
             job_id: Job identifier
             artifact_name: Name of the artifact file
-            
+
         Returns:
             Artifact content as bytes, or None if not found
         """
@@ -154,17 +152,17 @@ class S3StorageAdapter:
             if not key:
                 logger.warning(f"Artifact {artifact_name} not found for job {job_id}")
                 return None
-            
+
             # Download from S3
             content = await asyncio.get_event_loop().run_in_executor(
                 self.executor,
                 self._download_object_sync,
                 key
             )
-            
+
             logger.info(f"Downloaded artifact {artifact_name} for job {job_id}")
             return content
-            
+
         except Exception as e:
             logger.error(f"Failed to download artifact {artifact_name} for job {job_id}: {str(e)}")
             raise
@@ -176,11 +174,11 @@ class S3StorageAdapter:
     ) -> bool:
         """
         Delete an artifact from S3.
-        
+
         Args:
             job_id: Job identifier
             artifact_name: Name of the artifact file
-            
+
         Returns:
             True if deleted successfully, False if not found
         """
@@ -190,17 +188,17 @@ class S3StorageAdapter:
             if not key:
                 logger.warning(f"Artifact {artifact_name} not found for job {job_id}")
                 return False
-            
+
             # Delete from S3
             await asyncio.get_event_loop().run_in_executor(
                 self.executor,
                 self._delete_object_sync,
                 key
             )
-            
+
             logger.info(f"Deleted artifact {artifact_name} for job {job_id}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to delete artifact {artifact_name} for job {job_id}: {str(e)}")
             raise
@@ -208,30 +206,30 @@ class S3StorageAdapter:
     async def list_job_artifacts(
         self,
         job_id: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List all artifacts for a job.
-        
+
         Args:
             job_id: Job identifier
-            
+
         Returns:
             List of artifact information dictionaries
         """
         try:
             # List objects with job prefix
             prefix = f"{self.prefix}/"
-            
+
             artifacts = await asyncio.get_event_loop().run_in_executor(
                 self.executor,
                 self._list_objects_sync,
                 prefix,
                 job_id
             )
-            
+
             logger.info(f"Found {len(artifacts)} artifacts for job {job_id}")
             return artifacts
-            
+
         except Exception as e:
             logger.error(f"Failed to list artifacts for job {job_id}: {str(e)}")
             raise
@@ -239,7 +237,7 @@ class S3StorageAdapter:
     async def setup_lifecycle_policy(self) -> bool:
         """
         Set up S3 lifecycle policy for automatic artifact management.
-        
+
         Returns:
             True if policy was set successfully
         """
@@ -268,16 +266,16 @@ class S3StorageAdapter:
                     }
                 ]
             }
-            
+
             await asyncio.get_event_loop().run_in_executor(
                 self.executor,
                 self._put_lifecycle_configuration_sync,
                 lifecycle_config
             )
-            
+
             logger.info(f"Set up lifecycle policy for bucket {self.bucket_name}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to set up lifecycle policy: {str(e)}")
             return False
@@ -287,7 +285,7 @@ class S3StorageAdapter:
         key: str,
         content: bytes,
         content_type: str,
-        metadata: Dict[str, str]
+        metadata: dict[str, str]
     ) -> None:
         """Synchronous S3 object upload"""
         self.s3_client.put_object(
@@ -313,15 +311,15 @@ class S3StorageAdapter:
             Key=key
         )
 
-    def _list_objects_sync(self, prefix: str, job_id: str) -> List[Dict[str, Any]]:
+    def _list_objects_sync(self, prefix: str, job_id: str) -> list[dict[str, Any]]:
         """Synchronous S3 object listing"""
         artifacts = []
         paginator = self.s3_client.get_paginator('list_objects_v2')
-        
+
         for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix):
             if 'Contents' not in page:
                 continue
-                
+
             for obj in page['Contents']:
                 key = obj['Key']
                 # Check if this object belongs to the job
@@ -334,36 +332,36 @@ class S3StorageAdapter:
                         'last_modified': obj['LastModified'].isoformat(),
                         'url': f"https://{self.bucket_name}.s3.amazonaws.com/{key}"
                     })
-        
+
         return artifacts
 
-    def _put_lifecycle_configuration_sync(self, lifecycle_config: Dict[str, Any]) -> None:
+    def _put_lifecycle_configuration_sync(self, lifecycle_config: dict[str, Any]) -> None:
         """Synchronous lifecycle configuration setup"""
         self.s3_client.put_bucket_lifecycle_configuration(
             Bucket=self.bucket_name,
             LifecycleConfiguration=lifecycle_config
         )
 
-    async def _find_artifact_key(self, job_id: str, artifact_name: str) -> Optional[str]:
+    async def _find_artifact_key(self, job_id: str, artifact_name: str) -> str | None:
         """Find the S3 key for an artifact by searching through date prefixes"""
         try:
             # Search in recent date folders (last 30 days)
             for days_back in range(30):
                 date = (datetime.now(UTC) - timedelta(days=days_back)).strftime("%Y/%m/%d")
                 key = f"{self.prefix}/{date}/{job_id}/{artifact_name}"
-                
+
                 # Check if object exists
                 exists = await asyncio.get_event_loop().run_in_executor(
                     self.executor,
                     self._object_exists_sync,
                     key
                 )
-                
+
                 if exists:
                     return key
-            
+
             return None
-            
+
         except Exception as e:
             logger.error(f"Error finding artifact key: {str(e)}")
             return None

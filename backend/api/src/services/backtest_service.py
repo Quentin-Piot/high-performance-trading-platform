@@ -1,23 +1,20 @@
 from __future__ import annotations
+
 import io
 import logging
-from typing import Union
+from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 
-from dataclasses import dataclass
-from domain.backtest import BacktestResult, BacktestParams
-from domain.interfaces import PriceSeriesSource, StrategyInterface
+from domain.interfaces import PriceSeriesSource
 
 # Import des stratégies modernes
-from strategies.moving_average import MovingAverageStrategy, MovingAverageParams
-from strategies.rsi_reversion import RSIReversionStrategy, RSIParams
+from strategies.moving_average import MovingAverageParams, MovingAverageStrategy
+from strategies.rsi_reversion import RSIParams, RSIReversionStrategy
 
 logger = logging.getLogger("services.backtest")
 
-
-def _read_csv_to_series(file_obj: Union[io.BytesIO, bytes]) -> pd.Series:
+def _read_csv_to_series(file_obj: io.BytesIO | bytes) -> pd.Series:
     if isinstance(file_obj, (bytes, bytearray)):
         buffer = io.BytesIO(file_obj)
         df = pd.read_csv(buffer)
@@ -41,14 +38,13 @@ def _read_csv_to_series(file_obj: Union[io.BytesIO, bytes]) -> pd.Series:
 
     return pd.Series(df[price_col].astype(float).values, dtype=float)
 
-
 class CsvBytesPriceSeriesSource(PriceSeriesSource):
-    def __init__(self, data: Union[bytes, io.BytesIO]):
+    def __init__(self, data: bytes | io.BytesIO):
         self._data = data
 
     def get_prices(self) -> pd.Series:
         return _read_csv_to_series(self._data)
-    
+
     def to_dataframe(self) -> pd.DataFrame:
         """Convert CSV data to DataFrame for Monte Carlo processing."""
         if isinstance(self._data, (bytes, bytearray)):
@@ -71,19 +67,17 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
             df = df.sort_values("date")
             df = df.set_index("date")
-        
+
         # Rename price column to 'close' for consistency
         if price_col != "close":
             df = df.rename(columns={price_col: "close"})
-        
+
         # Ensure close column is float
         df["close"] = df["close"].astype(float)
-        
+
         return df
 
-
 # Stratégies supprimées - utiliser les implémentations modernes dans strategies/
-
 
 @dataclass
 class ServiceBacktestResult:
@@ -92,13 +86,11 @@ class ServiceBacktestResult:
     drawdown: float
     sharpe: float
 
-
 def _default_date_bounds():
     """Return sane date bounds to avoid pandas min/max nanosecond warnings."""
     start = pd.Timestamp("1970-01-01").to_pydatetime()
     end = pd.Timestamp("2100-01-01").to_pydatetime()
     return start, end
-
 
 def run_sma_crossover(
     source: PriceSeriesSource, sma_short: int, sma_long: int
@@ -109,7 +101,7 @@ def run_sma_crossover(
     """
     # Convertir les données en DataFrame
     df = source.to_dataframe()
-    
+
     # Créer les paramètres pour la stratégie moderne
     params = MovingAverageParams(
         short_window=sma_short,
@@ -118,11 +110,11 @@ def run_sma_crossover(
         initial_capital=1.0,
         commission=0.0
     )
-    
+
     # Exécuter la stratégie moderne
     strategy = MovingAverageStrategy()
     result = strategy.run(df, params)
-    
+
     # Convertir vers le format legacy
     return ServiceBacktestResult(
         equity=result.equity,
@@ -131,9 +123,8 @@ def run_sma_crossover(
         sharpe=result.sharpe_ratio,
     )
 
-
 def sma_crossover_backtest(
-    file_obj: Union[io.BytesIO, bytes], sma_short: int, sma_long: int
+    file_obj: io.BytesIO | bytes, sma_short: int, sma_long: int
 ):
     source = CsvBytesPriceSeriesSource(file_obj)
     result = run_sma_crossover(source, sma_short, sma_long)
@@ -144,7 +135,6 @@ def sma_crossover_backtest(
         float(result.sharpe),
     )
 
-
 def run_rsi(
     source: PriceSeriesSource, period: int, overbought: float, oversold: float
 ) -> ServiceBacktestResult:
@@ -154,7 +144,7 @@ def run_rsi(
     """
     # Convertir les données en DataFrame
     df = source.to_dataframe()
-    
+
     # Créer les paramètres pour la stratégie moderne
     params = RSIParams(
         window=period,
@@ -164,11 +154,11 @@ def run_rsi(
         initial_capital=1.0,
         commission=0.0
     )
-    
+
     # Exécuter la stratégie moderne
     strategy = RSIReversionStrategy()
     result = strategy.run(df, params)
-    
+
     # Convertir vers le format legacy
     return ServiceBacktestResult(
         equity=result.equity,

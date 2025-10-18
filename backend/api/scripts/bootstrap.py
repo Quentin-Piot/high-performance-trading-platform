@@ -1,12 +1,13 @@
 import os
+import signal
+import subprocess
 import sys
 import time
-import signal
 from urllib.parse import urlparse
-import subprocess
 
 import psycopg
 from dotenv import load_dotenv
+
 
 # --- Alembic stamping helpers ---
 def _to_psycopg_dsn(dsn: str) -> str:

@@ -6,16 +6,14 @@ Revises: 0001_initial
 Create Date: 2024-01-01 00:00:00.000000
 """
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0002_add_jobs_table"
 down_revision = "0001_initial"
 branch_labels = None
 depends_on = None
-
 
 def upgrade() -> None:
     """
@@ -65,7 +63,6 @@ def upgrade() -> None:
         existing_uniques = {uc.get("name") for uc in inspector.get_unique_constraints("jobs")}
         if "uq_job_dedup_key" not in existing_uniques:
             op.create_unique_constraint("uq_job_dedup_key", "jobs", ["dedup_key"])
-
 
 def downgrade() -> None:
     op.drop_constraint("uq_job_dedup_key", "jobs", type_="unique")

@@ -2,31 +2,47 @@
 Monte Carlo simulation API endpoints.
 """
 
-from typing import List, Optional, Dict, Any
-from uuid import UUID
-from datetime import datetime
+import asyncio
+import logging
+from collections import defaultdict
+from datetime import UTC, datetime
+from functools import lru_cache
+from typing import Any
 
 from fastapi import (
     APIRouter,
-    HTTPException,
-    Depends,
     BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
     Query,
-    status,
+    UploadFile,
     WebSocket,
+    status,
 )
-from starlette.websockets import WebSocketDisconnect
 from pydantic import BaseModel, Field, field_validator
+from starlette.websockets import WebSocketDisconnect
 
-from domain.queue import JobStatus, JobPriority, MonteCarloJobPayload, JobMetadata
-from services.job_manager import MonteCarloJobManager
-from infrastructure.queue.sqs_adapter import SQSQueueAdapter
-from infrastructure.monitoring.metrics import MonitoringService
 from config.queue_config import get_config
-from utils.date_validation import validate_date_range_for_symbol, get_all_symbols_date_ranges
-import asyncio
-from functools import lru_cache
 
+# Import enhanced logging utilities
+from core.background_task_logging import (
+    log_websocket_connection,
+)
+from domain.queue import JobPriority, JobStatus, MonteCarloJobPayload
+from infrastructure.queue.sqs_adapter import SQSQueueAdapter
+from services.job_manager import MonteCarloJobManager
+from utils.date_validation import (
+    get_all_symbols_date_ranges,
+    validate_date_range_for_csv_bytes,
+    validate_date_range_for_symbol,
+)
+
+# Global dictionary to store locks for each job to prevent race conditions
+_job_locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+logger = logging.getLogger(__name__)
 
 # Pydantic models for API requests/responses
 class MonteCarloJobRequest(BaseModel):
@@ -37,13 +53,13 @@ class MonteCarloJobRequest(BaseModel):
     end_date: datetime = Field(..., description="End date for simulation")
     num_runs: int = Field(..., ge=1, le=10000, description="Number of simulation runs")
     initial_capital: float = Field(..., gt=0, description="Initial capital amount")
-    strategy_params: Dict[str, Any] = Field(
+    strategy_params: dict[str, Any] = Field(
         default_factory=dict, description="Strategy parameters"
     )
     priority: JobPriority = Field(
         default=JobPriority.NORMAL, description="Job priority"
     )
-    timeout_seconds: Optional[int] = Field(
+    timeout_seconds: int | None = Field(
         None, ge=60, le=7200, description="Job timeout in seconds"
     )
 
@@ -62,15 +78,13 @@ class MonteCarloJobRequest(BaseModel):
             pass
         return v
 
-
 class BulkMonteCarloJobRequest(BaseModel):
     """Request model for creating multiple Monte Carlo jobs"""
 
-    jobs: List[MonteCarloJobRequest] = Field(..., min_length=1, max_length=50)
-    batch_name: Optional[str] = Field(
+    jobs: list[MonteCarloJobRequest] = Field(..., min_length=1, max_length=50)
+    batch_name: str | None = Field(
         None, description="Optional batch name for grouping"
     )
-
 
 class JobResponse(BaseModel):
     """Response model for job information"""
@@ -78,12 +92,11 @@ class JobResponse(BaseModel):
     job_id: str
     status: JobStatus
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    progress: Optional[float] = Field(None, ge=0.0, le=1.0)
-    result: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-
+    updated_at: datetime | None = None
+    progress: float | None = Field(None, ge=0.0, le=1.0)
+    result: dict[str, Any] | None = None
+    error_message: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 class JobSubmissionResponse(BaseModel):
     """Response model for job submission"""
@@ -91,30 +104,27 @@ class JobSubmissionResponse(BaseModel):
     job_id: str
     status: JobStatus
     message: str
-    estimated_completion_time: Optional[datetime] = None
-
+    estimated_completion_time: datetime | None = None
 
 class BulkJobSubmissionResponse(BaseModel):
     """Response model for bulk job submission"""
 
-    batch_id: Optional[str] = None
-    jobs: List[JobSubmissionResponse]
+    batch_id: str | None = None
+    jobs: list[JobSubmissionResponse]
     total_jobs: int
     successful_submissions: int
     failed_submissions: int
-
 
 class JobProgressResponse(BaseModel):
     """Response model for job progress"""
 
     job_id: str
     status: JobStatus
-    progress: Optional[float] = None
-    current_run: Optional[int] = None
-    total_runs: Optional[int] = None
-    estimated_completion_time: Optional[datetime] = None
+    progress: float | None = None
+    current_run: int | None = None
+    total_runs: int | None = None
+    estimated_completion_time: datetime | None = None
     last_updated: datetime
-
 
 class QueueMetricsResponse(BaseModel):
     """Response model for queue metrics."""
@@ -124,24 +134,21 @@ class QueueMetricsResponse(BaseModel):
     running_jobs: int
     completed_jobs: int
     failed_jobs: int
-    average_processing_time: Optional[float] = None
+    average_processing_time: float | None = None
     queue_depth: int
     worker_count: int
 
-
 class SymbolDateRangeResponse(BaseModel):
     """Response model for symbol date ranges."""
-    
+
     symbol: str
     min_date: datetime
     max_date: datetime
 
-
 class AllSymbolsDateRangesResponse(BaseModel):
     """Response model for all symbols date ranges."""
-    
-    symbols: List[SymbolDateRangeResponse]
 
+    symbols: list[SymbolDateRangeResponse]
 
 # Dependency injection
 @lru_cache(maxsize=1)
@@ -155,10 +162,8 @@ def get_job_manager() -> MonteCarloJobManager:
     queue_adapter = SQSQueueAdapter(config.sqs)
     return MonteCarloJobManager(queue_adapter)
 
-
 # Router setup
 router = APIRouter(prefix="/monte-carlo", tags=["Monte Carlo Simulations"])
-
 
 @router.post(
     "/jobs", response_model=JobSubmissionResponse, status_code=status.HTTP_201_CREATED
@@ -184,8 +189,9 @@ async def submit_job(
     """
     try:
         import os
-        import pandas as pd
         from io import BytesIO
+
+        import pandas as pd
 
         # Map symbol to dataset file
         symbol_to_file = {
@@ -211,13 +217,13 @@ async def submit_job(
             start_date=job_request.start_date,
             end_date=job_request.end_date
         )
-        
+
         if not validation_result['valid']:
             error_detail = validation_result['error_message']
             if validation_result['suggested_range']:
                 suggested = validation_result['suggested_range']
                 error_detail += f" Suggested range: {suggested['start_date'].strftime('%Y-%m-%d')} to {suggested['end_date'].strftime('%Y-%m-%d')}"
-            
+
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=error_detail,
@@ -287,8 +293,7 @@ async def submit_job(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to submit job: {str(e)}",
-        )
-
+        ) from e
 
 @router.post(
     "/jobs/bulk",
@@ -363,8 +368,7 @@ async def submit_bulk_jobs(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to submit bulk jobs: {str(e)}",
-        )
-
+        ) from e
 
 @router.get("/jobs/{job_id}", response_model=JobResponse)
 async def get_job_status(
@@ -408,8 +412,7 @@ async def get_job_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get job status: {str(e)}",
-        )
-
+        ) from e
 
 @router.get("/jobs/{job_id}/progress", response_model=JobProgressResponse)
 async def get_job_progress(
@@ -443,7 +446,7 @@ async def get_job_progress(
             current_run=progress.get("current_run"),
             total_runs=progress.get("total_runs"),
             estimated_completion_time=progress.get("estimated_completion_time"),
-            last_updated=progress.get("last_updated", datetime.utcnow()),
+            last_updated=progress.get("last_updated", datetime.now(UTC)),
         )
 
     except HTTPException:
@@ -452,8 +455,7 @@ async def get_job_progress(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get job progress: {str(e)}",
-        )
-
+        ) from e
 
 @router.delete("/jobs/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def cancel_job(
@@ -484,12 +486,11 @@ async def cancel_job(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel job: {str(e)}",
-        )
+        ) from e
 
-
-@router.get("/jobs", response_model=List[JobResponse])
+@router.get("/jobs", response_model=list[JobResponse])
 async def list_jobs(
-    status_filter: Optional[JobStatus] = Query(
+    status_filter: JobStatus | None = Query(
         None, description="Filter jobs by status"
     ),
     limit: int = Query(
@@ -497,7 +498,7 @@ async def list_jobs(
     ),
     offset: int = Query(0, ge=0, description="Number of jobs to skip"),
     job_manager: MonteCarloJobManager = Depends(get_job_manager),
-) -> List[JobResponse]:
+) -> list[JobResponse]:
     """
     List jobs with optional filtering and pagination.
 
@@ -536,8 +537,7 @@ async def list_jobs(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list jobs: {str(e)}",
-        )
-
+        ) from e
 
 @router.get("/metrics", response_model=QueueMetricsResponse)
 async def get_queue_metrics(
@@ -573,8 +573,7 @@ async def get_queue_metrics(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get queue metrics: {str(e)}",
-        )
-
+        ) from e
 
 @router.post("/jobs/{job_id}/wait", response_model=JobResponse)
 async def wait_for_job_completion(
@@ -623,40 +622,62 @@ async def wait_for_job_completion(
         raise HTTPException(
             status_code=status.HTTP_408_REQUEST_TIMEOUT,
             detail=f"Job {job_id} did not complete within {timeout_seconds} seconds",
-        )
+        ) from None
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to wait for job completion: {str(e)}",
-        )
-
+        ) from e
 
 # Export the router
 monte_carlo_router = router
 
-
 # WebSocket endpoint to stream job progress in real-time
 @router.websocket("/jobs/{job_id}/progress")
+@log_websocket_connection("monte_carlo_progress")
 async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
     """
     WebSocket endpoint for real-time job progress updates using Redis pub/sub.
-    
+
     Args:
         websocket: WebSocket connection
         job_id: Job ID to monitor
     """
     await websocket.accept()
-    
+
     # Use shared job manager to read initial job state
     job_manager = get_job_manager()
-    
+
+    # Add connection tracking and cleanup
+    connection_id = f"ws_{job_id}_{id(websocket)}"
+    logger.info(f"WebSocket connection established: {connection_id}")
+
+    # Create a lock for this specific job to prevent race conditions
+    job_lock = _job_locks[job_id]
+
     try:
-        # Send initial job state
-        progress = await job_manager.get_job_progress(job_id)
+        # Send immediate acknowledgment message to eliminate initial delay
+        immediate_payload = {
+            "job_id": job_id,
+            "status": "connecting",
+            "progress": None,
+            "message": "WebSocket connection established, fetching job status...",
+            "current_run": None,
+            "total_runs": None,
+            "estimated_completion_time": None,
+            "last_updated": datetime.now(UTC).isoformat(),
+        }
+        await websocket.send_json(immediate_payload)
+        logger.debug(f"Sent immediate connection acknowledgment: {connection_id}")
+
+        # Send initial job state with proper error handling
+        async with job_lock:
+            progress = await job_manager.get_job_progress(job_id)
+
         if not progress:
             payload = {
                 "job_id": job_id,
-                "status": str(JobStatus.PENDING),
+                "status": JobStatus.PENDING.value,
                 "progress": None,
                 "current_run": None,
                 "total_runs": None,
@@ -668,7 +689,7 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
             status_val = progress.get("status", JobStatus.PENDING)
             payload = {
                 "job_id": job_id,
-                "status": str(status_val),
+                "status": (status_val.value if isinstance(status_val, JobStatus) else status_val),
                 "progress": progress.get("progress"),
                 "message": progress.get("message"),
                 "created_at": progress.get("created_at"),
@@ -688,7 +709,7 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                 "last_updated": progress.get("last_updated"),
             }
             await websocket.send_json(payload)
-            
+
             # If job is already in terminal state, wait for client to close or timeout
             if status_val in {JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED}:
                 try:
@@ -698,30 +719,142 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                     await websocket.close(code=1000)
                 except WebSocketDisconnect:
                     pass
+                finally:
+                    logger.info(f"WebSocket connection closed (terminal state): {connection_id}")
                 return
 
         # Subscribe to Redis pub/sub for real-time updates
         from infrastructure.cache import cache_manager
-        
-        # Create a task to listen for Redis notifications
+
+        # Create a task to listen for Redis notifications with enhanced pub/sub system
         async def listen_for_updates():
+            subscription_active = False
+            last_sequence_number = 0
+
             try:
+                # Use the enhanced pub/sub system with automatic reconnection and message ordering
                 async for message in cache_manager.subscribe(f"job_progress:{job_id}"):
+                    subscription_active = True
+
                     # Check if WebSocket is still open before sending
                     if websocket.client_state.name != "CONNECTED":
                         logger.info(f"WebSocket disconnected for job {job_id}, stopping updates")
                         break
-                        
-                    if message['channel'] == f"job_progress:{job_id}":
-                        data = message['data']
-                        
-                        # Get full job state for complete payload
+
+                    # Enhanced message handling with ordering and deduplication
+                    if hasattr(message, 'sequence_number'):
+                        # Skip duplicate or out-of-order messages
+                        if message.sequence_number <= last_sequence_number:
+                            logger.debug(f"Skipping duplicate/out-of-order message: seq={message.sequence_number}, last={last_sequence_number}")
+                            continue
+                        last_sequence_number = message.sequence_number
+
+                    # Extract data from enhanced message format
+                    # Extract data from enhanced message format (not used currently)
+                    # Keeping for future use without assigning to an unused variable
+
+                    # Get full job state for complete payload with lock protection
+                    async with job_lock:
                         current_progress = await job_manager.get_job_progress(job_id)
-                        if current_progress:
-                            status_val = current_progress.get("status", JobStatus.PENDING)
+
+                    if current_progress:
+                        status_val = current_progress.get("status", JobStatus.PENDING)
+                        payload = {
+                            "job_id": job_id,
+                            "status": (status_val.value if isinstance(status_val, JobStatus) else status_val),
+                            "progress": current_progress.get("progress"),
+                            "message": current_progress.get("message"),
+                            "created_at": current_progress.get("created_at"),
+                            "updated_at": current_progress.get("updated_at"),
+                            "started_at": current_progress.get("started_at"),
+                            "completed_at": current_progress.get("completed_at"),
+                            "duration_seconds": current_progress.get("duration_seconds"),
+                            "error": current_progress.get("error"),
+                            "retry_count": current_progress.get("retry_count"),
+                            "worker_id": current_progress.get("worker_id"),
+                            "artifact_url": current_progress.get("artifact_url"),
+                            "artifacts": current_progress.get("artifacts", []),
+                            # Include counters and ETA for frontend display
+                            "current_run": current_progress.get("current_run"),
+                            "total_runs": current_progress.get("total_runs"),
+                            "estimated_completion_time": current_progress.get("estimated_completion_time"),
+                            "eta_seconds": current_progress.get("eta_seconds"),
+                            "last_updated": current_progress.get("last_updated"),
+                            # Add message metadata for debugging
+                            "message_sequence": getattr(message, 'sequence_number', None),
+                            "message_timestamp": getattr(message, 'timestamp', None),
+                        }
+
+                        try:
+                            await websocket.send_json(payload)
+                            logger.debug(f"Sent progress update via enhanced Redis pub/sub: {connection_id} (seq: {getattr(message, 'sequence_number', 'N/A')})")
+                        except Exception as send_error:
+                            logger.warning(f"Failed to send WebSocket message for job {job_id}: {send_error}")
+                            break
+
+                        # Break on terminal states
+                        if status_val in {JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED}:
+                            logger.info(f"Job {job_id} reached terminal state: {status_val}")
+                            break
+
+            except Exception as e:
+                logger.error(f"Enhanced Redis subscription error for job {job_id}: {str(e)}")
+                # Check pub/sub health for better error reporting
+                try:
+                    health_status = cache_manager.get_pubsub_health()
+                    logger.error(f"Redis pub/sub health status: {health_status}")
+                except Exception:
+                    pass
+
+                if not subscription_active:
+                    # If subscription never became active, Redis is likely down
+                    raise
+
+        # Create a fallback polling task with improved error handling
+        async def fallback_polling():
+            poll_count = 0
+            last_status = None
+            last_progress = None
+            last_current_run = None
+
+            while True:
+                # Check if WebSocket is still open before polling
+                if websocket.client_state.name != "CONNECTED":
+                    logger.info(f"WebSocket disconnected for job {job_id}, stopping polling")
+                    break
+
+                await asyncio.sleep(1.0)
+                poll_count += 1
+
+                try:
+                    async with job_lock:
+                        current_progress = await job_manager.get_job_progress(job_id)
+
+                    if current_progress:
+                        status_val = current_progress.get("status", JobStatus.PENDING)
+
+                        # Detect progress/run changes
+                        try:
+                            progress_val = float(current_progress.get("progress") or 0.0)
+                        except Exception:
+                            progress_val = 0.0
+                        curr_run = current_progress.get("current_run")
+
+                        should_send = False
+                        if status_val != last_status:
+                            should_send = True
+                        elif curr_run is not None and curr_run != last_current_run:
+                            should_send = True
+                        elif abs(progress_val - (last_progress or 0.0)) >= 0.01:
+                            should_send = True
+                        elif poll_count % 10 == 0:
+                            # periodic heartbeat even without changes
+                            should_send = True
+
+                        if should_send:
                             payload = {
                                 "job_id": job_id,
-                                "status": str(status_val),
+                                "status": (status_val.value if isinstance(status_val, JobStatus) else status_val),
                                 "progress": current_progress.get("progress"),
                                 "message": current_progress.get("message"),
                                 "created_at": current_progress.get("created_at"),
@@ -738,89 +871,73 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                                 "current_run": current_progress.get("current_run"),
                                 "total_runs": current_progress.get("total_runs"),
                                 "estimated_completion_time": current_progress.get("estimated_completion_time"),
+                                "eta_seconds": current_progress.get("eta_seconds"),
                                 "last_updated": current_progress.get("last_updated"),
                             }
-                            
+
                             try:
                                 await websocket.send_json(payload)
+                                if status_val != last_status:
+                                    logger.debug(f"Sent progress update via polling: {connection_id}")
+                                last_status = status_val
+                                last_progress = progress_val
+                                last_current_run = curr_run
                             except Exception as send_error:
                                 logger.warning(f"Failed to send WebSocket message for job {job_id}: {send_error}")
                                 break
-                            
-                            # Break on terminal states
-                            if status_val in {JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED}:
-                                break
-            except Exception as e:
-                logger.error(f"Error in Redis subscription for job {job_id}: {str(e)}")
 
-        # Create a fallback polling task in case Redis pub/sub is not available
-        async def fallback_polling():
-            while True:
-                # Check if WebSocket is still open before polling
-                if websocket.client_state.name != "CONNECTED":
-                    logger.info(f"WebSocket disconnected for job {job_id}, stopping polling")
-                    break
-                    
-                await asyncio.sleep(1.0)
-                current_progress = await job_manager.get_job_progress(job_id)
-                if current_progress:
-                    status_val = current_progress.get("status", JobStatus.PENDING)
-                    payload = {
-                        "job_id": job_id,
-                        "status": str(status_val),
-                        "progress": current_progress.get("progress"),
-                        "message": current_progress.get("message"),
-                        "created_at": current_progress.get("created_at"),
-                        "updated_at": current_progress.get("updated_at"),
-                        "started_at": current_progress.get("started_at"),
-                        "completed_at": current_progress.get("completed_at"),
-                        "duration_seconds": current_progress.get("duration_seconds"),
-                        "error": current_progress.get("error"),
-                        "retry_count": current_progress.get("retry_count"),
-                        "worker_id": current_progress.get("worker_id"),
-                        "artifact_url": current_progress.get("artifact_url"),
-                        "artifacts": current_progress.get("artifacts", []),
-                        # Include counters and ETA for frontend display
-                        "current_run": current_progress.get("current_run"),
-                        "total_runs": current_progress.get("total_runs"),
-                        "estimated_completion_time": current_progress.get("estimated_completion_time"),
-                        "last_updated": current_progress.get("last_updated"),
-                    }
-                    
-                    try:
-                        await websocket.send_json(payload)
-                    except Exception as send_error:
-                        logger.warning(f"Failed to send WebSocket message for job {job_id}: {send_error}")
-                        break
-                    
-                    # Break on terminal states
-                    if status_val in {JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED}:
-                        break
+                        # Break on terminal states
+                        if status_val in {JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED}:
+                            logger.info(f"Job {job_id} reached terminal state via polling: {status_val}")
+                            break
+
+                except Exception as e:
+                    logger.error(f"Error during polling for job {job_id}: {str(e)}")
+                    # Continue polling despite errors
+                    continue
 
         # Try Redis pub/sub first, fallback to polling if Redis is not available
         try:
             # Check if Redis is available before trying pub/sub
             if not cache_manager.is_connected():
-                logger.warning("Redis is not connected, using fallback polling")
+                logger.warning(f"Redis is not connected for {connection_id}, using fallback polling")
                 await fallback_polling()
             else:
-                # Create a timeout for Redis pub/sub to detect if it's not working
+                # Check pub/sub health before attempting subscription
                 try:
-                    await asyncio.wait_for(listen_for_updates(), timeout=2.0)
+                    health_status = cache_manager.get_pubsub_health()
+                    if not health_status.get('healthy', False):
+                        logger.warning(f"Redis pub/sub is unhealthy for {connection_id}: {health_status}, falling back to polling")
+                        await fallback_polling()
+                        return
+                except Exception as health_error:
+                    logger.warning(f"Failed to check pub/sub health for {connection_id}: {health_error}, falling back to polling")
+                    await fallback_polling()
+                    return
+
+                # Create a timeout for Redis pub/sub to detect if it's not working (reduced from 5s to 1s)
+                try:
+                    await asyncio.wait_for(listen_for_updates(), timeout=1.0)
                 except asyncio.TimeoutError:
-                    # If no Redis messages received within 2 seconds, fallback to polling
-                    logger.warning("Redis pub/sub timeout, falling back to polling")
+                    # If no Redis messages received within 1 second, fallback to polling
+                    logger.warning(f"Enhanced Redis pub/sub timeout for {connection_id}, falling back to polling")
                     await fallback_polling()
         except Exception as e:
-            logger.warning(f"Redis pub/sub failed, falling back to polling: {str(e)}")
+            logger.warning(f"Enhanced Redis pub/sub failed for {connection_id}, falling back to polling: {str(e)}")
+            # Log pub/sub metrics for debugging
+            try:
+                metrics = cache_manager.get_pubsub_metrics()
+                logger.warning(f"Redis pub/sub metrics: {metrics}")
+            except Exception:
+                pass
             await fallback_polling()
 
     except WebSocketDisconnect:
         # Client disconnected; nothing to do
-        logger.info(f"WebSocket disconnected for job {job_id}")
+        logger.info(f"WebSocket disconnected: {connection_id}")
         return
     except Exception as e:
-        logger.error(f"WebSocket error for job {job_id}: {str(e)}")
+        logger.error(f"WebSocket error for {connection_id}: {str(e)}")
         try:
             if websocket.client_state.name == "CONNECTED":
                 await websocket.send_json({"error": f"WS error: {str(e)}"})
@@ -831,27 +948,26 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                 await websocket.close(code=1011)
             except Exception:
                 pass  # Ignore errors when trying to close
-            return
 
     # Close cleanly after terminal state update
     try:
         if websocket.client_state.name == "CONNECTED":
             await websocket.close(code=1000)
+            logger.info(f"WebSocket connection closed cleanly: {connection_id}")
     except Exception as e:
-        logger.warning(f"Error closing WebSocket for job {job_id}: {str(e)}")
-
+        logger.warning(f"Error closing WebSocket for {connection_id}: {str(e)}")
 
 @router.get("/symbols/date-ranges", response_model=AllSymbolsDateRangesResponse)
 async def get_symbols_date_ranges():
     """
     Get available date ranges for all supported symbols.
-    
+
     Returns:
         AllSymbolsDateRangesResponse: Date ranges for all symbols
     """
     try:
         date_ranges = get_all_symbols_date_ranges()
-        
+
         symbols = [
             SymbolDateRangeResponse(
                 symbol=symbol,
@@ -860,11 +976,114 @@ async def get_symbols_date_ranges():
             )
             for symbol, ranges in date_ranges.items()
         ]
-        
+
         return AllSymbolsDateRangesResponse(symbols=symbols)
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving symbol date ranges: {str(e)}"
+        ) from e
+
+@router.post(
+    "/jobs/upload", response_model=JobSubmissionResponse, status_code=status.HTTP_201_CREATED
+)
+async def submit_job_upload(
+    csv: UploadFile = File(..., description="CSV file with columns: date, close"),
+    start_date: datetime = Form(..., description="Start date for simulation"),
+    end_date: datetime = Form(..., description="End date for simulation"),
+    num_runs: int = Form(..., description="Number of simulation runs"),
+    initial_capital: float = Form(..., description="Initial capital amount"),
+    strategy_params_json: str = Form("{}", description="Strategy parameters as JSON"),
+    method: str = Form("bootstrap", description="Monte Carlo method: bootstrap or gaussian"),
+    priority: JobPriority = Form(JobPriority.NORMAL),
+    timeout_seconds: int | None = Form(None),
+    job_manager: MonteCarloJobManager = Depends(get_job_manager),
+) -> JobSubmissionResponse:
+    """
+    Submit a Monte Carlo job using an uploaded CSV (accepts arbitrary files).
+
+    Performs real-time date validation against the uploaded CSV and filters
+    the dataset to the requested date range before enqueuing the job.
+    """
+    try:
+        import json
+        from io import BytesIO
+
+        import pandas as pd
+
+        # Read uploaded CSV
+        csv_bytes = await csv.read()
+        if not csv_bytes:
+            raise HTTPException(status_code=400, detail="Empty CSV upload")
+
+        # Validate date range on uploaded data
+        validation = validate_date_range_for_csv_bytes(csv_bytes, start_date, end_date)
+        if not validation["valid"]:
+            detail = validation["error_message"] or "Invalid date range for uploaded CSV"
+            suggested = validation.get("suggested_range")
+            if suggested:
+                detail += (
+                    f". Suggested range: "
+                    f"{suggested['start_date'].strftime('%Y-%m-%d')} to "
+                    f"{suggested['end_date'].strftime('%Y-%m-%d')}"
+                )
+            raise HTTPException(status_code=400, detail=detail)
+
+        # Filter by requested date range
+        df = pd.read_csv(BytesIO(csv_bytes))
+        df.columns = [str(c).strip().lower() for c in df.columns]
+        if "date" not in df.columns:
+            raise HTTPException(status_code=400, detail="CSV must contain a 'date' column")
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df = df.dropna(subset=["date"])
+        df = df[(df["date"] >= pd.to_datetime(start_date)) & (df["date"] <= pd.to_datetime(end_date))]
+        if df.empty:
+            raise HTTPException(status_code=400, detail="No data in requested date range after filtering")
+
+        # Convert filtered DataFrame back to CSV bytes
+        buf = BytesIO()
+        df.to_csv(buf, index=False)
+        filtered_csv = buf.getvalue()
+
+        # Parse strategy params JSON into dict
+        try:
+            strategy_params: dict[str, Any] = json.loads(strategy_params_json or "{}")
+            if not isinstance(strategy_params, dict):
+                raise ValueError("strategy_params_json must be a JSON object")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="Invalid strategy_params_json; must be valid JSON object") from e
+
+        # Build a filename from uploaded name and range
+        safe_name = (csv.filename or "uploaded.csv").replace(" ", "_")
+        filename = f"{safe_name.rsplit('.', 1)[0]}_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.csv"
+
+        # Enqueue job via job manager (persisted and deduplicated)
+        job_id = await job_manager.submit_monte_carlo_job(
+            csv_file=BytesIO(filtered_csv),
+            filename=filename,
+            strategy_name="sma_crossover",
+            strategy_params=strategy_params,
+            runs=num_runs,
+            method=method,
+            method_params=None,
+            seed=None,
+            include_equity_envelope=True,
+            priority=priority,
+            timeout_seconds=timeout_seconds or 3600,
+            max_retries=3,
         )
+
+        return JobSubmissionResponse(
+            job_id=job_id,
+            status=JobStatus.PENDING,
+            message="Job submitted successfully",
+            estimated_completion_time=None,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to submit uploaded CSV job: {str(e)}",
+        ) from e

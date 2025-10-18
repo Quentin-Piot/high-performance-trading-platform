@@ -1,9 +1,9 @@
+import contextvars
+import json
 import logging
 import os
 import sys
-import json
-from datetime import datetime, UTC
-import contextvars
+from datetime import UTC, datetime
 from logging.handlers import RotatingFileHandler
 
 DEFAULT_LOG_RECORD_ATTRS = {
@@ -29,7 +29,6 @@ DEFAULT_LOG_RECORD_ATTRS = {
     "process",
     "taskName",
 }
-
 
 class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
@@ -59,7 +58,6 @@ class JSONFormatter(logging.Formatter):
             payload["context"] = context
 
         return json.dumps(payload, ensure_ascii=False)
-
 
 class ConsoleFormatter(logging.Formatter):
     LEVEL_COLORS = {
@@ -101,24 +99,21 @@ class ConsoleFormatter(logging.Formatter):
         suffix = f" {' '.join(extras)}" if extras else ""
         return f"{prefix}{message}{suffix}"
 
-
 REQUEST_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "request_id", default=None
 )
-
 
 class RequestIdFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         rid = REQUEST_ID.get()
         if rid:
             # Attach request_id to record so formatters include it
-            setattr(record, "request_id", rid)
+            record.request_id = rid
         return True
-
 
 SENSITIVE_KEYS = {
     "authorization",
-    "password", 
+    "password",
     "secret",
     "token",
     "api_key",
@@ -151,11 +146,10 @@ SENSITIVE_PATTERNS = {
     "-----BEGIN"
 }
 
-
 def _redact(value):
     """
     Recursively redact sensitive information from log data.
-    
+
     This function identifies and redacts:
     - Dictionary keys that match sensitive patterns
     - String values containing sensitive patterns
@@ -173,22 +167,21 @@ def _redact(value):
     elif isinstance(value, str):
         # Check for sensitive patterns in string values
         value_lower = value.lower()
-        
+
         # Redact if string contains sensitive patterns
         if any(pattern in value_lower for pattern in SENSITIVE_PATTERNS):
             return "[REDACTED]"
-        
+
         # Redact long strings that might be tokens/keys (but preserve short ones)
         if len(value) > 20 and any(key in value_lower for key in SENSITIVE_KEYS):
             return "[REDACTED]"
-        
+
         # Redact AWS ARNs and other identifiable patterns
         if value.startswith(("arn:aws:", "AKIA", "ASIA")) or "-----BEGIN" in value:
             return "[REDACTED]"
-            
+
         return value
     return value
-
 
 class SecretsFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -203,7 +196,6 @@ class SecretsFilter(logging.Filter):
                 except Exception:
                     setattr(record, key, str(val))
         return True
-
 
 def setup_logging():
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()

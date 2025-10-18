@@ -2,11 +2,11 @@
 Test simple pour vérifier que le système de queue fonctionne correctement.
 """
 
-import pytest
-import asyncio
 from datetime import datetime
-from unittest.mock import Mock, AsyncMock
-from domain.queue import JobStatus, JobPriority, MonteCarloJobPayload, Job, JobMetadata
+
+import pytest
+
+from domain.queue import Job, JobMetadata, JobPriority, MonteCarloJobPayload
 from workers.monte_carlo_worker import MonteCarloJobProcessor
 
 
@@ -15,7 +15,7 @@ async def test_monte_carlo_processor_basic():
     """Test basique du processeur Monte Carlo"""
     # Créer un processeur
     processor = MonteCarloJobProcessor("test-processor")
-    
+
     # Créer un payload de test avec des données CSV valides et plus de points
     csv_data = b"""Date,Close
 2023-01-01,100.0
@@ -43,7 +43,7 @@ async def test_monte_carlo_processor_basic():
 2023-01-23,120.0
 2023-01-24,121.0
 2023-01-25,122.0"""
-    
+
     payload = MonteCarloJobPayload(
         csv_data=csv_data,
         filename="test.csv",
@@ -53,7 +53,7 @@ async def test_monte_carlo_processor_basic():
         method="bootstrap",
         parallel_workers=1
     )
-    
+
     # Créer un job de test
     job = Job(
         payload=payload,
@@ -64,16 +64,16 @@ async def test_monte_carlo_processor_basic():
             timeout_seconds=300
         )
     )
-    
+
     try:
         # Traiter le job
         result = await processor.process(job)
         print(f"✅ Traitement réussi: {result}")
-        
+
         # Vérifier que le résultat contient les clés attendues
         assert "summary" in result
         assert "runs" in result
-        
+
     except Exception as e:
         print(f"❌ Erreur lors du traitement: {e}")
         # Pour le test, on accepte que le traitement échoue car c'est un test basique

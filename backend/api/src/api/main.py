@@ -1,38 +1,38 @@
-from fastapi import FastAPI, Request
-from fastapi import responses
-from sqlalchemy import text
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import logging
 import time
-from datetime import datetime, UTC
-from core.logging import setup_logging, REQUEST_ID
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+
 from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from starlette.routing import Route, WebSocketRoute
+
+from api.routers.auth import router as auth_router
+from api.routers.backtest import router as backtest_router
+from api.routes.monte_carlo import router as monte_carlo_router
+from api.routes.performance import router as performance_router
+from core.logging import REQUEST_ID, setup_logging
+from infrastructure.cache import cache_manager
+from infrastructure.db import engine, init_db
+from infrastructure.monitoring import monitoring_service
 
 # Load environment variables from .env file
 load_dotenv()
 
-from api.routers.auth import router as auth_router
-from api.routers.backtest import router as backtest_router
-from api.routes.performance import router as performance_router
-from api.routes.monte_carlo import router as monte_carlo_router
-from infrastructure.db import init_db, engine
-from infrastructure.monitoring import monitoring_service
-from infrastructure.cache import cache_manager
-
 # log
 setup_logging()
-
 
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
     logging.getLogger("app").info("Startup")
     await init_db()
-    
+
     # Initialize cache manager
     await cache_manager.connect()
-    
+
     # Register database health check
     def db_health_check():
         """Check database connectivity"""
@@ -42,15 +42,14 @@ async def app_lifespan(app: FastAPI):
             return "healthy", "Database connection available", {}
         except Exception as e:
             return "unhealthy", f"Database connection failed: {str(e)}", {"error": str(e)}
-    
+
     monitoring_service.register_health_check("database", db_health_check)
-    
+
     yield
-    
+
     # Cleanup on shutdown
     await cache_manager.disconnect()
     logging.getLogger("app").info("Shutdown")
-
 
 app = FastAPI(title="Trading Backtest API", version="0.1.0", lifespan=app_lifespan)
 
@@ -63,15 +62,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
     # Record error metric
     await monitoring_service.increment_counter(
-        "http_errors", 
+        "http_errors",
         tags={"error_type": "ValueError", "path": request.url.path}
     )
-    
+
     logging.getLogger("http").warning(
         "Service error",
         extra={
@@ -86,7 +84,6 @@ async def value_error_handler(request: Request, exc: ValueError):
     )
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
-
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     logger = logging.getLogger("http")
@@ -99,7 +96,7 @@ async def request_logging_middleware(request: Request, call_next):
         req_id = uuid.uuid4().hex
     token = REQUEST_ID.set(req_id)
     start = time.monotonic()
-    
+
     # Enhanced structured logging with more context
     logger.info(
         "Request start",
@@ -114,21 +111,21 @@ async def request_logging_middleware(request: Request, call_next):
             "timestamp": datetime.now(UTC).isoformat(),
         },
     )
-    
+
     response = await call_next(request)
     duration_ms = round((time.monotonic() - start) * 1000, 2)
-    
+
     # Record timing metrics
     await monitoring_service.record_timing(
-        "http_request_duration", 
-        duration_ms, 
+        "http_request_duration",
+        duration_ms,
         tags={
             "method": request.method,
             "path": request.url.path,
             "status": str(response.status_code),
         }
     )
-    
+
     # Enhanced response logging
     logger.info(
         "Request end",
@@ -141,7 +138,7 @@ async def request_logging_middleware(request: Request, call_next):
             "timestamp": datetime.now(UTC).isoformat(),
         },
     )
-    
+
     # Expose request id to clients
     try:
         response.headers["x-request-id"] = req_id
@@ -151,31 +148,28 @@ async def request_logging_middleware(request: Request, call_next):
     REQUEST_ID.reset(token)
     return response
 
-
 @app.get("/")
 async def root():
     return {"message": "OK", "service": "Trading Backtest API"}
-
 
 @app.get("/api/healthz")
 async def healthz():
     """Basic health check endpoint"""
     return {"status": "ok", "timestamp": datetime.now(UTC).isoformat()}
 
-
 @app.get("/api/health")
 async def health_comprehensive():
     """Comprehensive health check with system monitoring"""
     try:
         health_status = await monitoring_service.get_health_status()
-        
+
         # Determine HTTP status code based on overall health
         status_code = 200
         if health_status["overall_status"] == "unhealthy":
             status_code = 503
         elif health_status["overall_status"] == "warning":
             status_code = 200  # Still operational but with warnings
-        
+
         return JSONResponse(
             status_code=status_code,
             content=health_status
@@ -191,7 +185,6 @@ async def health_comprehensive():
             }
         )
 
-
 @app.get("/api/readyz")
 async def readyz():
     """Readiness check for database connectivity"""
@@ -199,22 +192,21 @@ async def readyz():
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         return {
-            "ready": True, 
+            "ready": True,
             "timestamp": datetime.now(UTC).isoformat(),
             "database": "connected"
         }
     except Exception as e:
         logging.getLogger("app").error(f"Readiness check failed: {str(e)}")
-        return responses.JSONResponse(
-            status_code=503, 
+        return JSONResponse(
+            status_code=503,
             content={
-                "ready": False, 
+                "ready": False,
                 "timestamp": datetime.now(UTC).isoformat(),
                 "database": "disconnected",
                 "error": str(e)
             }
         )
-
 
 @app.get("/api/metrics")
 async def metrics():
@@ -222,7 +214,7 @@ async def metrics():
     try:
         metrics_data = monitoring_service.get_metrics_summary()
         performance_data = monitoring_service.get_performance_summary()
-        
+
         return {
             "timestamp": datetime.now(UTC).isoformat(),
             "metrics": metrics_data,
@@ -238,15 +230,14 @@ async def metrics():
             }
         )
 
-
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     # Record error metric
     await monitoring_service.increment_counter(
-        "http_errors", 
+        "http_errors",
         tags={"error_type": "Exception", "path": request.url.path}
     )
-    
+
     logging.getLogger("http").exception(
         "Unhandled exception",
         extra={
@@ -260,9 +251,6 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
     return JSONResponse(status_code=500, content={"detail": "internal server error"})
 
-
-from starlette.routing import Route, WebSocketRoute
-
 # Add this endpoint for debugging
 @app.get("/routes")
 def list_routes():
@@ -274,7 +262,6 @@ def list_routes():
         elif isinstance(route, WebSocketRoute):
             routes.append({"path": route.path, "name": route.name, "methods": ["WEBSOCKET"]})
     return routes
-
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")

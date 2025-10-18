@@ -1,0 +1,2605 @@
+W293 Blank line contains whitespace
+   --> src/api/routes/monte_carlo.py:658:1
+    |
+656 |     """
+657 |     WebSocket endpoint for real-time job progress updates using Redis pub/sub.
+658 |     
+    | ^^^^
+659 |     Args:
+660 |         websocket: WebSocket connection
+    |
+help: Remove whitespace from blank line
+
+F841 Local variable `data` is assigned to but never used
+   --> src/api/routes/monte_carlo.py:760:25
+    |
+758 |                     else:
+759 |                         # Fallback for legacy message format
+760 |                         data = message.get('data') if isinstance(message, dict) else message
+    |                         ^^^^
+761 |
+762 |                     # Get full job state for complete payload with lock protection
+    |
+help: Remove assignment to unused variable `data`
+
+W293 Blank line contains whitespace
+   --> src/api/routes/monte_carlo.py:949:1
+    |
+947 |     """
+948 |     Get available date ranges for all supported symbols.
+949 |     
+    | ^^^^
+950 |     Returns:
+951 |         AllSymbolsDateRangesResponse: Date ranges for all symbols
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/api/routes/performance.py:57:1
+   |
+55 |     """
+56 |     Get comprehensive database performance metrics.
+57 |     
+   | ^^^^
+58 |     Returns:
+59 |         Database performance statistics including connection pool,
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/api/routes/performance.py:90:1
+   |
+88 |     """
+89 |     Get cache performance metrics.
+90 |     
+   | ^^^^
+91 |     Returns:
+92 |         Cache statistics including hit ratio, memory usage, and connection info
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/api/routes/performance.py:131:1
+    |
+129 |     """
+130 |     Get comprehensive performance metrics for database and cache.
+131 |     
+    | ^^^^
+132 |     Returns:
+133 |         Complete performance metrics including database and cache statistics
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/api/routes/performance.py:168:1
+    |
+166 |     """
+167 |     Optimize a specific database table.
+168 |     
+    | ^^^^
+169 |     Args:
+170 |         table_name: Name of the table to optimize
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/api/routes/performance.py:171:1
+    |
+169 |     Args:
+170 |         table_name: Name of the table to optimize
+171 |         
+    | ^^^^^^^^
+172 |     Returns:
+173 |         Optimization results
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/api/routes/performance.py:213:1
+    |
+211 |     """
+212 |     Create performance-optimized database indexes.
+213 |     
+    | ^^^^
+214 |     Returns:
+215 |         Index creation results
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/api/routes/performance.py:250:1
+    |
+248 |     """
+249 |     Clear all cache entries.
+250 |     
+    | ^^^^
+251 |     Returns:
+252 |         Cache clearing results
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/api/routes/performance.py:288:1
+    |
+286 |     """
+287 |     Clear cache entries matching a pattern.
+288 |     
+    | ^^^^
+289 |     Args:
+290 |         pattern: Redis pattern to match (e.g., "job:*", "user:*")
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/api/routes/performance.py:291:1
+    |
+289 |     Args:
+290 |         pattern: Redis pattern to match (e.g., "job:*", "user:*")
+291 |         
+    | ^^^^^^^^
+292 |     Returns:
+293 |         Cache clearing results
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/config/queue_config.py:155:1
+    |
+153 |         """
+154 |         Create configuration from environment variables.
+155 |         
+    | ^^^^^^^^
+156 |         Args:
+157 |             env: Environment name (development, testing, staging, production)
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/config/queue_config.py:158:1
+    |
+156 |         Args:
+157 |             env: Environment name (development, testing, staging, production)
+158 |             
+    | ^^^^^^^^^^^^
+159 |         Returns:
+160 |             QueueSystemConfig instance
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/config/queue_config.py:346:1
+    |
+344 |     """
+345 |     Get configuration for the specified environment.
+346 |     
+    | ^^^^
+347 |     Args:
+348 |         environment: Environment name or None to auto-detect
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/config/queue_config.py:349:1
+    |
+347 |     Args:
+348 |         environment: Environment name or None to auto-detect
+349 |         
+    | ^^^^^^^^
+350 |     Returns:
+351 |         QueueSystemConfig instance
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/core/background_task_logging.py:47:1
+   |
+45 |     """
+46 |     Decorator for logging background tasks with comprehensive error handling.
+47 |     
+   | ^^^^
+48 |     Args:
+49 |         task_name: Name of the task for logging
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/background_task_logging.py:198:1
+    |
+196 |     """
+197 |     Decorator for logging WebSocket connection lifecycle.
+198 |     
+    | ^^^^
+199 |     Args:
+200 |         connection_name: Name of the WebSocket connection for logging
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/background_task_logging.py:282:1
+    |
+280 |     """
+281 |     Context manager for logging async operations with timing and error handling.
+282 |     
+    | ^^^^
+283 |     Args:
+284 |         operation_name: Name of the operation
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/background_task_logging.py:340:1
+    |
+338 |     """
+339 |     Setup enhanced logging for background tasks.
+340 |     
+    | ^^^^
+341 |     This should be called during application startup to add the
+342 |     BackgroundTaskFilter to the root logger.
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/background_task_logging.py:367:1
+    |
+365 |     """
+366 |     Create a background task with comprehensive error handling and logging.
+367 |     
+    | ^^^^
+368 |     Args:
+369 |         coro: Coroutine to run as background task
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/background_task_logging.py:372:1
+    |
+370 |         name: Optional name for the task
+371 |         logger_name: Logger name for error reporting
+372 |         
+    | ^^^^^^^^
+373 |     Returns:
+374 |         asyncio.Task with error handling
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/core/cloudwatch_logging.py:37:1
+   |
+35 |     """
+36 |     Configure CloudWatch logging handler.
+37 |     
+   | ^^^^
+38 |     Args:
+39 |         log_group: CloudWatch log group name
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/core/cloudwatch_logging.py:43:1
+   |
+41 |         region: AWS region
+42 |         level: Logging level
+43 |         
+   | ^^^^^^^^
+44 |     Returns:
+45 |         CloudWatchLogsHandler if successful, None otherwise
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/cloudwatch_logging.py:112:1
+    |
+110 |     """
+111 |     Ajoute CloudWatch handler à un logger existant.
+112 |     
+    | ^^^^
+113 |     Args:
+114 |         logger_name: Nom du logger (None pour root logger)
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/cloudwatch_logging.py:115:1
+    |
+113 |     Args:
+114 |         logger_name: Nom du logger (None pour root logger)
+115 |         
+    | ^^^^^^^^
+116 |     Returns:
+117 |         True si le handler a été ajouté avec succès
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/cloudwatch_logging.py:132:1
+    |
+130 |     """
+131 |     Configuration complète du logging avec CloudWatch optionnel.
+132 |     
+    | ^^^^
+133 |     Cette fonction combine la configuration locale existante avec CloudWatch.
+134 |     """
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/core/logging.py:158:1
+    |
+156 |     """
+157 |     Recursively redact sensitive information from log data.
+158 |     
+    | ^^^^
+159 |     This function identifies and redacts:
+160 |     - Dictionary keys that match sensitive patterns
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:122:1
+    |
+120 |         """
+121 |         Enqueue a job and return job ID.
+122 |         
+    | ^^^^^^^^
+123 |         Args:
+124 |             job: Job to enqueue
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:125:1
+    |
+123 |         Args:
+124 |             job: Job to enqueue
+125 |             
+    | ^^^^^^^^^^^^
+126 |         Returns:
+127 |             Job ID for tracking
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:135:1
+    |
+133 |         """
+134 |         Dequeue a job for processing.
+135 |         
+    | ^^^^^^^^
+136 |         Args:
+137 |             timeout_seconds: Maximum time to wait for a job
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:138:1
+    |
+136 |         Args:
+137 |             timeout_seconds: Maximum time to wait for a job
+138 |             
+    | ^^^^^^^^^^^^
+139 |         Returns:
+140 |             Job to process or None if timeout
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:148:1
+    |
+146 |         """
+147 |         Acknowledge successful job completion.
+148 |         
+    | ^^^^^^^^
+149 |         Args:
+150 |             job_id: ID of completed job
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:151:1
+    |
+149 |         Args:
+150 |             job_id: ID of completed job
+151 |             
+    | ^^^^^^^^^^^^
+152 |         Returns:
+153 |             True if acknowledged successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:161:1
+    |
+159 |         """
+160 |         Reject a job (failed processing).
+161 |         
+    | ^^^^^^^^
+162 |         Args:
+163 |             job_id: ID of failed job
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:165:1
+    |
+163 |             job_id: ID of failed job
+164 |             requeue: Whether to requeue for retry
+165 |             
+    | ^^^^^^^^^^^^
+166 |         Returns:
+167 |             True if rejected successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:175:1
+    |
+173 |         """
+174 |         Get current status of a job.
+175 |         
+    | ^^^^^^^^
+176 |         Args:
+177 |             job_id: Job ID to query
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:178:1
+    |
+176 |         Args:
+177 |             job_id: Job ID to query
+178 |             
+    | ^^^^^^^^^^^^
+179 |         Returns:
+180 |             Job with current status or None if not found
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:188:1
+    |
+186 |         """
+187 |         Cancel a pending job.
+188 |         
+    | ^^^^^^^^
+189 |         Args:
+190 |             job_id: Job ID to cancel
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:191:1
+    |
+189 |         Args:
+190 |             job_id: Job ID to cancel
+191 |             
+    | ^^^^^^^^^^^^
+192 |         Returns:
+193 |             True if cancelled successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:201:1
+    |
+199 |         """
+200 |         Get queue metrics for monitoring.
+201 |         
+    | ^^^^^^^^
+202 |         Returns:
+203 |             Current queue metrics
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:213:1
+    |
+211 |         Implementations may return an adapter-specific object with at least
+212 |         attributes: status, progress, error, retry_count, worker_id, message.
+213 |         
+    | ^^^^^^^^
+214 |         Args:
+215 |             job_id: Job ID to query
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:216:1
+    |
+214 |         Args:
+215 |             job_id: Job ID to query
+216 |         
+    | ^^^^^^^^
+217 |         Returns:
+218 |             Progress info object or None if not available
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:230:1
+    |
+228 |         """
+229 |         Process a job and return result.
+230 |         
+    | ^^^^^^^^
+231 |         Args:
+232 |             job: Job to process
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:233:1
+    |
+231 |         Args:
+232 |             job: Job to process
+233 |             
+    | ^^^^^^^^^^^^
+234 |         Returns:
+235 |             Processing result
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:236:1
+    |
+234 |         Returns:
+235 |             Processing result
+236 |             
+    | ^^^^^^^^^^^^
+237 |         Raises:
+238 |             Exception: If processing fails
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:255:1
+    |
+253 |         """
+254 |         Report job progress.
+255 |         
+    | ^^^^^^^^
+256 |         Args:
+257 |             job_id: Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:267:1
+    |
+265 |         """
+266 |         Report job completion.
+267 |         
+    | ^^^^^^^^
+268 |         Args:
+269 |             job_id: Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:278:1
+    |
+276 |         """
+277 |         Report job error.
+278 |         
+    | ^^^^^^^^
+279 |         Args:
+280 |             job_id: Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:317:1
+    |
+315 |         """
+316 |         Submit a new job.
+317 |         
+    | ^^^^^^^^
+318 |         Args:
+319 |             payload: Job payload
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:321:1
+    |
+319 |             payload: Job payload
+320 |             metadata: Optional job metadata
+321 |             
+    | ^^^^^^^^^^^^
+322 |         Returns:
+323 |             Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:331:1
+    |
+329 |         """
+330 |         Get job by ID.
+331 |         
+    | ^^^^^^^^
+332 |         Args:
+333 |             job_id: Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:334:1
+    |
+332 |         Args:
+333 |             job_id: Job ID
+334 |             
+    | ^^^^^^^^^^^^
+335 |         Returns:
+336 |             Job or None if not found
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:350:1
+    |
+348 |         """
+349 |         List jobs with optional filtering.
+350 |         
+    | ^^^^^^^^
+351 |         Args:
+352 |             status: Filter by status
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:356:1
+    |
+354 |             limit: Maximum number of jobs
+355 |             offset: Pagination offset
+356 |             
+    | ^^^^^^^^^^^^
+357 |         Returns:
+358 |             List of jobs
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:366:1
+    |
+364 |         """
+365 |         Cancel a job.
+366 |         
+    | ^^^^^^^^
+367 |         Args:
+368 |             job_id: Job ID to cancel
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/domain/queue.py:369:1
+    |
+367 |         Args:
+368 |             job_id: Job ID to cancel
+369 |             
+    | ^^^^^^^^^^^^
+370 |         Returns:
+371 |             True if cancelled successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/cache.py:30:1
+   |
+28 |         """
+29 |         Initialize cache manager.
+30 |         
+   | ^^^^^^^^
+31 |         Args:
+32 |             redis_url: Redis connection URL (defaults to settings)
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/cache.py:152:1
+    |
+150 |         """
+151 |         Set value in cache.
+152 |         
+    | ^^^^^^^^
+153 |         Args:
+154 |             key: Cache key
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/cache.py:158:1
+    |
+156 |             ttl: Time to live in seconds (defaults to default_ttl)
+157 |             nx: Only set if key doesn't exist
+158 |             
+    | ^^^^^^^^^^^^
+159 |         Returns:
+160 |             True if set successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/cache.py:310:1
+    |
+308 |         """
+309 |         Publish a message to a Redis channel using enhanced pub/sub.
+310 |         
+    | ^^^^^^^^
+311 |         Args:
+312 |             channel: Channel name
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/cache.py:315:1
+    |
+313 |             message: Message to publish (will be JSON serialized)
+314 |             ensure_delivery: Whether to ensure message delivery
+315 |             
+    | ^^^^^^^^^^^^
+316 |         Returns:
+317 |             Number of subscribers that received the message (1 if successful with enhanced pub/sub, 0 if failed)
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/cache.py:334:1
+    |
+332 |         """
+333 |         Subscribe to Redis channels using enhanced pub/sub with automatic reconnection.
+334 |         
+    | ^^^^^^^^
+335 |         Args:
+336 |             channels: Channel names to subscribe to
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/cache.py:337:1
+    |
+335 |         Args:
+336 |             channels: Channel names to subscribe to
+337 |             
+    | ^^^^^^^^^^^^
+338 |         Yields:
+339 |             Dict with 'channel' and 'data' keys for each message
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/db_indexes.py:25:1
+   |
+23 |         """
+24 |         Create performance-optimized indexes for frequently queried columns.
+25 |         
+   | ^^^^^^^^
+26 |         Returns:
+27 |             Dictionary mapping index name to creation success status
+   |
+help: Remove whitespace from blank line
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:36:87
+   |
+34 |                 "name": "idx_jobs_status_created_at",
+35 |                 "sql": """
+36 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_status_created_at 
+   |                                                                                       ^
+37 |                     ON jobs (status, created_at DESC)
+38 |                 """,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:44:83
+   |
+42 |                 "name": "idx_jobs_worker_status",
+43 |                 "sql": """
+44 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_worker_status 
+   |                                                                                   ^
+45 |                     ON jobs (worker_id, status) WHERE worker_id IS NOT NULL
+46 |                 """,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:52:89
+   |
+50 |                 "name": "idx_jobs_priority_created_at",
+51 |                 "sql": """
+52 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_priority_created_at 
+   |                                                                                         ^
+53 |                     ON jobs (priority, created_at) WHERE status IN ('pending', 'retry')
+54 |                 """,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:60:84
+   |
+58 |                 "name": "idx_jobs_dedup_key_hash",
+59 |                 "sql": """
+60 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_dedup_key_hash 
+   |                                                                                    ^
+61 |                     ON jobs USING hash (dedup_key) WHERE dedup_key IS NOT NULL
+62 |                 """,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:68:87
+   |
+66 |                 "name": "idx_jobs_updated_at_status",
+67 |                 "sql": """
+68 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_updated_at_status 
+   |                                                                                       ^
+69 |                     ON jobs (updated_at DESC, status) WHERE status IN ('processing', 'completed', 'failed')
+70 |                 """,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:76:89
+   |
+74 |                 "name": "idx_jobs_progress_processing",
+75 |                 "sql": """
+76 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_progress_processing 
+   |                                                                                         ^
+77 |                     ON jobs (progress, updated_at DESC) WHERE status = 'processing'
+78 |                 """,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:88:82
+   |
+86 |                 "name": "idx_users_email_lower",
+87 |                 "sql": """
+88 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email_lower 
+   |                                                                                  ^
+89 |                     ON users (LOWER(email))
+90 |                 """,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> src/infrastructure/db_indexes.py:96:81
+   |
+94 |                 "name": "idx_users_created_at",
+95 |                 "sql": """
+96 |                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_created_at 
+   |                                                                                 ^
+97 |                     ON users (created_at DESC)
+98 |                 """,
+   |
+help: Remove trailing whitespace
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:129:1
+    |
+127 |         """
+128 |         Analyze table statistics for query optimization.
+129 |         
+    | ^^^^^^^^
+130 |         Args:
+131 |             table_name: Name of the table to analyze
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:132:1
+    |
+130 |         Args:
+131 |             table_name: Name of the table to analyze
+132 |             
+    | ^^^^^^^^^^^^
+133 |         Returns:
+134 |             Dictionary containing table statistics
+    |
+help: Remove whitespace from blank line
+
+W291 Trailing whitespace
+   --> src/infrastructure/db_indexes.py:142:23
+    |
+140 |             # Get table size and row count
+141 |             stats_query = text("""
+142 |                 SELECT 
+    |                       ^
+143 |                     schemaname,
+144 |                     tablename,
+    |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+   --> src/infrastructure/db_indexes.py:150:30
+    |
+148 |                     most_common_vals,
+149 |                     most_common_freqs
+150 |                 FROM pg_stats 
+    |                              ^
+151 |                 WHERE tablename = :table_name
+152 |                 ORDER BY attname
+    |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+   --> src/infrastructure/db_indexes.py:160:23
+    |
+158 |             # Get table size information
+159 |             size_query = text("""
+160 |                 SELECT 
+    |                       ^
+161 |                     pg_size_pretty(pg_total_relation_size(:table_name)) as total_size,
+162 |                     pg_size_pretty(pg_relation_size(:table_name)) as table_size,
+    |
+help: Remove trailing whitespace
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:196:1
+    |
+194 |         """
+195 |         Get slow queries from pg_stat_statements (if available).
+196 |         
+    | ^^^^^^^^
+197 |         Args:
+198 |             limit: Maximum number of queries to return
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:199:1
+    |
+197 |         Args:
+198 |             limit: Maximum number of queries to return
+199 |             
+    | ^^^^^^^^^^^^
+200 |         Returns:
+201 |             List of slow query information
+    |
+help: Remove whitespace from blank line
+
+W291 Trailing whitespace
+   --> src/infrastructure/db_indexes.py:220:23
+    |
+218 |             # Get slow queries
+219 |             slow_queries = text("""
+220 |                 SELECT 
+    |                       ^
+221 |                     query,
+222 |                     calls,
+    |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+   --> src/infrastructure/db_indexes.py:227:40
+    |
+225 |                     rows,
+226 |                     100.0 * shared_blks_hit / nullif(shared_blks_hit + shared_blks_read, 0) AS hit_percent
+227 |                 FROM pg_stat_statements 
+    |                                        ^
+228 |                 WHERE query NOT LIKE '%pg_stat_statements%'
+229 |                 ORDER BY total_time DESC 
+    |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+   --> src/infrastructure/db_indexes.py:229:41
+    |
+227 |                 FROM pg_stat_statements 
+228 |                 WHERE query NOT LIKE '%pg_stat_statements%'
+229 |                 ORDER BY total_time DESC 
+    |                                         ^
+230 |                 LIMIT :limit
+231 |             """)
+    |
+help: Remove trailing whitespace
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:257:1
+    |
+255 |         """
+256 |         Optimize a table by running VACUUM and ANALYZE.
+257 |         
+    | ^^^^^^^^
+258 |         Args:
+259 |             table_name: Name of the table to optimize
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:260:1
+    |
+258 |         Args:
+259 |             table_name: Name of the table to optimize
+260 |             
+    | ^^^^^^^^^^^^
+261 |         Returns:
+262 |             Dictionary containing optimization results
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:298:1
+    |
+296 |         """
+297 |         Get index usage statistics.
+298 |         
+    | ^^^^^^^^
+299 |         Returns:
+300 |             List of index usage statistics
+    |
+help: Remove whitespace from blank line
+
+W291 Trailing whitespace
+   --> src/infrastructure/db_indexes.py:304:23
+    |
+302 |         try:
+303 |             query = text("""
+304 |                 SELECT 
+    |                       ^
+305 |                     schemaname,
+306 |                     tablename,
+    |
+help: Remove trailing whitespace
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:344:1
+    |
+342 |     """
+343 |     Convenience function to create all performance indexes.
+344 |     
+    | ^^^^
+345 |     Args:
+346 |         session: Database session
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:347:1
+    |
+345 |     Args:
+346 |         session: Database session
+347 |         
+    | ^^^^^^^^
+348 |     Returns:
+349 |         Dictionary mapping index name to creation success status
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:358:1
+    |
+356 |     """
+357 |     Analyze comprehensive database performance metrics.
+358 |     
+    | ^^^^
+359 |     Args:
+360 |         session: Database session
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/db_indexes.py:361:1
+    |
+359 |     Args:
+360 |         session: Database session
+361 |         
+    | ^^^^^^^^
+362 |     Returns:
+363 |         Dictionary containing performance analysis results
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/monitoring/metrics.py:47:1
+   |
+45 |         """
+46 |         Initialize metrics collector.
+47 |         
+   | ^^^^^^^^
+48 |         Args:
+49 |             max_points_per_metric: Maximum number of points to keep per metric
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/monitoring/metrics.py:129:1
+    |
+127 |         """
+128 |         Register a health check function.
+129 |         
+    | ^^^^^^^^
+130 |         Args:
+131 |             name: Name of the health check
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/monitoring/metrics.py:225:1
+    |
+223 |         """
+224 |         Initialize performance tracker.
+225 |         
+    | ^^^^^^^^
+226 |         Args:
+227 |             window_size: Size of the sliding window for calculations
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/queue/sqs_adapter.py:41:1
+   |
+39 |         """
+40 |         Initialize SQS queue adapter with secure configuration.
+41 |         
+   | ^^^^^^^^
+42 |         Args:
+43 |             config: SQS configuration with secure credential management
+   |
+help: Remove whitespace from blank line
+
+F841 Local variable `response` is assigned to but never used
+  --> src/infrastructure/queue/sqs_adapter.py:92:13
+   |
+90 |             # Send message to SQS
+91 |             loop = asyncio.get_event_loop()
+92 |             response = await loop.run_in_executor(
+   |             ^^^^^^^^
+93 |                 self.executor,
+94 |                 self._send_message_sync,
+   |
+help: Remove assignment to unused variable `response`
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/redis_pubsub.py:169:1
+    |
+167 |         """
+168 |         Initialize enhanced Redis pub/sub manager.
+169 |         
+    | ^^^^^^^^
+170 |         Args:
+171 |             redis_url: Redis connection URL
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/redis_pubsub.py:370:1
+    |
+368 |         """
+369 |         Publish a message to a Redis channel with enhanced features.
+370 |         
+    | ^^^^^^^^
+371 |         Args:
+372 |             channel: Channel name
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/redis_pubsub.py:376:1
+    |
+374 |             ensure_delivery: Whether to ensure message delivery
+375 |             timeout: Publish timeout in seconds
+376 |             
+    | ^^^^^^^^^^^^
+377 |         Returns:
+378 |             True if message was published successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/redis_pubsub.py:436:1
+    |
+434 |         """
+435 |         Subscribe to Redis channels with enhanced features.
+436 |         
+    | ^^^^^^^^
+437 |         Args:
+438 |             channels: Channel names to subscribe to
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/redis_pubsub.py:441:1
+    |
+439 |             connection_id: Optional connection identifier
+440 |             auto_reconnect: Whether to automatically reconnect on failures
+441 |             
+    | ^^^^^^^^^^^^
+442 |         Yields:
+443 |             Async generator of enhanced messages
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/db_utils.py:54:1
+   |
+52 |     """
+53 |     Determine if a database error is retryable.
+54 |     
+   | ^^^^
+55 |     Args:
+56 |         error: The exception to check
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/db_utils.py:57:1
+   |
+55 |     Args:
+56 |         error: The exception to check
+57 |         
+   | ^^^^^^^^
+58 |     Returns:
+59 |         True if the error is retryable, False otherwise
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/db_utils.py:96:1
+   |
+94 |     """
+95 |     Decorator for database operations with retry logic.
+96 |     
+   | ^^^^
+97 |     Args:
+98 |         max_retries: Maximum number of retry attempts
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:103:1
+    |
+101 |         max_delay: Maximum delay between retries
+102 |         exceptions: Tuple of exceptions to catch and retry on
+103 |         
+    | ^^^^^^^^
+104 |     Returns:
+105 |         Decorated function with retry logic
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:172:1
+    |
+170 |     """
+171 |     Context manager for monitoring database operation performance.
+172 |     
+    | ^^^^
+173 |     Args:
+174 |         operation_name: Name of the database operation
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:176:1
+    |
+174 |         operation_name: Name of the database operation
+175 |         session: Database session
+176 |         
+    | ^^^^^^^^
+177 |     Yields:
+178 |         Dictionary containing operation metrics
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:240:1
+    |
+238 |     """
+239 |     Execute a database operation with timeout.
+240 |     
+    | ^^^^
+241 |     Args:
+242 |         session: Database session
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:246:1
+    |
+244 |         timeout: Timeout in seconds
+245 |         operation_name: Name for logging purposes
+246 |         
+    | ^^^^^^^^
+247 |     Returns:
+248 |         Result of the operation
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:249:1
+    |
+247 |     Returns:
+248 |         Result of the operation
+249 |         
+    | ^^^^^^^^
+250 |     Raises:
+251 |         DatabaseTimeoutError: If operation times out
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:307:1
+    |
+305 |         """
+306 |         Execute all pending operations in batches.
+307 |         
+    | ^^^^^^^^
+308 |         Returns:
+309 |             Dictionary with operation counts
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:404:1
+    |
+402 |     """
+403 |     Check if database connection is healthy.
+404 |     
+    | ^^^^
+405 |     Args:
+406 |         session: Database session to check
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/db_utils.py:407:1
+    |
+405 |     Args:
+406 |         session: Database session to check
+407 |         
+    | ^^^^^^^^
+408 |     Returns:
+409 |         True if connection is healthy, False otherwise
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/jobs.py:38:1
+   |
+36 |         """
+37 |         Batch update multiple job statuses to reduce database round trips.
+38 |         
+   | ^^^^^^^^
+39 |         Args:
+40 |             updates: List of job update dictionaries containing job_id, status, and other fields
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/jobs.py:41:1
+   |
+39 |         Args:
+40 |             updates: List of job update dictionaries containing job_id, status, and other fields
+41 |             
+   | ^^^^^^^^^^^^
+42 |         Returns:
+43 |             Dictionary with operation counts
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/jobs.py:44:1
+   |
+42 |         Returns:
+43 |             Dictionary with operation counts
+44 |             
+   | ^^^^^^^^^^^^
+45 |         Raises:
+46 |             DatabaseError: If batch operation fails
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/jobs.py:76:1
+   |
+74 |         """
+75 |         Batch update multiple job progress values to reduce database round trips.
+76 |         
+   | ^^^^^^^^
+77 |         Args:
+78 |             updates: List of job progress update dictionaries
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/jobs.py:79:1
+   |
+77 |         Args:
+78 |             updates: List of job progress update dictionaries
+79 |             
+   | ^^^^^^^^^^^^
+80 |         Returns:
+81 |             Dictionary with operation counts
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/repositories/jobs.py:82:1
+   |
+80 |         Returns:
+81 |             Dictionary with operation counts
+82 |             
+   | ^^^^^^^^^^^^
+83 |         Raises:
+84 |             DatabaseError: If batch operation fails
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:121:1
+    |
+119 |         """
+120 |         Create a new job in the database with retry logic and performance monitoring.
+121 |         
+    | ^^^^^^^^
+122 |         Args:
+123 |             job_id: Unique job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:128:1
+    |
+126 |             priority: Job priority
+127 |             dedup_key: Deduplication key for idempotence
+128 |             
+    | ^^^^^^^^^^^^
+129 |         Returns:
+130 |             Created job instance
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:131:1
+    |
+129 |         Returns:
+130 |             Created job instance
+131 |             
+    | ^^^^^^^^^^^^
+132 |         Raises:
+133 |             IntegrityError: If dedup_key already exists
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:194:1
+    |
+192 |         """
+193 |         Find existing job with same dedup_key in PENDING or PROCESSING status.
+194 |         
+    | ^^^^^^^^
+195 |         Args:
+196 |             dedup_key: Deduplication key to search for
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:197:1
+    |
+195 |         Args:
+196 |             dedup_key: Deduplication key to search for
+197 |             
+    | ^^^^^^^^^^^^
+198 |         Returns:
+199 |             Existing job if found, None otherwise
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:221:1
+    |
+219 |         """
+220 |         Get job counts grouped by status for metrics with caching.
+221 |         
+    | ^^^^^^^^
+222 |         Returns:
+223 |             Dictionary mapping status to count
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:271:1
+    |
+269 |         """
+270 |         Update job progress and timing information.
+271 |         
+    | ^^^^^^^^
+272 |         Args:
+273 |             job_id: Job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:280:1
+    |
+278 |             started_at: Job start timestamp
+279 |             completed_at: Job completion timestamp
+280 |             
+    | ^^^^^^^^^^^^
+281 |         Returns:
+282 |             True if update successful, False otherwise
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:342:1
+    |
+340 |         """
+341 |         Update job status with retry logic, timeout handling, and cache invalidation.
+342 |         
+    | ^^^^^^^^
+343 |         Args:
+344 |             job_id: Job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:351:1
+    |
+349 |             artifact_url: URL to job artifacts
+350 |             completed_at: Job completion timestamp
+351 |             
+    | ^^^^^^^^^^^^
+352 |         Returns:
+353 |             True if update successful, False otherwise
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:354:1
+    |
+352 |         Returns:
+353 |             True if update successful, False otherwise
+354 |             
+    | ^^^^^^^^^^^^
+355 |         Raises:
+356 |             DatabaseError: If operation fails after retries
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:442:1
+    |
+440 |         """
+441 |         Increment job attempt count.
+442 |         
+    | ^^^^^^^^
+443 |         Args:
+444 |             job_id: Job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:445:1
+    |
+443 |         Args:
+444 |             job_id: Job identifier
+445 |             
+    | ^^^^^^^^^^^^
+446 |         Returns:
+447 |             True if job was updated, False if not found
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:470:1
+    |
+468 |         """
+469 |         List jobs with optional filtering.
+470 |         
+    | ^^^^^^^^
+471 |         Args:
+472 |             status: Filter by status
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:476:1
+    |
+474 |             limit: Maximum number of jobs to return
+475 |             offset: Number of jobs to skip
+476 |             
+    | ^^^^^^^^^^^^
+477 |         Returns:
+478 |             List of jobs
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:506:1
+    |
+504 |         """
+505 |         Clean up old completed/failed jobs.
+506 |         
+    | ^^^^^^^^
+507 |         Args:
+508 |             older_than_hours: Remove jobs older than this many hours
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/repositories/jobs.py:509:1
+    |
+507 |         Args:
+508 |             older_than_hours: Remove jobs older than this many hours
+509 |             
+    | ^^^^^^^^^^^^
+510 |         Returns:
+511 |             Number of jobs removed
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/security/credential_manager.py:88:1
+   |
+86 |         """
+87 |         Resolve AWS credentials using secure fallback strategy.
+88 |         
+   | ^^^^^^^^
+89 |         Priority order:
+90 |         1. IAM Role (if prefer_iam_role=True and in AWS environment)
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/security/credential_manager.py:94:1
+   |
+92 |         3. Environment variables
+93 |         4. Instance/Container metadata (if in AWS environment)
+94 |         
+   | ^^^^^^^^
+95 |         Args:
+96 |             environment: Current environment (development, staging, production)
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:98:1
+    |
+ 96 |             environment: Current environment (development, staging, production)
+ 97 |             prefer_iam_role: Whether to prefer IAM roles over explicit credentials
+ 98 |             
+    | ^^^^^^^^^^^^
+ 99 |         Returns:
+100 |             AWSCredentials configuration
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:169:1
+    |
+167 |         """
+168 |         Validate AWS credentials without exposing sensitive data.
+169 |         
+    | ^^^^^^^^
+170 |         Args:
+171 |             credentials: AWS credentials to validate
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:172:1
+    |
+170 |         Args:
+171 |             credentials: AWS credentials to validate
+172 |             
+    | ^^^^^^^^^^^^
+173 |         Returns:
+174 |             True if credentials appear valid
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:210:1
+    |
+208 |         """
+209 |         Get database URL with optional masking for logs.
+210 |         
+    | ^^^^^^^^
+211 |         Args:
+212 |             mask_in_logs: Whether to mask the URL in logs
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:213:1
+    |
+211 |         Args:
+212 |             mask_in_logs: Whether to mask the URL in logs
+213 |             
+    | ^^^^^^^^^^^^
+214 |         Returns:
+215 |             Database URL or None if not configured
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:234:1
+    |
+232 |         """
+233 |         Mask sensitive parts of a URL for logging.
+234 |         
+    | ^^^^^^^^
+235 |         Args:
+236 |             url: URL to mask
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:237:1
+    |
+235 |         Args:
+236 |             url: URL to mask
+237 |             
+    | ^^^^^^^^^^^^
+238 |         Returns:
+239 |             Masked URL safe for logging
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/credential_manager.py:257:1
+    |
+255 |         """
+256 |         Get application configuration with sensitive data masked.
+257 |         
+    | ^^^^^^^^
+258 |         Returns:
+259 |             Configuration dictionary safe for logging
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/security/iam_policies.py:48:1
+   |
+46 |         """
+47 |         Create IAM policy for Monte Carlo workers with minimal required permissions.
+48 |         
+   | ^^^^^^^^
+49 |         Args:
+50 |             sqs_queue_arn: ARN of the SQS queue for job processing
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/security/iam_policies.py:53:1
+   |
+51 |             s3_bucket_arn: ARN of the S3 bucket for artifact storage
+52 |             cloudwatch_log_group_arn: Optional CloudWatch log group ARN
+53 |             
+   | ^^^^^^^^^^^^
+54 |         Returns:
+55 |             IAMPolicy with least-privilege permissions
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:126:1
+    |
+124 |         """
+125 |         Create IAM policy for API servers with minimal required permissions.
+126 |         
+    | ^^^^^^^^
+127 |         Args:
+128 |             sqs_queue_arn: ARN of the SQS queue for job submission
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:131:1
+    |
+129 |             s3_bucket_arn: ARN of the S3 bucket for artifact access
+130 |             cloudwatch_log_group_arn: Optional CloudWatch log group ARN
+131 |             
+    | ^^^^^^^^^^^^
+132 |         Returns:
+133 |             IAMPolicy with least-privilege permissions
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:189:1
+    |
+187 |         """
+188 |         Create IAM policy for monitoring and metrics collection.
+189 |         
+    | ^^^^^^^^
+190 |         Args:
+191 |             cloudwatch_namespace: CloudWatch metrics namespace
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:192:1
+    |
+190 |         Args:
+191 |             cloudwatch_namespace: CloudWatch metrics namespace
+192 |             
+    | ^^^^^^^^^^^^
+193 |         Returns:
+194 |             IAMPolicy with monitoring permissions
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:235:1
+    |
+233 |     """
+234 |     Generate Terraform-compatible IAM policy documents.
+235 |     
+    | ^^^^
+236 |     Args:
+237 |         sqs_queue_arn: SQS queue ARN
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:240:1
+    |
+238 |         s3_bucket_arn: S3 bucket ARN
+239 |         cloudwatch_log_group_arn: Optional CloudWatch log group ARN
+240 |         
+    | ^^^^^^^^
+241 |     Returns:
+242 |         Dictionary of policy names to JSON policy documents
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:260:1
+    |
+258 |     """
+259 |     Validate that a policy contains all required actions.
+260 |     
+    | ^^^^
+261 |     Args:
+262 |         policy: IAM policy to validate
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/security/iam_policies.py:264:1
+    |
+262 |         policy: IAM policy to validate
+263 |         required_actions: List of required actions
+264 |         
+    | ^^^^^^^^
+265 |     Returns:
+266 |         True if all required actions are present
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/storage/s3_adapter.py:36:1
+   |
+34 |         """
+35 |         Initialize S3 storage adapter.
+36 |         
+   | ^^^^^^^^
+37 |         Args:
+38 |             bucket_name: S3 bucket name
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/storage/s3_adapter.py:82:1
+   |
+80 |         """
+81 |         Upload an artifact to S3.
+82 |         
+   | ^^^^^^^^
+83 |         Args:
+84 |             job_id: Job identifier
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/infrastructure/storage/s3_adapter.py:89:1
+   |
+87 |             content_type: MIME type of the content
+88 |             metadata: Additional metadata to store with the object
+89 |             
+   | ^^^^^^^^^^^^
+90 |         Returns:
+91 |             S3 URL of the uploaded artifact
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/storage/s3_adapter.py:142:1
+    |
+140 |         """
+141 |         Download an artifact from S3.
+142 |         
+    | ^^^^^^^^
+143 |         Args:
+144 |             job_id: Job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/storage/s3_adapter.py:146:1
+    |
+144 |             job_id: Job identifier
+145 |             artifact_name: Name of the artifact file
+146 |             
+    | ^^^^^^^^^^^^
+147 |         Returns:
+148 |             Artifact content as bytes, or None if not found
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/storage/s3_adapter.py:178:1
+    |
+176 |         """
+177 |         Delete an artifact from S3.
+178 |         
+    | ^^^^^^^^
+179 |         Args:
+180 |             job_id: Job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/storage/s3_adapter.py:182:1
+    |
+180 |             job_id: Job identifier
+181 |             artifact_name: Name of the artifact file
+182 |             
+    | ^^^^^^^^^^^^
+183 |         Returns:
+184 |             True if deleted successfully, False if not found
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/storage/s3_adapter.py:213:1
+    |
+211 |         """
+212 |         List all artifacts for a job.
+213 |         
+    | ^^^^^^^^
+214 |         Args:
+215 |             job_id: Job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/storage/s3_adapter.py:216:1
+    |
+214 |         Args:
+215 |             job_id: Job identifier
+216 |             
+    | ^^^^^^^^^^^^
+217 |         Returns:
+218 |             List of artifact information dictionaries
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/infrastructure/storage/s3_adapter.py:241:1
+    |
+239 |         """
+240 |         Set up S3 lifecycle policy for automatic artifact management.
+241 |         
+    | ^^^^^^^^
+242 |         Returns:
+243 |             True if policy was set successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/services/job_manager.py:47:1
+   |
+45 |         """
+46 |         Initialize Monte Carlo job manager.
+47 |         
+   | ^^^^^^^^
+48 |         Args:
+49 |             queue: Queue interface for job management
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/services/job_manager.py:68:1
+   |
+66 |         """
+67 |         Generate deduplication key from payload.
+68 |         
+   | ^^^^^^^^
+69 |         Args:
+70 |             payload: Job payload
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/services/job_manager.py:71:1
+   |
+69 |         Args:
+70 |             payload: Job payload
+71 |             
+   | ^^^^^^^^^^^^
+72 |         Returns:
+73 |             SHA256 hash of normalized payload
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:102:1
+    |
+100 |         """
+101 |         Validate job payload against hard limits.
+102 |         
+    | ^^^^^^^^
+103 |         Args:
+104 |             payload: Job payload to validate
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:105:1
+    |
+103 |         Args:
+104 |             payload: Job payload to validate
+105 |             
+    | ^^^^^^^^^^^^
+106 |         Raises:
+107 |             ValueError: If payload exceeds limits
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:187:1
+    |
+185 |         """
+186 |         Submit a Monte Carlo simulation job with database persistence and deduplication.
+187 |         
+    | ^^^^^^^^
+188 |         Args:
+189 |             csv_file: CSV file containing price data
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:205:1
+    |
+203 |             tags: Additional tags for job metadata
+204 |             dedup_key: Optional deduplication key for idempotence
+205 |             
+    | ^^^^^^^^^^^^
+206 |         Returns:
+207 |             Job ID for tracking
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:208:1
+    |
+206 |         Returns:
+207 |             Job ID for tracking
+208 |             
+    | ^^^^^^^^^^^^
+209 |         Raises:
+210 |             ValueError: If payload validation fails
+    |
+help: Remove whitespace from blank line
+
+F841 Local variable `db_job` is assigned to but never used
+   --> src/services/job_manager.py:258:21
+    |
+257 |                 try:
+258 |                     db_job = await job_repo.create_job(
+    |                     ^^^^^^
+259 |                         job_id=job_id,
+260 |                         payload=payload_for_db,
+    |
+help: Remove assignment to unused variable `db_job`
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:321:1
+    |
+319 |         """
+320 |         Submit a generic job (implements JobManagerInterface).
+321 |         
+    | ^^^^^^^^
+322 |         Args:
+323 |             payload: Job payload (should be MonteCarloJobPayload)
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:325:1
+    |
+323 |             payload: Job payload (should be MonteCarloJobPayload)
+324 |             metadata: Optional job metadata
+325 |             
+    | ^^^^^^^^^^^^
+326 |         Returns:
+327 |             Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:356:1
+    |
+354 |         """
+355 |         Get job by ID.
+356 |         
+    | ^^^^^^^^
+357 |         Args:
+358 |             job_id: Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:359:1
+    |
+357 |         Args:
+358 |             job_id: Job ID
+359 |             
+    | ^^^^^^^^^^^^
+360 |         Returns:
+361 |             Job or None if not found
+    |
+help: Remove whitespace from blank line
+
+F841 Local variable `payload` is assigned to but never used
+   --> src/services/job_manager.py:395:17
+    |
+393 |                     payload_data['csv_data'] = base64.b64decode(payload_data['csv_data'])
+394 |
+395 |                 payload = MonteCarloJobPayload(**payload_data)
+    |                 ^^^^^^^
+396 |
+397 |                 # Create Job object with generic payload (not MonteCarloJobPayload)
+    |
+help: Remove assignment to unused variable `payload`
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:420:1
+    |
+418 |         """
+419 |         List jobs with optional filtering.
+420 |         
+    | ^^^^^^^^
+421 |         Args:
+422 |             status: Filter by status
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:425:1
+    |
+423 |             limit: Maximum number of jobs
+424 |             offset: Pagination offset
+425 |             
+    | ^^^^^^^^^^^^
+426 |         Returns:
+427 |             List of jobs
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:470:1
+    |
+468 |         """
+469 |         Cancel a job.
+470 |         
+    | ^^^^^^^^
+471 |         Args:
+472 |             job_id: Job ID to cancel
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:473:1
+    |
+471 |         Args:
+472 |             job_id: Job ID to cancel
+473 |             
+    | ^^^^^^^^^^^^
+474 |         Returns:
+475 |             True if cancelled successfully
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:482:1
+    |
+480 |         """
+481 |         Get job result if completed.
+482 |         
+    | ^^^^^^^^
+483 |         Args:
+484 |             job_id: Job ID
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:485:1
+    |
+483 |         Args:
+484 |             job_id: Job ID
+485 |             
+    | ^^^^^^^^^^^^
+486 |         Returns:
+487 |             Job result or None if not completed
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:502:1
+    |
+500 |         """
+501 |         Wait for job completion and return result.
+502 |         
+    | ^^^^^^^^
+503 |         Args:
+504 |             job_id: Job ID to wait for
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:507:1
+    |
+505 |             timeout_seconds: Maximum time to wait
+506 |             poll_interval: Polling interval in seconds
+507 |             
+    | ^^^^^^^^^^^^
+508 |         Returns:
+509 |             Job result or None if timeout/failed
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:610:1
+    |
+608 |         """
+609 |         Get comprehensive queue metrics including database statistics.
+610 |         
+    | ^^^^^^^^
+611 |         Returns:
+612 |             Dictionary containing queue and database metrics
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:685:1
+    |
+683 |         """
+684 |         Submit multiple jobs in batches.
+685 |         
+    | ^^^^^^^^
+686 |         Args:
+687 |             job_requests: List of job request dictionaries
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:689:1
+    |
+687 |             job_requests: List of job request dictionaries
+688 |             batch_size: Number of jobs to submit per batch
+689 |             
+    | ^^^^^^^^^^^^
+690 |         Returns:
+691 |             List of job IDs
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:721:1
+    |
+719 |         """
+720 |         Cleanup completed jobs older than specified hours.
+721 |         
+    | ^^^^^^^^
+722 |         Args:
+723 |             older_than_hours: Remove jobs completed more than this many hours ago
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/job_manager.py:724:1
+    |
+722 |         Args:
+723 |             older_than_hours: Remove jobs completed more than this many hours ago
+724 |             
+    | ^^^^^^^^^^^^
+725 |         Returns:
+726 |             Number of jobs cleaned up
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/services/mc_backtest_service.py:60:1
+   |
+58 |     """
+59 |     Bootstrap method: resample returns with replacement and reconstruct prices.
+60 |     
+   | ^^^^
+61 |     Args:
+62 |         prices: Original price series
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/services/mc_backtest_service.py:65:1
+   |
+63 |         sample_fraction: Fraction of returns to sample (1.0 = same length)
+64 |         rng: Random number generator
+65 |         
+   | ^^^^^^^^
+66 |     Returns:
+67 |         Synthetic price series
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/services/mc_backtest_service.py:94:1
+   |
+92 |     """
+93 |     Gaussian noise method: add noise to returns and reconstruct prices.
+94 |     
+   | ^^^^
+95 |     Args:
+96 |         prices: Original price series
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/mc_backtest_service.py:99:1
+    |
+ 97 |         scale: Scale factor for Gaussian noise (1.0 = same std as original returns)
+ 98 |         rng: Random number generator
+ 99 |         
+    | ^^^^^^^^
+100 |     Returns:
+101 |         Synthetic price series
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/mc_backtest_service.py:125:1
+    |
+123 |     """
+124 |     Worker function for Monte Carlo simulation.
+125 |     
+    | ^^^^
+126 |     Args:
+127 |         args: Either a tuple (csv_data, strategy_name, strategy_params, method, method_params, seed)
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/mc_backtest_service.py:129:1
+    |
+127 |         args: Either a tuple (csv_data, strategy_name, strategy_params, method, method_params, seed)
+128 |               or a dict with keys: csv_data/df, strategy_name, strategy_params, method, method_params, seed/rng_seed
+129 |         
+    | ^^^^^^^^
+130 |     Returns:
+131 |         MonteCarloResult or None if failed
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/mc_backtest_service.py:238:1
+    |
+236 |     """
+237 |     Compute equity envelope with percentiles from multiple equity curves.
+238 |     
+    | ^^^^
+239 |     Args:
+240 |         equity_curves: List of equity curves from Monte Carlo runs
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/services/mc_backtest_service.py:242:1
+    |
+240 |         equity_curves: List of equity curves from Monte Carlo runs
+241 |         timestamps: List of timestamp strings
+242 |         
+    | ^^^^^^^^
+243 |     Returns:
+244 |         EquityEnvelope with percentiles
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/utils/date_validation.py:17:1
+   |
+15 |     """
+16 |     Get the date range available in a CSV file.
+17 |     
+   | ^^^^
+18 |     Args:
+19 |         csv_file_path: Path to the CSV file
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/utils/date_validation.py:20:1
+   |
+18 |     Args:
+19 |         csv_file_path: Path to the CSV file
+20 |         
+   | ^^^^^^^^
+21 |     Returns:
+22 |         Tuple of (min_date, max_date)
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/utils/date_validation.py:23:1
+   |
+21 |     Returns:
+22 |         Tuple of (min_date, max_date)
+23 |         
+   | ^^^^^^^^
+24 |     Raises:
+25 |         FileNotFoundError: If CSV file doesn't exist
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/utils/date_validation.py:58:1
+   |
+56 |     """
+57 |     Validate if the requested date range is available for a given symbol.
+58 |     
+   | ^^^^
+59 |     Args:
+60 |         symbol: Trading symbol (e.g., 'aapl', 'msft')
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/utils/date_validation.py:64:1
+   |
+62 |         end_date: Requested end date
+63 |         datasets_path: Path to datasets directory
+64 |         
+   | ^^^^^^^^
+65 |     Returns:
+66 |         Dict with validation result:
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/utils/date_validation.py:147:1
+    |
+145 |     """
+146 |     Get date ranges for all available symbols.
+147 |     
+    | ^^^^
+148 |     Args:
+149 |         datasets_path: Path to datasets directory
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/utils/date_validation.py:150:1
+    |
+148 |     Args:
+149 |         datasets_path: Path to datasets directory
+150 |         
+    | ^^^^^^^^
+151 |     Returns:
+152 |         Dict mapping symbol to {'min_date': datetime, 'max_date': datetime}
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/workers/monte_carlo_worker.py:48:1
+   |
+46 |         """
+47 |         Initialize Monte Carlo job processor.
+48 |         
+   | ^^^^^^^^
+49 |         Args:
+50 |             processor_id: Unique processor identifier
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/workers/monte_carlo_worker.py:63:1
+   |
+61 |         """
+62 |         Process a Monte Carlo simulation job with comprehensive tracking.
+63 |         
+   | ^^^^^^^^
+64 |         Args:
+65 |             job: Monte Carlo job to process
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/workers/monte_carlo_worker.py:66:1
+   |
+64 |         Args:
+65 |             job: Monte Carlo job to process
+66 |             
+   | ^^^^^^^^^^^^
+67 |         Returns:
+68 |             Simulation results with artifact URLs
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+  --> src/workers/monte_carlo_worker.py:69:1
+   |
+67 |         Returns:
+68 |             Simulation results with artifact URLs
+69 |             
+   | ^^^^^^^^^^^^
+70 |         Raises:
+71 |             Exception: If processing fails
+   |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/workers/monte_carlo_worker.py:215:1
+    |
+213 |         """
+214 |         Store simulation artifacts in S3.
+215 |         
+    | ^^^^^^^^
+216 |         Args:
+217 |             job_id: Job identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/workers/monte_carlo_worker.py:220:1
+    |
+218 |             result: Simulation results
+219 |             payload: Job payload
+220 |             
+    | ^^^^^^^^^^^^
+221 |         Returns:
+222 |             Dictionary mapping artifact names to URLs
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/workers/monte_carlo_worker.py:331:1
+    |
+329 |         """
+330 |         Initialize Monte Carlo worker.
+331 |         
+    | ^^^^^^^^
+332 |         Args:
+333 |             worker_id: Unique worker identifier
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/workers/monte_carlo_worker.py:516:1
+    |
+514 |         """
+515 |         Calculate exponential backoff delay with jitter.
+516 |         
+    | ^^^^^^^^
+517 |         Args:
+518 |             attempt: Current attempt number (0-based)
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> src/workers/monte_carlo_worker.py:519:1
+    |
+517 |         Args:
+518 |             attempt: Current attempt number (0-based)
+519 |             
+    | ^^^^^^^^^^^^
+520 |         Returns:
+521 |             Delay in seconds
+    |
+help: Remove whitespace from blank line
+
+Found 217 errors.
+No fixes available (217 hidden fixes can be enabled with the `--unsafe-fixes` option).

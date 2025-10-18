@@ -1,4 +1,5 @@
 import io
+
 import pandas as pd
 
 from services.backtest_service import _read_csv_to_series

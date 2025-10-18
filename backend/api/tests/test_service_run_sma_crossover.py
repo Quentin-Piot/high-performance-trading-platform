@@ -1,7 +1,12 @@
 import io
+
 import pandas as pd
 
-from services.backtest_service import run_sma_crossover, sma_crossover_backtest, CsvBytesPriceSeriesSource
+from services.backtest_service import (
+    CsvBytesPriceSeriesSource,
+    run_sma_crossover,
+    sma_crossover_backtest,
+)
 
 
 def _csv_from_prices(prices):

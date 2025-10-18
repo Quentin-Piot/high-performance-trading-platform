@@ -1,10 +1,10 @@
+import datetime as dt
 import io
 import math
-import datetime as dt
 
 import numpy as np
-import pandas as pd
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from services.backtest_service import sma_crossover_backtest
 

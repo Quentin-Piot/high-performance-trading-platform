@@ -1,7 +1,8 @@
 import io
+
 import pytest
 
-from services.backtest_service import sma_crossover_backtest, _read_csv_to_series
+from services.backtest_service import _read_csv_to_series, sma_crossover_backtest
 
 
 @pytest.mark.parametrize(

@@ -1,8 +1,12 @@
-import numpy as np
-import pytest
 import pandas as pd
+import pytest
 
-from strategies.metrics import sharpe_ratio, max_drawdown, total_return, trade_summary_from_positions
+from strategies.metrics import (
+    max_drawdown,
+    sharpe_ratio,
+    total_return,
+    trade_summary_from_positions,
+)
 
 
 def test_sharpe_ratio_nan_on_zero_returns():
