@@ -1,13 +1,14 @@
 from __future__ import annotations
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from pydantic import Field
 
 from domain.backtest import BacktestResult
 from strategies.base import Strategy, StrategyParams
 from strategies.metrics import (
-    sharpe_ratio,
     max_drawdown,
+    sharpe_ratio,
     total_return,
     trade_summary_from_positions,
 )
@@ -18,7 +19,6 @@ class RSIParams(StrategyParams):
     rsi_low: int = Field(30, ge=1, le=100)
     rsi_high: int = Field(70, ge=1, le=100)
     annualization: int = Field(252, gt=0)
-
 
 class RSIReversionStrategy(Strategy):
     ParamsModel = RSIParams

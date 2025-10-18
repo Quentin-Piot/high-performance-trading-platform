@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Protocol
-import pandas as pd
 from abc import ABC, abstractmethod
-from domain.backtest import BacktestResult, BacktestParams
+from typing import Protocol
+
+import pandas as pd
+
+from domain.backtest import BacktestParams, BacktestResult
 
 
 class PriceSeriesSource(Protocol):
@@ -11,7 +13,6 @@ class PriceSeriesSource(Protocol):
         self,
     ) -> pd.Series:  # returns Series indexed by datetime if available
         ...
-
 
 class StrategyInterface(ABC):
     """

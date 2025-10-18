@@ -4,16 +4,15 @@ Configuration for the queue system across different environments.
 This module provides configuration classes for development, testing, and production
 environments, with support for environment variables and validation.
 """
-import os
 import logging
+import os
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
 from enum import Enum
+from typing import Any
 
-from infrastructure.security import CredentialManager, AWSCredentials
+from infrastructure.security import AWSCredentials, CredentialManager
 
 logger = logging.getLogger(__name__)
-
 
 class Environment(Enum):
     """Environment types"""
@@ -22,30 +21,29 @@ class Environment(Enum):
     STAGING = "staging"
     PRODUCTION = "production"
 
-
 @dataclass
 class SQSConfig:
     """SQS-specific configuration with secure credential management"""
     queue_url: str
     region_name: str = "us-east-1"
-    dead_letter_queue_url: Optional[str] = None
+    dead_letter_queue_url: str | None = None
     visibility_timeout: int = 300  # 5 minutes
     message_retention_period: int = 1209600  # 14 days
     max_receive_count: int = 3
-    aws_credentials: Optional[AWSCredentials] = None
-    endpoint_url: Optional[str] = None  # For LocalStack
-    
+    aws_credentials: AWSCredentials | None = None
+    endpoint_url: str | None = None  # For LocalStack
+
     def __post_init__(self):
         """Validate configuration after initialization"""
         if not self.queue_url:
             raise ValueError("queue_url is required")
-        
+
         if self.visibility_timeout < 0 or self.visibility_timeout > 43200:  # 12 hours max
             raise ValueError("visibility_timeout must be between 0 and 43200 seconds")
-        
+
         if self.message_retention_period < 60 or self.message_retention_period > 1209600:  # 14 days max
             raise ValueError("message_retention_period must be between 60 and 1209600 seconds")
-        
+
         # Initialize AWS credentials if not provided
         if self.aws_credentials is None:
             environment = os.getenv("ENVIRONMENT", "development")
@@ -53,21 +51,21 @@ class SQSConfig:
                 environment=environment,
                 prefer_iam_role=(environment in ("staging", "production"))
             )
-            
+
         # Validate credentials
         if not CredentialManager.validate_credentials(self.aws_credentials):
             logger.warning("AWS credentials validation failed", extra={
                 "credential_info": self.aws_credentials.mask_sensitive_data()
             })
-    
-    def get_boto3_config(self) -> Dict[str, Any]:
+
+    def get_boto3_config(self) -> dict[str, Any]:
         """Get boto3 configuration with secure credentials"""
         config = self.aws_credentials.to_boto3_config()
         if self.endpoint_url:
             config["endpoint_url"] = self.endpoint_url
         return config
-    
-    def mask_sensitive_data(self) -> Dict[str, Any]:
+
+    def mask_sensitive_data(self) -> dict[str, Any]:
         """Return configuration with sensitive data masked for logging"""
         return {
             "queue_url": self.queue_url,
@@ -80,27 +78,25 @@ class SQSConfig:
             "aws_credentials": self.aws_credentials.mask_sensitive_data() if self.aws_credentials else None
         }
 
-
 @dataclass
 class WorkerConfig:
     """Worker configuration"""
-    worker_id: Optional[str] = None
+    worker_id: str | None = None
     max_concurrent_jobs: int = 1
     poll_interval: float = 1.0
     health_check_interval: float = 30.0
     shutdown_timeout: int = 300  # 5 minutes
-    
+
     def __post_init__(self):
         """Validate configuration after initialization"""
         if self.max_concurrent_jobs < 1:
             raise ValueError("max_concurrent_jobs must be at least 1")
-        
+
         if self.poll_interval < 0.1:
             raise ValueError("poll_interval must be at least 0.1 seconds")
-        
+
         if self.health_check_interval < 1.0:
             raise ValueError("health_check_interval must be at least 1.0 seconds")
-
 
 @dataclass
 class JobConfig:
@@ -109,18 +105,17 @@ class JobConfig:
     default_max_retries: int = 3
     max_runs_per_job: int = 10000
     min_runs_per_job: int = 1
-    
+
     def __post_init__(self):
         """Validate configuration after initialization"""
         if self.default_timeout_seconds < 60:
             raise ValueError("default_timeout_seconds must be at least 60 seconds")
-        
+
         if self.default_max_retries < 0:
             raise ValueError("default_max_retries must be non-negative")
-        
+
         if self.max_runs_per_job < self.min_runs_per_job:
             raise ValueError("max_runs_per_job must be >= min_runs_per_job")
-
 
 @dataclass
 class MonitoringConfig:
@@ -129,15 +124,14 @@ class MonitoringConfig:
     metrics_retention_hours: int = 24
     health_check_interval: float = 30.0
     performance_window_size: int = 100
-    
+
     def __post_init__(self):
         """Validate configuration after initialization"""
         if self.metrics_retention_hours < 1:
             raise ValueError("metrics_retention_hours must be at least 1")
-        
+
         if self.performance_window_size < 10:
             raise ValueError("performance_window_size must be at least 10")
-
 
 @dataclass
 class QueueSystemConfig:
@@ -147,15 +141,15 @@ class QueueSystemConfig:
     worker: WorkerConfig = field(default_factory=WorkerConfig)
     job: JobConfig = field(default_factory=JobConfig)
     monitoring: MonitoringConfig = field(default_factory=MonitoringConfig)
-    
+
     @classmethod
-    def from_environment(cls, env: Optional[str] = None) -> 'QueueSystemConfig':
+    def from_environment(cls, env: str | None = None) -> 'QueueSystemConfig':
         """
         Create configuration from environment variables.
-        
+
         Args:
             env: Environment name (development, testing, staging, production)
-            
+
         Returns:
             QueueSystemConfig instance
         """
@@ -164,14 +158,14 @@ class QueueSystemConfig:
         try:
             environment = Environment(env_name.lower())
         except ValueError:
-            raise ValueError(f"Invalid environment: {env_name}")
-        
+            raise ValueError(f"Invalid environment: {env_name}") from None
+
         # SQS Configuration with secure credentials
         aws_credentials = CredentialManager.resolve_aws_credentials(
             environment=environment.value,
             prefer_iam_role=(environment in (Environment.STAGING, Environment.PRODUCTION))
         )
-        
+
         sqs_config = SQSConfig(
             queue_url=os.getenv("SQS_QUEUE_URL", ""),
             region_name=os.getenv("AWS_REGION", "us-east-1"),
@@ -182,7 +176,7 @@ class QueueSystemConfig:
             aws_credentials=aws_credentials,
             endpoint_url=os.getenv("AWS_ENDPOINT_URL") or os.getenv("SQS_ENDPOINT_URL")  # For LocalStack
         )
-        
+
         # Worker Configuration
         worker_config = WorkerConfig(
             worker_id=os.getenv("WORKER_ID"),
@@ -191,7 +185,7 @@ class QueueSystemConfig:
             health_check_interval=float(os.getenv("HEALTH_CHECK_INTERVAL", "30.0")),
             shutdown_timeout=int(os.getenv("SHUTDOWN_TIMEOUT", "300"))
         )
-        
+
         # Job Configuration
         job_config = JobConfig(
             default_timeout_seconds=int(os.getenv("DEFAULT_JOB_TIMEOUT", "3600")),
@@ -199,7 +193,7 @@ class QueueSystemConfig:
             max_runs_per_job=int(os.getenv("MAX_RUNS_PER_JOB", "10000")),
             min_runs_per_job=int(os.getenv("MIN_RUNS_PER_JOB", "1"))
         )
-        
+
         # Monitoring Configuration
         monitoring_config = MonitoringConfig(
             enabled=os.getenv("MONITORING_ENABLED", "true").lower() == "true",
@@ -207,7 +201,7 @@ class QueueSystemConfig:
             health_check_interval=float(os.getenv("MONITORING_HEALTH_CHECK_INTERVAL", "30.0")),
             performance_window_size=int(os.getenv("PERFORMANCE_WINDOW_SIZE", "100"))
         )
-        
+
         return cls(
             environment=environment,
             sqs=sqs_config,
@@ -215,8 +209,8 @@ class QueueSystemConfig:
             job=job_config,
             monitoring=monitoring_config
         )
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary"""
         return {
             "environment": self.environment.value,
@@ -249,26 +243,26 @@ class QueueSystemConfig:
                 "performance_window_size": self.monitoring.performance_window_size
             }
         }
-    
+
     def validate(self) -> None:
         """Validate the complete configuration"""
         # Environment-specific validations
         if self.environment == Environment.PRODUCTION:
             if not self.sqs.aws_credentials or not self.sqs.aws_credentials.is_valid():
                 raise ValueError("Production environment requires valid AWS credentials or IAM role")
-            
+
             if self.sqs.endpoint_url:
                 raise ValueError("Production environment should not use custom SQS endpoint")
-        
+
         elif self.environment == Environment.TESTING:
             # Testing might use LocalStack
             if not self.sqs.endpoint_url and not self.sqs.queue_url.startswith("https://sqs"):
                 raise ValueError("Testing environment requires either LocalStack endpoint or real SQS URL")
-        
+
         # General validations
         if not self.sqs.queue_url:
             raise ValueError("SQS queue URL is required")
-        
+
         # Log configuration for debugging (with sensitive data masked)
         logger.info("Queue configuration validated", extra={
             "environment": self.environment.value,
@@ -278,7 +272,6 @@ class QueueSystemConfig:
                 "poll_interval": self.worker.poll_interval
             }
         })
-
 
 # Environment-specific configurations
 def get_development_config() -> QueueSystemConfig:
@@ -293,14 +286,13 @@ def get_development_config() -> QueueSystemConfig:
     config.worker.health_check_interval = 10.0
     config.job.default_timeout_seconds = 600
     config.job.max_runs_per_job = 1000
-    
-    return config
 
+    return config
 
 def get_testing_config() -> QueueSystemConfig:
     """Get testing configuration"""
     from infrastructure.security import AWSCredentials, CredentialSource
-    
+
     # Create mock AWS credentials for testing
     test_credentials = AWSCredentials(
         access_key_id='testing',
@@ -308,9 +300,9 @@ def get_testing_config() -> QueueSystemConfig:
         region='us-east-1',
         source=CredentialSource.ENVIRONMENT
     )
-    
+
     config = QueueSystemConfig.from_environment("testing")
-    
+
     # Testing-specific overrides
     config.sqs.aws_credentials = test_credentials
     config.sqs.visibility_timeout = 30
@@ -324,34 +316,32 @@ def get_testing_config() -> QueueSystemConfig:
     config.job.max_runs_per_job = 100
     config.monitoring.metrics_retention_hours = 1
     config.monitoring.performance_window_size = 10
-    
-    return config
 
+    return config
 
 def get_production_config() -> QueueSystemConfig:
     """Get production configuration"""
     config = QueueSystemConfig.from_environment("production")
-    
+
     # Production-specific overrides
     config.worker.max_concurrent_jobs = max(1, config.worker.max_concurrent_jobs)
     config.job.default_timeout_seconds = max(3600, config.job.default_timeout_seconds)
     config.monitoring.enabled = True
-    
+
     return config
 
-
-def get_config(environment: Optional[str] = None) -> QueueSystemConfig:
+def get_config(environment: str | None = None) -> QueueSystemConfig:
     """
     Get configuration for the specified environment.
-    
+
     Args:
         environment: Environment name or None to auto-detect
-        
+
     Returns:
         QueueSystemConfig instance
     """
     env_name = environment or os.getenv("ENVIRONMENT", "development")
-    
+
     if env_name.lower() == "development":
         return get_development_config()
     elif env_name.lower() == "testing":

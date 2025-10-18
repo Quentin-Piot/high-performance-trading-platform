@@ -45,7 +45,10 @@ aws --endpoint-url=http://localhost:4566 sqs create-queue \
 # Queue principale avec DLQ
 aws --endpoint-url=http://localhost:4566 sqs create-queue \
     --queue-name trading-platform-monte-carlo-jobs \
-    --attributes MessageRetentionPeriod=1209600,VisibilityTimeoutSeconds=300 || echo "Queue principale existe déjà"
+    --attributes '{
+        "MessageRetentionPeriod": "1209600",
+        "VisibilityTimeout": "300"
+    }' || echo "Queue principale existe déjà"
 
 # Créer le bucket S3 pour les artefacts
 echo "🪣 Création du bucket S3..."

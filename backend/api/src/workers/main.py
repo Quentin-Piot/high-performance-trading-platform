@@ -10,7 +10,11 @@ from config.queue_config import get_config
 from core.logging import setup_logging
 from infrastructure.queue.sqs_adapter import SQSQueueAdapter
 from infrastructure.storage.s3_adapter import S3StorageAdapter
-from workers.monte_carlo_worker import MonteCarloJobProcessor, MonteCarloWorker, WorkerProgressCallback
+from workers.monte_carlo_worker import (
+    MonteCarloJobProcessor,
+    MonteCarloWorker,
+    WorkerProgressCallback,
+)
 
 
 async def main():
@@ -41,7 +45,8 @@ async def main():
         logger.info("SQS queue adapter initialized.")
 
         logger.info("Initializing worker progress callback...")
-        progress_callback = WorkerProgressCallback(queue)
+        worker_id = os.getenv("WORKER_ID", "worker-1")
+        progress_callback = WorkerProgressCallback(queue, worker_id)
         logger.info("Worker progress callback initialized.")
 
         logger.info("Initializing S3 storage adapter...")
@@ -80,7 +85,6 @@ async def main():
     except Exception as e:
         logger.error(f"Worker failed: {str(e)}", exc_info=True)
         sys.exit(1)
-
 
 if __name__ == "__main__":
     asyncio.run(main())

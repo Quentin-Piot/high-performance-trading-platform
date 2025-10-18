@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+
 
 class MetricsDistribution(BaseModel):
     """Statistical distribution of a metric"""
@@ -13,18 +14,18 @@ class MetricsDistribution(BaseModel):
 
 class EquityEnvelope(BaseModel):
     """Equity curve envelope with percentiles"""
-    timestamps: List[str]
-    p5: List[float]
-    p25: List[float]
-    median: List[float]
-    p75: List[float]
-    p95: List[float]
+    timestamps: list[str]
+    p5: list[float]
+    p25: list[float]
+    median: list[float]
+    p75: list[float]
+    p95: list[float]
 
 class SingleBacktestResult(BaseModel):
     """Results for a single CSV file backtest"""
     filename: str
-    timestamps: List[str]
-    equity_curve: List[float]
+    timestamps: list[str]
+    equity_curve: list[float]
     pnl: float
     drawdown: float
     sharpe: float
@@ -35,8 +36,8 @@ class MonteCarloBacktestResult(BaseModel):
     method: str
     runs: int
     successful_runs: int
-    metrics_distribution: Dict[str, MetricsDistribution]
-    equity_envelope: Optional[EquityEnvelope] = None
+    metrics_distribution: dict[str, MetricsDistribution]
+    equity_envelope: EquityEnvelope | None = None
 
 class AggregatedMetrics(BaseModel):
     """Aggregated metrics across all CSV files"""
@@ -47,21 +48,21 @@ class AggregatedMetrics(BaseModel):
 
 class SingleBacktestResponse(BaseModel):
     """Response for single CSV backtest (backward compatibility)"""
-    timestamps: List[str]
-    equity_curve: List[float]
+    timestamps: list[str]
+    equity_curve: list[float]
     pnl: float
     drawdown: float
     sharpe: float
 
 class MultiBacktestResponse(BaseModel):
     """Response for multiple CSV backtest"""
-    results: List[SingleBacktestResult]
-    aggregated_metrics: Optional[AggregatedMetrics] = None
+    results: list[SingleBacktestResult]
+    aggregated_metrics: AggregatedMetrics | None = None
 
 class MonteCarloResponse(BaseModel):
     """Response for Monte Carlo backtest"""
-    results: List[MonteCarloBacktestResult]
-    aggregated_metrics: Optional[AggregatedMetrics] = None
+    results: list[MonteCarloBacktestResult]
+    aggregated_metrics: AggregatedMetrics | None = None
 
 # Union type for the endpoint response
 BacktestResponse = SingleBacktestResponse | MultiBacktestResponse | MonteCarloResponse

@@ -1,8 +1,19 @@
-from datetime import datetime
-from sqlalchemy import Integer, String, DateTime, ForeignKey, Float, Text, JSON, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from infrastructure.db import Base
 import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    JSON,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from infrastructure.db import Base
 
 
 # -----------------------------------------
@@ -22,7 +33,6 @@ class User(Base):
 
     strategies: Mapped[list["Strategy"]] = relationship(back_populates="owner")
 
-
 # -----------------------------------------
 # Strategy
 # -----------------------------------------
@@ -38,7 +48,6 @@ class Strategy(Base):
 
     owner: Mapped[User] = relationship(back_populates="strategies")
     backtests: Mapped[list["Backtest"]] = relationship(back_populates="strategy")
-
 
 # -----------------------------------------
 # Backtest
@@ -61,7 +70,6 @@ class Backtest(Base):
 
     strategy: Mapped[Strategy] = relationship(back_populates="backtests")
 
-
 # -----------------------------------------
 # Job (Monte Carlo Queue System)
 # -----------------------------------------
@@ -81,11 +89,11 @@ class Job(Base):
     error: Mapped[str] = mapped_column(Text, nullable=True)
     artifact_url: Mapped[str] = mapped_column(String(500), nullable=True)
     dedup_key: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
-    
+
     # Job timing fields for duration tracking
     started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )

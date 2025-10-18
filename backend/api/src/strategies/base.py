@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Type, Optional
 from datetime import datetime
+
 import pandas as pd
 from pydantic import BaseModel
 
@@ -18,10 +19,9 @@ class StrategyParams(BaseModel):
     commission: float = 0.0  # fraction per trade (e.g. 0.001 = 0.1%)
     slippage: float = 0.0  # fraction applied similarly (approx.)
     position_size: float = 1.0  # fraction of capital per trade (1.0 = full)
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     timeframe: str = "1d"  # informative
-
 
 class Strategy(ABC):
     """
@@ -31,7 +31,7 @@ class Strategy(ABC):
     - implement run(df, params) -> BacktestResult
     """
 
-    ParamsModel: Type[StrategyParams] = StrategyParams
+    ParamsModel: type[StrategyParams] = StrategyParams
     name: str = "base-strategy"
 
     @abstractmethod

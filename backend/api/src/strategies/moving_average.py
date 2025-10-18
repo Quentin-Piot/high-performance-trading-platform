@@ -1,13 +1,13 @@
 from __future__ import annotations
+
 import pandas as pd
-from typing import Optional
 from pydantic import Field, model_validator
 
 from domain.backtest import BacktestResult
 from strategies.base import Strategy, StrategyParams
 from strategies.metrics import (
-    sharpe_ratio,
     max_drawdown,
+    sharpe_ratio,
     total_return,
     trade_summary_from_positions,
 )
@@ -17,13 +17,12 @@ class MovingAverageParams(StrategyParams):
     short_window: int = Field(20, gt=0)
     long_window: int = Field(50, gt=0)
     annualization: int = Field(252, gt=0)
-    
+
     @model_validator(mode='after')
     def validate_windows(self):
         if self.short_window >= self.long_window:
             raise ValueError("short_window must be less than long_window")
         return self
-
 
 class MovingAverageStrategy(Strategy):
     ParamsModel = MovingAverageParams

@@ -1,20 +1,18 @@
-import pytest
-import pandas as pd
-import numpy as np
-from unittest.mock import patch
-from fastapi.testclient import TestClient
 from io import BytesIO
+
+import numpy as np
+import pandas as pd
+import pytest
+from fastapi.testclient import TestClient
 
 from api.main import app
 from services.mc_backtest_service import (
+    MetricsDistribution,
+    MonteCarloSummary,
     bootstrap_returns_to_prices,
     gaussian_noise_returns_to_prices,
     monte_carlo_worker,
     run_monte_carlo_on_df,
-    MonteCarloResult,
-    MonteCarloSummary,
-    MetricsDistribution,
-    EquityEnvelope,
 )
 
 client = TestClient(app)
@@ -43,10 +41,10 @@ def test_bootstrap_returns_to_prices():
     # Create simple price series
     prices = pd.Series([100, 101, 102, 101, 103, 104])
     rng = np.random.RandomState(42)
-    
+
     # Bootstrap with full sample
     new_prices = bootstrap_returns_to_prices(prices, sample_fraction=1.0, rng=rng)
-    
+
     # Should have same length
     assert len(new_prices) == len(prices)
     # Should start with same initial price
@@ -59,10 +57,10 @@ def test_gaussian_noise_returns_to_prices():
     """Test Gaussian noise addition to returns."""
     prices = pd.Series([100, 101, 102, 101, 103, 104])
     rng = np.random.RandomState(42)
-    
+
     # Add noise
     new_prices = gaussian_noise_returns_to_prices(prices, scale=1.0, rng=rng)
-    
+
     # Should have same length
     assert len(new_prices) == len(prices)
     # Should start with same initial price
@@ -77,7 +75,7 @@ def test_monte_carlo_worker():
     dates = pd.date_range("2023-01-01", periods=50, freq="D")
     prices = pd.Series(100 * np.exp(np.cumsum(np.random.normal(0.001, 0.02, 50))))
     df = pd.DataFrame({"close": prices}, index=dates)
-    
+
     # Test SMA strategy
     args = {
         "df": df,
@@ -87,9 +85,9 @@ def test_monte_carlo_worker():
         "method_params": {"sample_fraction": 1.0},
         "rng_seed": 42,
     }
-    
+
     result = monte_carlo_worker(args)
-    
+
     # Should return metrics
     assert result is not None
     assert result.pnl is not None
@@ -106,7 +104,7 @@ def test_run_monte_carlo_on_df(sample_csv_bytes):
     progress_calls = []
     def progress_callback(processed, total):
         progress_calls.append((processed, total))
-    
+
     # Run Monte Carlo with small number of runs
     result = run_monte_carlo_on_df(
         csv_data=sample_csv_bytes,
@@ -120,27 +118,27 @@ def test_run_monte_carlo_on_df(sample_csv_bytes):
         include_equity_envelope=True,
         progress_callback=progress_callback,
     )
-    
+
     # Verify result structure
     assert isinstance(result, MonteCarloSummary)
     assert isinstance(result.metrics_distribution, dict)
     assert "pnl" in result.metrics_distribution
     assert "sharpe" in result.metrics_distribution
     assert "drawdown" in result.metrics_distribution
-    
+
     # Check metrics distribution
     pnl_dist = result.metrics_distribution["pnl"]
     assert isinstance(pnl_dist, MetricsDistribution)
     assert hasattr(pnl_dist, "mean")
     assert hasattr(pnl_dist, "std")
-    
+
     # Check equity envelope
     if result.equity_envelope:
         assert len(result.equity_envelope.timestamps) > 0
         assert len(result.equity_envelope.p5) == len(result.equity_envelope.timestamps)
         assert len(result.equity_envelope.median) == len(result.equity_envelope.timestamps)
         assert len(result.equity_envelope.p95) == len(result.equity_envelope.timestamps)
-    
+
     # Progress callback should have been called
     assert len(progress_calls) > 0
 
@@ -159,26 +157,26 @@ def test_monte_carlo_api_endpoint_single_file(sample_csv_bytes):
             "parallel_workers": 1,
         }
     )
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Should be Monte Carlo response
     assert "results" in data
     assert len(data["results"]) == 1
-    
+
     result = data["results"][0]
     assert result["method"] == "bootstrap"
     assert result["runs"] == 5
     assert "metrics_distribution" in result
     assert "equity_envelope" in result
-    
+
     # Check metrics distribution structure
     metrics = result["metrics_distribution"]
     assert "pnl" in metrics
     assert "sharpe" in metrics
     assert "drawdown" in metrics
-    
+
     for metric in ["pnl", "sharpe", "drawdown"]:
         assert "mean" in metrics[metric]
         assert "std" in metrics[metric]
@@ -194,7 +192,7 @@ def test_monte_carlo_api_endpoint_multiple_files(sample_csv_bytes):
     csv_buffer_2 = BytesIO()
     sample_data_2.to_csv(csv_buffer_2, index=False)
     csv_bytes_2 = csv_buffer_2.getvalue()
-    
+
     response = client.post(
         "/api/v1/backtest",
         files=[
@@ -212,14 +210,14 @@ def test_monte_carlo_api_endpoint_multiple_files(sample_csv_bytes):
             "parallel_workers": 1,
         }
     )
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Should have results for both files
     assert "results" in data
     assert len(data["results"]) == 2
-    
+
     # Should have aggregated metrics
     assert "aggregated_metrics" in data
     assert data["aggregated_metrics"] is not None
@@ -242,7 +240,7 @@ def test_monte_carlo_api_validation():
             "method": "invalid_method",
         }
     )
-    
+
     assert response.status_code == 400
     assert "Unsupported method" in response.json()["detail"]
 
@@ -262,7 +260,7 @@ def test_regular_backtest_still_works(sample_csv_bytes):
 
     assert response.status_code == 200
     data = response.json()
-    
+
     # Should be regular backtest response (SingleBacktestResponse format)
     assert "pnl" in data
     assert "sharpe" in data
