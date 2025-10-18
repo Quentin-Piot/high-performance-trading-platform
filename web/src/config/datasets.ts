@@ -16,8 +16,8 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     filename: "AAPL.csv",
     description: "Apple Inc. stock data",
     dateRange: {
-      minDate: "2020-01-02",
-      maxDate: "2024-12-31"
+      minDate: "2014-09-29",
+      maxDate: "2018-03-29"
     }
   },
   {
@@ -26,8 +26,8 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     filename: "AMZN.csv",
     description: "Amazon.com Inc. stock data",
     dateRange: {
-      minDate: "2020-01-02",
-      maxDate: "2024-12-31"
+      minDate: "1997-05-15",
+      maxDate: "2022-03-24"
     }
   },
   {
@@ -36,8 +36,8 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     filename: "FB.csv",
     description: "Meta Platforms Inc. stock data",
     dateRange: {
-      minDate: "2020-01-02",
-      maxDate: "2024-12-31"
+      minDate: "2012-05-18",
+      maxDate: "2022-03-24"
     }
   },
   {
@@ -46,8 +46,8 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     filename: "GOOGL.csv",
     description: "Alphabet Inc. stock data",
     dateRange: {
-      minDate: "2020-01-02",
-      maxDate: "2024-12-31"
+      minDate: "2004-08-19",
+      maxDate: "2022-03-24"
     }
   },
   {
@@ -56,8 +56,8 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     filename: "MSFT.csv",
     description: "Microsoft Corp. stock data",
     dateRange: {
-      minDate: "2020-01-02",
-      maxDate: "2024-12-31"
+      minDate: "1986-03-13",
+      maxDate: "2022-03-24"
     }
   },
   {
@@ -66,8 +66,8 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     filename: "NFLX.csv",
     description: "Netflix Inc. stock data",
     dateRange: {
-      minDate: "2020-01-02",
-      maxDate: "2024-12-31"
+      minDate: "2002-05-23",
+      maxDate: "2022-06-03"
     }
   },
   {
@@ -76,8 +76,8 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     filename: "NVDA.csv",
     description: "NVIDIA Corp. stock data",
     dateRange: {
-      minDate: "2020-01-02",
-      maxDate: "2024-12-31"
+      minDate: "2019-05-23",
+      maxDate: "2024-05-23"
     }
   },
 ];

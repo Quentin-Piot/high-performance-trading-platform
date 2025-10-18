@@ -13,7 +13,7 @@ import StrategyParametersSection from './StrategyParametersSection.vue'
 import MonteCarloSection from './MonteCarloSection.vue'
 import {
   validateDateRange,
-  calculateSmartDateRange
+  calculateDateRangeWithCsvFiles
 } from '@/services/frontendDateValidationService'
 import type { DateValue } from "@internationalized/date"
 import {
@@ -81,12 +81,9 @@ watch(endDateValue, (value) => {
 watch(startDate, (value) => {
   if (value && value !== startDateValue.value?.toString()) {
     try {
-      const date = new Date(value)
-      if (!isNaN(date.getTime())) {
-        // Convert to DateValue using the date formatter
-        const year = date.getFullYear()
-        const month = date.getMonth() + 1
-        const day = date.getDate()
+      // Parse date without timezone issues by splitting the ISO string
+      const [year, month, day] = value.split('-').map(Number)
+      if (year && month && day && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
         startDateValue.value = new CalendarDate(year, month, day)
       }
     } catch (error) {
@@ -100,12 +97,9 @@ watch(startDate, (value) => {
 watch(endDate, (value) => {
   if (value && value !== endDateValue.value?.toString()) {
     try {
-      const date = new Date(value)
-      if (!isNaN(date.getTime())) {
-        // Convert to DateValue using the date formatter
-        const year = date.getFullYear()
-        const month = date.getMonth() + 1
-        const day = date.getDate()
+      // Parse date without timezone issues by splitting the ISO string
+      const [year, month, day] = value.split('-').map(Number)
+      if (year && month && day && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
         endDateValue.value = new CalendarDate(year, month, day)
       }
     } catch (error) {
@@ -154,30 +148,18 @@ watch([startDate, endDate, selectedDatasets], () => {
 })
 
 // Watch for dataset selection changes to auto-adjust dates
-watch(selectedDatasets, (newDatasets) => {
-  if (newDatasets.length === 0) {
+watch([selectedDatasets, selectedFiles], async ([newDatasets, newFiles]) => {
+  if (newDatasets.length === 0 && newFiles.length === 0) {
     return
   }
   
-  // Calculer la plage de dates intelligente avec le nouveau service
-  const smartRange = calculateSmartDateRange(newDatasets)
+  // Calculer la plage de dates complète incluant les CSV uploadés
+  const fullRange = await calculateDateRangeWithCsvFiles(newDatasets, newFiles)
   
-  if (smartRange) {
-    // Auto-définir les dates si elles ne sont pas déjà définies ou si elles sont en dehors de la plage
-    const currentStart = startDate.value ? new Date(startDate.value) : null
-    const currentEnd = endDate.value ? new Date(endDate.value) : null
-    const availableStart = new Date(smartRange.minDate)
-    const availableEnd = new Date(smartRange.maxDate)
-    
-    // Définir la date de début si elle n'est pas définie ou en dehors de la plage
-    if (!currentStart || currentStart < availableStart || currentStart > availableEnd) {
-      startDate.value = smartRange.minDate
-    }
-    
-    // Définir la date de fin si elle n'est pas définie ou en dehors de la plage
-    if (!currentEnd || currentEnd > availableEnd || currentEnd < availableStart) {
-      endDate.value = smartRange.maxDate
-    }
+  if (fullRange) {
+    // Toujours définir les dates avec la plage complète disponible
+    startDate.value = fullRange.minDate
+    endDate.value = fullRange.maxDate
   }
 })
 
