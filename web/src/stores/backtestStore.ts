@@ -16,6 +16,7 @@ import {
 } from "@/services/backtestService";
 import {
   submitMonteCarloJob as submitMonteCarloJobSvc,
+  submitMonteCarloJobUpload as submitMonteCarloJobUploadSvc,
   type MonteCarloJobRequest,
 } from "@/services/monteCarloJobService";
 import { useErrorStore } from "@/stores/errorStore";
@@ -220,6 +221,24 @@ export const useBacktestStore = defineStore("backtest", {
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         useErrorStore().log("error.montecarlo_submit_failed", msg, jobReq as unknown as Record<string, unknown>);
+      }
+    },
+    async submitMonteCarloJobUpload(file: File, fields: {
+      start_date: string;
+      end_date: string;
+      num_runs: number;
+      initial_capital: number;
+      strategy_params?: Record<string, any>;
+      method?: string;
+      priority?: 1 | 2 | 3 | 4;
+      timeout_seconds?: number;
+    }) {
+      try {
+        const res = await submitMonteCarloJobUploadSvc(file, fields);
+        this.monteCarloJobId = res.job_id;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        useErrorStore().log("error.montecarlo_submit_failed", msg, fields as unknown as Record<string, unknown>);
       }
     },
   },

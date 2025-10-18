@@ -129,7 +129,7 @@ function formatEta(sec: number | null): string {
 
 const mcStatusLabel = computed(() => {
     const s = (mcStatus.value || "").toUpperCase();
-    if (s.includes("RUNNING")) return "En cours";
+    if (s.includes("PROCESSING")) return "En cours";
     if (s.includes("QUEUED") || s.includes("PENDING")) return "En file";
     if (s.includes("COMPLETED")) return "Terminé";
     if (s.includes("FAILED")) return "Échec";
