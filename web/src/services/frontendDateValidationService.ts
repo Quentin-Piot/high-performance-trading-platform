@@ -3,7 +3,7 @@
  * Remplace les appels backend pour la validation des plages de dates
  */
 
-import { AVAILABLE_DATASETS, type Dataset } from '@/config/datasets'
+import { AVAILABLE_DATASETS } from '@/config/datasets'
 
 export interface DateRange {
   minDate: string
@@ -111,7 +111,8 @@ export function validateDateRange(
   const availableEnd = new Date(intersection.maxDate)
 
   // Vérifier si la plage demandée est dans l'intersection disponible
-  if (requestedStart >= availableStart && requestedEnd <= availableEnd) {
+  // Utiliser des comparaisons de chaînes pour éviter les problèmes de timezone
+  if (startDate >= intersection.minDate && endDate <= intersection.maxDate) {
     return { valid: true }
   }
 
@@ -140,49 +141,20 @@ export function validateDateRange(
 }
 
 /**
- * Calcule une plage de dates intelligente basée sur les datasets sélectionnés
+ * Calcule la plage de dates complète basée sur les datasets sélectionnés
+ * Utilise la première date disponible comme début et la dernière comme fin
  */
-export function calculateSmartDateRange(datasetIds: string[]): DateRange | null {
+export function calculateFullDateRange(datasetIds: string[]): DateRange | null {
   const intersection = calculateDateRangeIntersection(datasetIds)
   
   if (!intersection) {
     return null
   }
 
-  const availableStart = new Date(intersection.minDate)
-  const availableEnd = new Date(intersection.maxDate)
-  
-  // Calculer la durée totale en jours
-  const totalDays = Math.floor((availableEnd.getTime() - availableStart.getTime()) / (1000 * 60 * 60 * 24))
-  
-  // Logique de sélection intelligente :
-  // - Moins de 6 mois : utiliser toute la plage
-  // - 6 mois à 2 ans : utiliser les 6 derniers mois
-  // - Plus de 2 ans : utiliser la dernière année
-  let smartStartDate: Date
-  const smartEndDate: Date = availableEnd
-  
-  if (totalDays < 180) { // Moins de 6 mois
-    smartStartDate = availableStart
-  } else if (totalDays < 730) { // 6 mois à 2 ans
-    smartStartDate = new Date(availableEnd)
-    smartStartDate.setMonth(smartStartDate.getMonth() - 6)
-    // S'assurer qu'on ne dépasse pas le début disponible
-    if (smartStartDate < availableStart) {
-      smartStartDate = availableStart
-    }
-  } else { // Plus de 2 ans
-    smartStartDate = new Date(availableEnd)
-    smartStartDate.setFullYear(smartStartDate.getFullYear() - 1)
-    // S'assurer qu'on ne dépasse pas le début disponible
-    if (smartStartDate < availableStart) {
-      smartStartDate = availableStart
-    }
-  }
-  
+  // Retourner directement l'intersection complète (première à dernière date)
   return {
-    minDate: formatDateISO(smartStartDate),
-    maxDate: formatDateISO(smartEndDate)
+    minDate: intersection.minDate,
+    maxDate: intersection.maxDate
   }
 }
 
@@ -194,8 +166,154 @@ function formatDateISO(date: Date): string {
 }
 
 /**
- * Obtient la liste des datasets disponibles avec leurs plages de dates
+ * Analyse un fichier CSV pour extraire les plages de dates
  */
-export function getAvailableDatasets(): Dataset[] {
-  return AVAILABLE_DATASETS
+export async function analyzeCsvDateRange(file: File): Promise<DateRange | null> {
+  try {
+    const text = await file.text()
+    const lines = text.split('\n').filter(line => line.trim())
+    
+    if (lines.length < 2) {
+      return null // Pas assez de données
+    }
+    
+    // Supposer que la première ligne est l'en-tête
+    const header = lines[0]?.toLowerCase() || ''
+    
+    // Chercher la colonne de date (formats courants)
+    const dateColumnNames = ['date', 'timestamp', 'time', 'datetime']
+    const headerColumns = header.split(',').map(col => col.trim().toLowerCase())
+    
+    let dateColumnIndex = -1
+    for (const dateCol of dateColumnNames) {
+      dateColumnIndex = headerColumns.findIndex(col => col.includes(dateCol))
+      if (dateColumnIndex !== -1) break
+    }
+    
+    // Si aucune colonne de date trouvée, essayer la première colonne
+    if (dateColumnIndex === -1) {
+      dateColumnIndex = 0
+    }
+    
+    const dates: Date[] = []
+    
+    // Analyser les lignes de données (ignorer l'en-tête)
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i]
+      if (!line?.trim()) continue
+      
+      const columns = line.split(',')
+      const dateStr = columns[dateColumnIndex]?.trim()
+      
+      if (dateStr) {
+        // Essayer différents formats de date
+        const date = parseFlexibleDate(dateStr)
+        if (date && !isNaN(date.getTime())) {
+          dates.push(date)
+        }
+      }
+    }
+    
+    if (dates.length === 0) {
+      return null
+    }
+    
+    // Trier les dates et prendre la première et la dernière
+    dates.sort((a, b) => a.getTime() - b.getTime())
+    
+    return {
+      minDate: formatDateISO(dates[0]!),
+      maxDate: formatDateISO(dates[dates.length - 1]!)
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'analyse du CSV:', error)
+    return null
+  }
+}
+
+/**
+ * Parse une date avec différents formats possibles
+ */
+function parseFlexibleDate(dateStr: string): Date | null {
+  // Nettoyer la chaîne
+  const cleaned = dateStr.replace(/['"]/g, '').trim()
+  
+  // Essayer le parsing direct d'abord
+  let date = new Date(cleaned)
+  if (!isNaN(date.getTime())) {
+    return date
+  }
+  
+  // Si le format US (MM/DD/YYYY), convertir en ISO
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cleaned)) {
+    const [month, day, year] = cleaned.split('/')
+    if (month && day && year) {
+      date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`)
+      if (!isNaN(date.getTime())) {
+        return date
+      }
+    }
+  }
+  
+  // Si le format européen (DD-MM-YYYY), convertir en ISO
+  if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(cleaned)) {
+    const [day, month, year] = cleaned.split('-')
+    if (day && month && year) {
+      date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`)
+      if (!isNaN(date.getTime())) {
+        return date
+      }
+    }
+  }
+  
+  return null
+}
+
+/**
+ * Calcule l'intersection des plages de dates incluant les fichiers CSV uploadés
+ */
+export async function calculateDateRangeWithCsvFiles(
+  datasetIds: string[],
+  csvFiles: File[]
+): Promise<DateRange | null> {
+  const ranges: DateRange[] = []
+  
+  // Ajouter les plages des datasets sélectionnés
+  for (const datasetId of datasetIds) {
+    const range = getDatasetDateRange(datasetId)
+    if (range) {
+      ranges.push(range)
+    }
+  }
+  
+  // Analyser les fichiers CSV uploadés
+  for (const file of csvFiles) {
+    const range = await analyzeCsvDateRange(file)
+    if (range) {
+      ranges.push(range)
+    }
+  }
+  
+  if (ranges.length === 0) {
+    return null
+  }
+  
+  // Calculer l'intersection de toutes les plages
+  const latestMinDate = ranges.reduce((latest, range) => {
+    return new Date(range.minDate) > new Date(latest) ? range.minDate : latest
+  }, ranges[0]!.minDate)
+
+  const earliestMaxDate = ranges.reduce((earliest, range) => {
+    return new Date(range.maxDate) < new Date(earliest) ? range.maxDate : earliest
+  }, ranges[0]!.maxDate)
+
+  // Vérifier si l'intersection est valide
+  if (new Date(latestMinDate) > new Date(earliestMaxDate)) {
+    return null // Pas d'intersection valide
+  }
+
+  return {
+    minDate: latestMinDate,
+    maxDate: earliestMaxDate
+  }
 }
