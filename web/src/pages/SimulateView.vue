@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
+import { RefreshCw, Download, BarChart3, LineChart, Activity, Clock, Zap, Wifi } from "lucide-vue-next";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { buildEquityPoints } from "@/composables/useEquitySeries";
 import { buildWsUrl } from "@/services/apiClient";
@@ -118,6 +118,18 @@ const mcTotal = ref(0);
 const mcEtaSeconds = ref<number | null>(null);
 const mcProgressVisible = computed(() => !!store.monteCarloJobId);
 
+// Nouvelles variables pour les informations détaillées du WebSocket
+const mcJobSubmissionTime = ref<number | null>(null);
+const mcWsConnectionTime = ref<number | null>(null);
+const mcFirstMessageTime = ref<number | null>(null);
+const mcJobStartTime = ref<number | null>(null);
+const mcMessageCount = ref(0);
+const mcSpeed = ref<number | null>(null);
+const mcConnectionDelay = ref<number | null>(null);
+const mcProcessingDelay = ref<number | null>(null);
+const mcTotalDuration = ref<number | null>(null);
+const mcShowDetailedInfo = ref(false);
+
 function formatEta(sec: number | null): string {
     if (sec == null) return "";
     const s = Math.max(0, Math.round(sec));
@@ -168,6 +180,21 @@ function connectMonteCarloWs(jobId: string) {
             mcConnected.value = false;
         }
         
+        // Initialiser les timings (sauf mcJobSubmissionTime qui est déjà défini)
+        mcMessageCount.value = 0;
+        mcSpeed.value = null;
+        mcConnectionDelay.value = null;
+        mcProcessingDelay.value = null;
+        mcTotalDuration.value = null;
+        
+        // 🔧 CORRECTION: Réinitialiser les valeurs de progression pour éviter d'afficher les valeurs du run précédent
+        mcCurrent.value = 0;
+        // 🎯 NOUVELLE FONCTIONNALITÉ: Initialiser mcTotal avec le nombre de runs du store si disponible
+        mcTotal.value = store.monteCarloJobRuns || 0;
+        mcPercent.value = 0;
+        mcStatus.value = "";
+        mcEtaSeconds.value = null;
+        
         mcConnecting.value = true;
         mcActiveJobId.value = jobId;
         mcWs.value = new WebSocket(url);
@@ -176,6 +203,9 @@ function connectMonteCarloWs(jobId: string) {
             console.log("WebSocket connected successfully");
             mcConnected.value = true;
             mcConnecting.value = false;
+            mcWsConnectionTime.value = Date.now();
+            mcConnectionDelay.value = (mcWsConnectionTime.value - mcJobSubmissionTime.value!) / 1000;
+            
             toast.success("Worker Monte Carlo connecté", {
                 description: "Streaming de la progression en temps réel.",
             });
@@ -186,6 +216,21 @@ function connectMonteCarloWs(jobId: string) {
                 const msg = JSON.parse(evt.data);
                 console.log("WebSocket message received:", msg);
                 
+                mcMessageCount.value++;
+                const messageTime = Date.now();
+                
+                // Marquer le premier message
+                if (mcFirstMessageTime.value === null) {
+                    mcFirstMessageTime.value = messageTime;
+                    console.log(`🎯 PREMIER MESSAGE REÇU! (délai depuis soumission: ${((messageTime - mcJobSubmissionTime.value!) / 1000).toFixed(3)}s)`);
+                }
+                
+                // Détecter le message de connexion
+                if (msg.status === "connecting") {
+                    console.log(`🔗 Msg#${mcMessageCount.value} (+${((messageTime - mcJobSubmissionTime.value!) / 1000).toFixed(3)}s): CONNEXION - ${msg.message || 'Connexion établie'}`);
+                    return; // Ne pas traiter ce message comme un message de progression
+                }
+                
                 mcStatus.value = String(msg.status || "");
                 const p = Number(msg.progress ?? 0);
                 mcPercent.value = Math.max(
@@ -193,7 +238,40 @@ function connectMonteCarloWs(jobId: string) {
                     Math.min(100, Math.round(p * 100)),
                 );
                 mcCurrent.value = Number(msg.current_run ?? 0);
-                mcTotal.value = Number(msg.total_runs ?? 0);
+                // 🎯 AMÉLIORATION: Mettre à jour mcTotal seulement si le message contient total_runs, sinon garder la valeur initiale
+                if (msg.total_runs !== undefined && msg.total_runs !== null) {
+                    mcTotal.value = Number(msg.total_runs);
+                }
+                
+                // Détecter le début du traitement
+                if (mcJobStartTime.value === null && mcCurrent.value > 0) {
+                    mcJobStartTime.value = messageTime;
+                    mcProcessingDelay.value = (mcJobStartTime.value - mcJobSubmissionTime.value!) / 1000;
+                    console.log(`🏃 DÉBUT DU TRAITEMENT DÉTECTÉ! (délai: ${mcProcessingDelay.value.toFixed(3)}s)`);
+                }
+                
+                // Calculer la vitesse
+                if (mcJobStartTime.value && mcCurrent.value > 0) {
+                    const processingTime = (messageTime - mcJobStartTime.value) / 1000;
+                    mcSpeed.value = mcCurrent.value / processingTime;
+                }
+                
+                // Log de progression avec timing comme dans le script Python
+                const msgDelay = (messageTime - mcJobSubmissionTime.value!) / 1000;
+                const progressPercent = Math.round((Number(msg.progress) || 0) * 100 * 10) / 10;
+                
+                if (mcCurrent.value > 0 && mcTotal.value > 0) {
+                    const speedStr = mcSpeed.value ? ` (${mcSpeed.value.toFixed(1)} runs/s)` : "";
+                    const etaStr = msg.eta_seconds ? ` (ETA: ${msg.eta_seconds}s)` : "";
+                    console.log(`📊 Msg#${mcMessageCount.value} (+${msgDelay.toFixed(3)}s): ${msg.status} - ${mcCurrent.value}/${mcTotal.value} runs (${progressPercent}%)${speedStr}${etaStr}`);
+                } else {
+                    console.log(`📊 Msg#${mcMessageCount.value} (+${msgDelay.toFixed(3)}s): ${msg.status} - ${progressPercent}%`);
+                }
+                
+                // Log spécial pour détecter les messages problématiques
+                if (mcCurrent.value === 0 && mcTotal.value === 0 && mcMessageCount.value > 1) {
+                    console.log(`⚠️  Message avec 0/0 runs détecté! Contenu:`, msg);
+                }
                 
                 // Support both eta_seconds and estimated_completion_time
                 if (typeof msg.eta_seconds === "number") {
@@ -226,6 +304,11 @@ function connectMonteCarloWs(jobId: string) {
                     term.includes("FAILED") ||
                     term.includes("CANCELLED")
                 ) {
+                    // Calculer la durée totale
+                    mcTotalDuration.value = (Date.now() - mcJobSubmissionTime.value!) / 1000;
+                    
+                    console.log(`🏁 Job terminé avec le statut: ${term} (durée totale: ${mcTotalDuration.value.toFixed(3)}s)`);
+                    
                     try {
                         mcWs.value?.close();
                     } catch {
@@ -238,7 +321,7 @@ function connectMonteCarloWs(jobId: string) {
                     
                     if (term.includes("COMPLETED")) {
                         toast.success("Monte Carlo terminé", {
-                            description: `${mcTotal.value} runs terminés`,
+                            description: `${mcTotal.value} runs terminés en ${mcTotalDuration.value?.toFixed(1)}s`,
                         });
                     } else if (term.includes("FAILED")) {
                         toast.error("Monte Carlo échoué", {
@@ -311,7 +394,11 @@ function connectMonteCarloWs(jobId: string) {
 watch(
     () => store.monteCarloJobId,
     (jobId) => {
-        if (jobId && jobId !== mcActiveJobId.value) connectMonteCarloWs(jobId);
+        if (jobId && jobId !== mcActiveJobId.value) {
+            // Initialiser le timing de soumission du job dès qu'on a l'ID
+            mcJobSubmissionTime.value = Date.now();
+            connectMonteCarloWs(jobId);
+        }
     },
 );
 watch(loading, (isLoading) => {
@@ -655,8 +742,18 @@ function downloadCsv() {
                                             ) || "Monte Carlo en cours"
                                         }}
                                     </div>
-                                    <div class="text-xs font-semibold">
-                                        {{ mcPercent }}%
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-xs font-semibold">
+                                            {{ mcPercent }}%
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            class="h-6 w-6 p-0 hover:bg-secondary/50"
+                                            @click="mcShowDetailedInfo = !mcShowDetailedInfo"
+                                        >
+                                            <Activity class="size-3" />
+                                        </Button>
                                     </div>
                                 </div>
                                 <div
@@ -677,6 +774,48 @@ function downloadCsv() {
                                     <span v-if="mcEtaSeconds != null">
                                         · ETA {{ formatEta(mcEtaSeconds) }}</span
                                     >
+                                    <span v-if="mcSpeed && mcSpeed > 0">
+                                        · {{ mcSpeed.toFixed(1) }} runs/s</span
+                                    >
+                                </div>
+                                
+                                <!-- Panneau d'informations détaillées -->
+                                <div
+                                    v-if="mcShowDetailedInfo"
+                                    class="mx-2 mb-2 p-3 bg-secondary/20 rounded-md border border-secondary/30"
+                                >
+                                    <div class="text-xs font-medium text-foreground mb-2 flex items-center gap-1">
+                                        <Zap class="size-3" />
+                                        Diagnostic WebSocket
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                                        <div class="flex items-center gap-1">
+                                            <Wifi class="size-2.5" />
+                                            <span>Connexion:</span>
+                                            <span class="font-mono">{{ mcConnectionDelay?.toFixed(2) || '--' }}s</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <Clock class="size-2.5" />
+                                            <span>Traitement:</span>
+                                            <span class="font-mono">{{ mcProcessingDelay?.toFixed(2) || '--' }}s</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <Activity class="size-2.5" />
+                                            <span>Messages:</span>
+                                            <span class="font-mono">{{ mcMessageCount }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <Clock class="size-2.5" />
+                                            <span>Durée totale:</span>
+                                            <span class="font-mono">{{ mcTotalDuration?.toFixed(1) || '--' }}s</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 pt-2 border-t border-secondary/30">
+                                        <div class="text-[10px] text-muted-foreground">
+                                            <span class="font-medium">Job ID:</span>
+                                            <span class="font-mono ml-1">{{ mcActiveJobId?.slice(-8) || '--' }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -53,6 +53,7 @@ export const useBacktestStore = defineStore("backtest", {
 
     // Worker Monte Carlo job tracking
     monteCarloJobId: null as string | null,
+    monteCarloJobRuns: null as number | null,
   }),
   getters: {
     equitySeries(state) {
@@ -218,6 +219,7 @@ export const useBacktestStore = defineStore("backtest", {
       try {
         const res = await submitMonteCarloJobSvc(jobReq);
         this.monteCarloJobId = res.job_id;
+        this.monteCarloJobRuns = jobReq.num_runs;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         useErrorStore().log("error.montecarlo_submit_failed", msg, jobReq as unknown as Record<string, unknown>);
@@ -236,6 +238,7 @@ export const useBacktestStore = defineStore("backtest", {
       try {
         const res = await submitMonteCarloJobUploadSvc(file, fields);
         this.monteCarloJobId = res.job_id;
+        this.monteCarloJobRuns = fields.num_runs;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         useErrorStore().log("error.montecarlo_submit_failed", msg, fields as unknown as Record<string, unknown>);

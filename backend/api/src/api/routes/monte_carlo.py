@@ -810,12 +810,50 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                     # If subscription never became active, Redis is likely down
                     raise
 
-        # Create a fallback polling task with improved error handling
+        # Create a fallback polling task with improved error handling and immediate start
         async def fallback_polling():
             poll_count = 0
             last_status = None
             last_progress = None
             last_current_run = None
+
+            # Send immediate first update without delay
+            try:
+                async with job_lock:
+                    current_progress = await job_manager.get_job_progress(job_id)
+                
+                if current_progress:
+                    status_val = current_progress.get("status", JobStatus.PENDING)
+                    payload = {
+                        "job_id": job_id,
+                        "status": (status_val.value if isinstance(status_val, JobStatus) else status_val),
+                        "progress": current_progress.get("progress"),
+                        "message": current_progress.get("message"),
+                        "created_at": current_progress.get("created_at"),
+                        "updated_at": current_progress.get("updated_at"),
+                        "started_at": current_progress.get("started_at"),
+                        "completed_at": current_progress.get("completed_at"),
+                        "duration_seconds": current_progress.get("duration_seconds"),
+                        "error": current_progress.get("error"),
+                        "retry_count": current_progress.get("retry_count"),
+                        "worker_id": current_progress.get("worker_id"),
+                        "artifact_url": current_progress.get("artifact_url"),
+                        "artifacts": current_progress.get("artifacts", []),
+                        "current_run": current_progress.get("current_run"),
+                        "total_runs": current_progress.get("total_runs"),
+                        "estimated_completion_time": current_progress.get("estimated_completion_time"),
+                        "eta_seconds": current_progress.get("eta_seconds"),
+                        "last_updated": current_progress.get("last_updated"),
+                    }
+                    
+                    await websocket.send_json(payload)
+                    logger.debug(f"Sent immediate progress update: {connection_id}")
+                    
+                    last_status = status_val
+                    last_progress = float(current_progress.get("progress") or 0.0)
+                    last_current_run = current_progress.get("current_run")
+            except Exception as e:
+                logger.error(f"Error sending immediate update for job {job_id}: {str(e)}")
 
             while True:
                 # Check if WebSocket is still open before polling
@@ -823,7 +861,7 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                     logger.info(f"WebSocket disconnected for job {job_id}, stopping polling")
                     break
 
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(0.2)  # Much faster polling: 200ms instead of 500ms
                 poll_count += 1
 
                 try:
@@ -845,10 +883,11 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                             should_send = True
                         elif curr_run is not None and curr_run != last_current_run:
                             should_send = True
-                        elif abs(progress_val - (last_progress or 0.0)) >= 0.01:
+                        elif abs(progress_val - (last_progress or 0.0)) >= 0.001:
+                            # Send on any progress change >= 0.1% (was 1%)
                             should_send = True
-                        elif poll_count % 10 == 0:
-                            # periodic heartbeat even without changes
+                        elif poll_count % 2 == 0:
+                            # periodic heartbeat even without changes (every 400ms)
                             should_send = True
 
                         if should_send:
@@ -893,8 +932,7 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
 
                 except Exception as e:
                     logger.error(f"Error during polling for job {job_id}: {str(e)}")
-                    # Continue polling despite errors
-                    continue
+                    await asyncio.sleep(0.2)  # Continue polling even on errors
 
         # Try Redis pub/sub first, fallback to polling if Redis is not available
         try:
@@ -915,12 +953,14 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                     await fallback_polling()
                     return
 
-                # Create a timeout for Redis pub/sub to detect if it's not working (reduced from 5s to 1s)
+                # Create a timeout for Redis pub/sub to detect if it's not working (disabled timeout to force polling)
                 try:
-                    await asyncio.wait_for(listen_for_updates(), timeout=1.0)
+                    # Force immediate fallback to polling for consistent behavior
+                    raise asyncio.TimeoutError("Forcing fallback to polling for debugging")
+                    await asyncio.wait_for(listen_for_updates(), timeout=10.0)
                 except asyncio.TimeoutError:
-                    # If no Redis messages received within 1 second, fallback to polling
-                    logger.warning(f"Enhanced Redis pub/sub timeout for {connection_id}, falling back to polling")
+                    # Always fallback to polling for now
+                    logger.warning(f"Using fallback polling for {connection_id}")
                     await fallback_polling()
         except Exception as e:
             logger.warning(f"Enhanced Redis pub/sub failed for {connection_id}, falling back to polling: {str(e)}")
