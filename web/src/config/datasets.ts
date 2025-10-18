@@ -3,6 +3,10 @@ export interface Dataset {
   name: string;
   filename: string;
   description?: string;
+  dateRange: {
+    minDate: string; // Format ISO: YYYY-MM-DD
+    maxDate: string; // Format ISO: YYYY-MM-DD
+  };
 }
 
 export const AVAILABLE_DATASETS: Dataset[] = [
@@ -11,42 +15,70 @@ export const AVAILABLE_DATASETS: Dataset[] = [
     name: "Apple",
     filename: "AAPL.csv",
     description: "Apple Inc. stock data",
+    dateRange: {
+      minDate: "2020-01-02",
+      maxDate: "2024-12-31"
+    }
   },
   {
     id: "amzn",
     name: "Amazon",
     filename: "AMZN.csv",
     description: "Amazon.com Inc. stock data",
+    dateRange: {
+      minDate: "2020-01-02",
+      maxDate: "2024-12-31"
+    }
   },
   {
     id: "fb",
     name: "Meta",
     filename: "FB.csv",
     description: "Meta Platforms Inc. stock data",
+    dateRange: {
+      minDate: "2020-01-02",
+      maxDate: "2024-12-31"
+    }
   },
   {
     id: "googl",
     name: "Alphabet",
     filename: "GOOGL.csv",
     description: "Alphabet Inc. stock data",
+    dateRange: {
+      minDate: "2020-01-02",
+      maxDate: "2024-12-31"
+    }
   },
   {
     id: "msft",
     name: "Microsoft",
     filename: "MSFT.csv",
     description: "Microsoft Corp. stock data",
+    dateRange: {
+      minDate: "2020-01-02",
+      maxDate: "2024-12-31"
+    }
   },
   {
     id: "nflx",
     name: "Netflix",
     filename: "NFLX.csv",
     description: "Netflix Inc. stock data",
+    dateRange: {
+      minDate: "2020-01-02",
+      maxDate: "2024-12-31"
+    }
   },
   {
     id: "nvda",
     name: "NVIDIA",
     filename: "NVDA.csv",
     description: "NVIDIA Corp. stock data",
+    dateRange: {
+      minDate: "2020-01-02",
+      maxDate: "2024-12-31"
+    }
   },
 ];
 

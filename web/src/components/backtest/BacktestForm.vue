@@ -12,10 +12,9 @@ import DateRangeSelector from './DateRangeSelector.vue'
 import StrategyParametersSection from './StrategyParametersSection.vue'
 import MonteCarloSection from './MonteCarloSection.vue'
 import {
-  fetchSymbolDateRanges,
-  getIntersectionDateRange,
-  type DateRangesResponse
-} from '@/services/dateValidationService'
+  validateDateRange,
+  calculateSmartDateRange
+} from '@/services/frontendDateValidationService'
 import type { DateValue } from "@internationalized/date"
 import {
   CalendarDate
@@ -43,9 +42,7 @@ const endDateValue = ref<DateValue>()
 const error = ref<string | null>(null)
 
 // Date validation state
-const dateRanges = ref<DateRangesResponse | null>(null)
 const dateValidationError = ref<string | null>(null)
-const isLoadingDateRanges = ref(false)
 
 // Monte Carlo parameters
 const monteCarloRuns = ref<number>(1)
@@ -130,23 +127,16 @@ initParams()
 watch(strategy, () => initParams())
 
 // Load available date ranges on component mount
-onMounted(async () => {
-  try {
-    isLoadingDateRanges.value = true
-    dateRanges.value = await fetchSymbolDateRanges()
-  } catch (err) {
-    console.error('Failed to load date ranges:', err)
-    dateValidationError.value = 'Failed to load available date ranges'
-  } finally {
-    isLoadingDateRanges.value = false
-  }
+onMounted(() => {
+  // Plus besoin de charger les plages de dates depuis le backend
+  // Les données sont maintenant disponibles directement dans la configuration des datasets
 })
 
 // Watch for date changes to validate them
 watch([startDate, endDate, selectedDatasets], () => {
   dateValidationError.value = null
   
-  if (!dateRanges.value || selectedDatasets.value.length === 0) {
+  if (selectedDatasets.value.length === 0) {
     return
   }
   
@@ -155,83 +145,38 @@ watch([startDate, endDate, selectedDatasets], () => {
     return
   }
   
-  // Get intersection of date ranges for all selected datasets
-  const intersectionRange = getIntersectionDateRange(selectedDatasets.value, dateRanges.value)
+  // Valider avec le nouveau service frontend
+  const validation = validateDateRange(startDate.value, endDate.value, selectedDatasets.value)
   
-  if (!intersectionRange) {
-    dateValidationError.value = 'No valid date intersection found for selected datasets'
-    return
-  }
-  
-  // Validate against the intersection range
-  const requestedStart = new Date(startDate.value)
-  const requestedEnd = new Date(endDate.value)
-  const availableStart = new Date(intersectionRange.min_date)
-  const availableEnd = new Date(intersectionRange.max_date)
-  
-  if (requestedStart < availableStart || requestedEnd > availableEnd) {
-    dateValidationError.value = `Date range must be between ${intersectionRange.min_date} and ${intersectionRange.max_date} for selected datasets`
+  if (!validation.valid) {
+    dateValidationError.value = validation.errorMessage || 'Plage de dates invalide'
   }
 })
 
 // Watch for dataset selection changes to auto-adjust dates
 watch(selectedDatasets, (newDatasets) => {
-  if (!dateRanges.value || newDatasets.length === 0) {
+  if (newDatasets.length === 0) {
     return
   }
   
-  // Get intersection of date ranges for selected datasets
-  const intersectionRange = getIntersectionDateRange(newDatasets, dateRanges.value)
+  // Calculer la plage de dates intelligente avec le nouveau service
+  const smartRange = calculateSmartDateRange(newDatasets)
   
-  if (intersectionRange) {
-    // Auto-set dates to the intersection range if not already set or if current dates are outside the range
+  if (smartRange) {
+    // Auto-définir les dates si elles ne sont pas déjà définies ou si elles sont en dehors de la plage
     const currentStart = startDate.value ? new Date(startDate.value) : null
     const currentEnd = endDate.value ? new Date(endDate.value) : null
-    const availableStart = new Date(intersectionRange.min_date)
-    const availableEnd = new Date(intersectionRange.max_date)
+    const availableStart = new Date(smartRange.minDate)
+    const availableEnd = new Date(smartRange.maxDate)
     
-    // Calculate intelligent date ranges based on available data
-    const totalDays = Math.floor((availableEnd.getTime() - availableStart.getTime()) / (1000 * 60 * 60 * 24))
-    
-    // Smart date selection logic:
-    // - For datasets with < 6 months of data: use full range
-    // - For datasets with 6 months - 2 years: use last 6 months
-    // - For datasets with > 2 years: use last 1 year
-    let smartStartDate: Date
-    const smartEndDate: Date = availableEnd
-    
-    if (totalDays < 180) { // Less than 6 months
-      smartStartDate = availableStart
-    } else if (totalDays < 730) { // 6 months to 2 years
-      smartStartDate = new Date(availableEnd)
-      smartStartDate.setMonth(smartStartDate.getMonth() - 6)
-      // Ensure we don't go before available start
-      if (smartStartDate < availableStart) {
-        smartStartDate = availableStart
-      }
-    } else { // More than 2 years
-      smartStartDate = new Date(availableEnd)
-      smartStartDate.setFullYear(smartStartDate.getFullYear() - 1)
-      // Ensure we don't go before available start
-      if (smartStartDate < availableStart) {
-        smartStartDate = availableStart
-      }
-    }
-    
-    // Set start date if not set or outside range
+    // Définir la date de début si elle n'est pas définie ou en dehors de la plage
     if (!currentStart || currentStart < availableStart || currentStart > availableEnd) {
-      const smartStartDateISO = smartStartDate.toISOString().split('T')[0]
-      if (smartStartDateISO) {
-        startDate.value = smartStartDateISO
-      }
+      startDate.value = smartRange.minDate
     }
     
-    // Set end date if not set or outside range
+    // Définir la date de fin si elle n'est pas définie ou en dehors de la plage
     if (!currentEnd || currentEnd > availableEnd || currentEnd < availableStart) {
-      const smartEndDateISO = smartEndDate.toISOString().split('T')[0]
-      if (smartEndDateISO) {
-        endDate.value = smartEndDateISO
-      }
+      endDate.value = smartRange.maxDate
     }
   }
 })
@@ -432,7 +377,6 @@ function onReset() {
       v-model:start-date="startDate"
       v-model:end-date="endDate"
       :selected-datasets="selectedDatasets"
-      :date-ranges="dateRanges"
       :date-validation-error="dateValidationError"
     />
 
