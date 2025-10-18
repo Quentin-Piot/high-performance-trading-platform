@@ -1,9 +1,9 @@
-import { postJson, fetchJson } from "./apiClient";
+import { postJson, fetchJson, postFormData } from "./apiClient";
 
 export type JobStatus =
   | "PENDING"
   | "QUEUED"
-  | "RUNNING"
+  | "PROCESSING"
   | "COMPLETED"
   | "FAILED"
   | "CANCELLED";
@@ -46,7 +46,49 @@ export interface JobResponse {
 export async function submitMonteCarloJob(
   payload: MonteCarloJobRequest
 ): Promise<JobSubmitResponse> {
-  return postJson<JobSubmitResponse>("/monte-carlo/jobs", payload);
+  // Ensure a unique identifier per job without overriding existing one
+  const uid = (globalThis.crypto?.randomUUID?.() ?? `uid_${Date.now()}_${Math.random().toString(36).slice(2,10)}`);
+  const strategyParams = {
+    ...(payload.strategy_params || {}),
+    unique_id: payload.strategy_params?.unique_id ?? uid,
+  };
+  const payloadWithId: MonteCarloJobRequest = { ...payload, strategy_params: strategyParams };
+  return postJson<JobSubmitResponse>("/monte-carlo/jobs", payloadWithId);
+}
+
+export async function submitMonteCarloJobUpload(
+  file: File,
+  fields: {
+    start_date: string;
+    end_date: string;
+    num_runs: number;
+    initial_capital: number;
+    strategy_params?: Record<string, any>;
+    method?: string;
+    priority?: 1 | 2 | 3 | 4;
+    timeout_seconds?: number;
+  }
+): Promise<JobSubmitResponse> {
+  const form = new FormData();
+  form.append("csv", file);
+  form.append("start_date", fields.start_date);
+  form.append("end_date", fields.end_date);
+  form.append("num_runs", String(fields.num_runs));
+  form.append("initial_capital", String(fields.initial_capital));
+
+  // Ensure unique_id in strategy_params_json without overriding existing one
+  const uid = (globalThis.crypto?.randomUUID?.() ?? `uid_${Date.now()}_${Math.random().toString(36).slice(2,10)}`);
+  const paramsWithId = {
+    ...(fields.strategy_params || {}),
+    unique_id: fields.strategy_params?.unique_id ?? uid,
+  };
+  form.append("strategy_params_json", JSON.stringify(paramsWithId));
+
+  if (fields.method) form.append("method", fields.method);
+  if (fields.priority) form.append("priority", String(fields.priority));
+  if (fields.timeout_seconds) form.append("timeout_seconds", String(fields.timeout_seconds));
+
+  return postFormData<JobSubmitResponse>("/monte-carlo/jobs/upload", form);
 }
 
 export async function getMonteCarloJobStatus(
