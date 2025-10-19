@@ -953,14 +953,11 @@ async def monte_carlo_progress_ws(websocket: WebSocket, job_id: str):
                     await fallback_polling()
                     return
 
-                # Create a timeout for Redis pub/sub to detect if it's not working (disabled timeout to force polling)
+                # Subscribe via enhanced Redis pub/sub; fallback on timeout/errors
                 try:
-                    # Force immediate fallback to polling for consistent behavior
-                    raise asyncio.TimeoutError("Forcing fallback to polling for debugging")
-                    await asyncio.wait_for(listen_for_updates(), timeout=10.0)
+                    await listen_for_updates()
                 except asyncio.TimeoutError:
-                    # Always fallback to polling for now
-                    logger.warning(f"Using fallback polling for {connection_id}")
+                    logger.warning(f"Redis pub/sub timed out for {connection_id}; falling back to polling")
                     await fallback_polling()
         except Exception as e:
             logger.warning(f"Enhanced Redis pub/sub failed for {connection_id}, falling back to polling: {str(e)}")

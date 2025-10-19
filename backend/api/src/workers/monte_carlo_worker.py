@@ -145,19 +145,24 @@ class MonteCarloJobProcessor(JobProcessorInterface[MonteCarloJobPayload, dict[st
         payload: MonteCarloJobPayload,
         progress_callback: Callable[[float, str], None] | None = None
     ) -> dict[str, Any]:
-        """Execute the Monte Carlo simulation"""
+        """Execute the Monte Carlo simulation in a non-blocking way."""
 
-        # Progress tracking wrapper
+        loop = asyncio.get_running_loop()
+
+        # Progress tracking wrapper that is safe to call from another thread
         def sync_progress_callback(processed: int, total: int):
             if progress_callback:
-                progress = processed / payload.runs if payload.runs > 0 else 0.0
-                message = f"Completed {processed}/{payload.runs} simulations"
-                # Create task for async callback with correct signature
-                asyncio.create_task(progress_callback(progress, message))
+                progress = processed / total if total > 0 else 0.0
+                message = f"Processing {payload.filename}: {processed}/{total} runs"
+                # Schedule the async callback on the main event loop
+                asyncio.run_coroutine_threadsafe(
+                    progress_callback(progress, message), loop
+                )
 
-        # Execute simulation using existing service
+        # Execute the synchronous, CPU-bound simulation in a separate thread
         try:
-            result = run_monte_carlo_on_df(
+            result = await asyncio.to_thread(
+                run_monte_carlo_on_df,
                 csv_data=payload.csv_data,
                 filename=payload.filename,
                 strategy_name=payload.strategy_name,
@@ -563,12 +568,17 @@ class MonteCarloWorker(WorkerInterface):
 
     def _setup_signal_handlers(self) -> None:
         """Setup signal handlers for graceful shutdown"""
-        def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, initiating graceful shutdown")
-            asyncio.create_task(self.stop())
+        try:
+            def signal_handler(signum, frame):
+                logger.info(f"Received signal {signum}, initiating graceful shutdown")
+                asyncio.create_task(self.stop())
 
-        signal.signal(signal.SIGTERM, signal_handler)
-        signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+            signal.signal(signal.SIGINT, signal_handler)
+        except ValueError as e:
+            # Signal handlers can only be set in the main thread
+            logger.warning(f"Cannot setup signal handlers in worker thread: {e}")
+            logger.info("Worker will rely on external shutdown mechanisms")
 
 class WorkerProgressCallback(ProgressCallbackInterface):
     """Progress callback that updates job status in queue and database"""

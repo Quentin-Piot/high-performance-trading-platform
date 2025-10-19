@@ -139,7 +139,7 @@ def validate_date_range_for_symbol(
     start_date: datetime,
     end_date: datetime,
     # Use backend datasets by default; we'll refine this later via env/config
-    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
+    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/web/public/data/datasets"
 ) -> dict[str, any]:
     """
     Validate if the requested date range is available for a given symbol.
@@ -228,7 +228,7 @@ def validate_date_range_for_symbol(
 
 def get_all_symbols_date_ranges(
     # Use backend datasets by default; we'll refine this later via env/config
-    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
+    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/web/public/data/datasets"
 ) -> dict[str, dict[str, datetime]]:
     """
     Get date ranges for all available symbols.
