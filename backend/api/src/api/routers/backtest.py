@@ -254,6 +254,31 @@ async def run_monte_carlo_backtest(
             # Convert to dataframe for processing
             source.to_dataframe()
 
+            # Emit an immediate 'processing' status and 0% progress with run counters
+            if job_id and not started_sent:
+                async def _initial_report():
+                    async with SessionLocal() as session:
+                        repo = JobRepository(session)
+                        started_at = datetime.now(UTC)
+                        try:
+                            await repo.update_job_status(job_id, "processing")
+                        except Exception:
+                            pass
+                        await repo.update_job_progress(
+                            job_id,
+                            0.0,
+                            f"Starting {file.filename or 'file'}...",
+                            current_run=0,
+                            total_runs=monte_carlo_runs,
+                            started_at=started_at,
+                        )
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(_initial_report())
+                except RuntimeError:
+                    asyncio.run(_initial_report())
+                started_sent = True
+
             # Progress callback: updates JobRepository so WS can stream progress
             def progress_callback(processed: int, total: int, _file=file, _completed_units=completed_units):
                 if not job_id:
@@ -282,7 +307,12 @@ async def run_monte_carlo_backtest(
                             except Exception:
                                 pass
                         await repo.update_job_progress(
-                            job_id, progress_ratio, msg, started_at=started_at
+                            job_id,
+                            progress_ratio,
+                            msg,
+                            current_run=processed,
+                            total_runs=total,
+                            started_at=started_at,
                         )
 
                 try:
@@ -320,6 +350,9 @@ async def run_monte_carlo_backtest(
                                 job_id,
                                 min(1.0, float(_completed_units) / float(total_units)),
                                 _final_msg,
+                                current_run=monte_carlo_runs,
+                                total_runs=monte_carlo_runs,
+                                completed_at=datetime.now(UTC),
                             )
 
                     try:

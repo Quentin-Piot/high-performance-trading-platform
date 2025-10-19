@@ -82,20 +82,20 @@ class WebSocketStressTester:
             raise RuntimeError("Session not initialized")
 
         job_data = {
-            "symbol": "AAPL",
-            "start_date": "2023-01-01T00:00:00",
-            "end_date": "2023-12-31T23:59:59",
+            "symbol": "aapl",
+            "start_date": "2015-01-01T00:00:00",
+            "end_date": "2015-12-31T23:59:59",
             "num_runs": 1000,
             "initial_capital": 10000.0,
             "strategy_params": {},
-            "priority": "normal"
+            "priority": 2
         }
 
         async with self.session.post(
             f"{self.http_base_url}/api/v1/monte-carlo/jobs",
             json=job_data
         ) as response:
-            if response.status == 200:
+            if response.status == 201:  # Check for 201 Created
                 result = await response.json()
                 return result["job_id"]
             else:

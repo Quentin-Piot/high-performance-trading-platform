@@ -304,65 +304,57 @@ def run_monte_carlo_on_df(
 
     progress_lock = threading.Lock()
     completed_runs = 0
+    last_progress_time = time.time()
+    last_reported_progress = 0
 
     def update_progress():
-        """Thread-safe progress update"""
-        nonlocal completed_runs
+        """Thread-safe progress update with more frequent reporting"""
+        nonlocal completed_runs, last_progress_time, last_reported_progress
         with progress_lock:
             completed_runs += 1
-            if progress_callback:
+            current_time = time.time()
+            current_progress = completed_runs / runs if runs > 0 else 0
+            
+            # Send progress update if:
+            # 1. At least 0.5 seconds have passed since last update, OR
+            # 2. Progress increased by at least 5%, OR
+            # 3. This is the final run
+            time_elapsed = current_time - last_progress_time
+            progress_delta = current_progress - last_reported_progress
+            
+            should_update = (
+                time_elapsed >= 0.5 or  # Every 500ms minimum
+                progress_delta >= 0.05 or  # Every 5% progress
+                completed_runs == runs  # Final update
+            )
+            
+            if should_update and progress_callback:
+                # This call is now thread-safe thanks to run_coroutine_threadsafe
                 progress_callback(completed_runs, runs)
+                last_progress_time = current_time
+                last_reported_progress = current_progress
 
     if use_parallel:
         logger.info(f"Using {parallel_workers} parallel workers")
-
-        # Start a background thread to send periodic progress updates
-        stop_progress_thread = threading.Event()
-
-        def periodic_progress_update():
-            """Send progress updates every 2 seconds even if no new completions"""
-            while not stop_progress_thread.is_set():
-                if progress_callback:
-                    with progress_lock:
-                        progress_callback(completed_runs, runs)
-                time.sleep(2)  # Update every 2 seconds
-
-        progress_thread = threading.Thread(target=periodic_progress_update, daemon=True)
-        progress_thread.start()
-
         try:
             with ProcessPoolExecutor(max_workers=parallel_workers) as executor:
-                # Submit all jobs
-                future_to_idx = {executor.submit(monte_carlo_worker, args): i
-                               for i, args in enumerate(worker_args)}
+                future_to_idx = {executor.submit(monte_carlo_worker, args): i for i, args in enumerate(worker_args)}
 
-                # Collect results as they complete
                 for future in as_completed(future_to_idx):
                     result = future.result()
                     if result is not None:
                         results.append(result)
                         successful_runs += 1
-
-                    # Update progress immediately when a worker completes
                     update_progress()
         finally:
-            # Stop the progress thread
-            stop_progress_thread.set()
-            progress_thread.join(timeout=1)
+            logger.info("Parallel processing finished.")
     else:
-        # Sequential processing with more frequent updates
         logger.info("Using sequential processing")
         for i, args in enumerate(worker_args):
-            # Send progress update before starting each run
-            if progress_callback and i % max(1, runs // 20) == 0:  # Update every 5% or at least every run
-                progress_callback(i, runs)
-
             result = monte_carlo_worker(args)
             if result is not None:
                 results.append(result)
                 successful_runs += 1
-
-            # Update progress after each run
             update_progress()
 
     if not results:

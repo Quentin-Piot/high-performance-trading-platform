@@ -319,6 +319,16 @@ class JobRepository:
             )
 
             await self.session.commit()
+
+            # Invalidate caches so progress reads are fresh for WebSockets/UI
+            try:
+                await self._invalidate_job_caches(job_id)
+            except Exception as e:
+                logger.warning("Failed to invalidate job caches after progress update", extra={
+                    "job_id": job_id,
+                    "error": str(e)
+                })
+
             return result.rowcount > 0
 
         except Exception:
