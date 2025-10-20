@@ -84,16 +84,39 @@ def validate_date_range_for_csv_bytes(
     """
     Validate requested date range against the available dates in uploaded CSV bytes.
 
-    Returns structure similar to validate_date_range_for_symbol.
+    Returns structure similar to validate_date_range_for_symbol with filtered CSV data.
     """
     try:
         min_date, max_date = get_csv_date_range_from_bytes(csv_bytes)
+
+        # Parse CSV and filter by date range
+        df = pd.read_csv(io.BytesIO(csv_bytes))
+
+        # Ensure date column exists and is properly formatted
+        if "date" not in df.columns:
+            raise ValueError("CSV must contain a 'date' column")
+
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df = df.dropna(subset=["date"])
+
+        if df.empty:
+            raise ValueError("No valid dates found in CSV")
+
+        # Filter by date range
+        filtered_df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+
+        # Convert filtered DataFrame back to CSV bytes
+        csv_buffer = io.BytesIO()
+        filtered_df.to_csv(csv_buffer, index=False)
+        filtered_csv_bytes = csv_buffer.getvalue()
+
     except ValueError as e:
         return {
             "valid": False,
             "error_message": str(e),
             "available_range": None,
             "suggested_range": None,
+            "filtered_csv": None,
         }
 
     available_range = {"min_date": min_date, "max_date": max_date}
@@ -124,6 +147,7 @@ def validate_date_range_for_csv_bytes(
                 "start_date": suggested_start,
                 "end_date": suggested_end,
             },
+            "filtered_csv": None,
         }
 
     return {
@@ -131,6 +155,7 @@ def validate_date_range_for_csv_bytes(
         "error_message": None,
         "available_range": available_range,
         "suggested_range": None,
+        "filtered_csv": filtered_csv_bytes,
     }
 
 
@@ -139,7 +164,7 @@ def validate_date_range_for_symbol(
     start_date: datetime,
     end_date: datetime,
     # Use backend datasets by default; we'll refine this later via env/config
-    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/web/public/data/datasets"
+    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
 ) -> dict[str, any]:
     """
     Validate if the requested date range is available for a given symbol.

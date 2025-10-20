@@ -1,14 +1,12 @@
-import asyncio
 import os
-from datetime import UTC, datetime
+from io import BytesIO
 
+import pandas as pd
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
 from domain.schemas.backtest import (
     AggregatedMetrics,
     BacktestResponse,
-    MonteCarloBacktestResult,
-    MonteCarloResponse,
     MultiBacktestResponse,
     SingleBacktestResponse,
     SingleBacktestResult,
@@ -18,21 +16,22 @@ from services.backtest_service import (
     run_rsi,
     run_sma_crossover,
 )
-from services.mc_backtest_service import (
-    MAX_MONTE_CARLO_RUNS,
-    run_monte_carlo_on_df,
-)
 
 router = APIRouter(tags=["backtest"])  # no internal prefix; main adds versioned prefix
 
-@router.post("/backtest", response_model=BacktestResponse)
-async def backtest(
-    csv: UploadFile | list[UploadFile] = File(
-        ..., description="CSV file(s) with columns: date, close (max 10 files)"
-    ),
+@router.get("/backtest", response_model=BacktestResponse)
+async def backtest_get(
+    # Dataset parameters (required for GET)
+    symbol: str = Query(..., description="Symbol to use from local datasets (e.g., AAPL, AMZN)"),
+    start_date: str = Query(..., description="Start date for dataset filtering (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date for dataset filtering (YYYY-MM-DD)"),
     strategy: str = Query(
         "sma_crossover",
         description="Strategy name (e.g., sma_crossover, rsi)",
+    ),
+    # Price type selection
+    price_type: str = Query(
+        "close", description="Price type to use: 'close' or 'adj_close'"
     ),
     # SMA parameters (optional, required only if strategy = sma_crossover/sma)
     sma_short: int | None = Query(None, gt=0, description="Short SMA window"),
@@ -49,32 +48,251 @@ async def backtest(
         False, description="Include aggregated metrics across all files"
     ),
     # Monte Carlo parameters
-    monte_carlo_runs: int = Query(
-        1, ge=1, le=MAX_MONTE_CARLO_RUNS, description="Number of Monte Carlo runs"
-    ),
-    method: str = Query(
-        "bootstrap", description="Perturbation method: bootstrap or gaussian"
-    ),
-    sample_fraction: float = Query(
-        1.0, ge=0.1, le=2.0, description="Bootstrap sample fraction"
-    ),
-    gaussian_scale: float = Query(
-        1.0, ge=0.1, le=5.0, description="Gaussian noise scale factor"
-    ),
-    parallel_workers: int = Query(
-        os.cpu_count() or 1, ge=1, le=16, description="Number of parallel workers"
-    ),
-    include_equity_percentiles: bool = Query(
-        True, description="Include equity curve percentiles"
-    ),
-    stream: bool = Query(False, description="Stream progress updates (future feature)"),
-    # Optional job_id to report progress to JobRepository for WS streaming
-    job_id: str | None = Query(
-        None, description="Monte Carlo job ID for progress tracking"
-    ),
+    # Monte Carlo parameters (removed from this endpoint)
 ):
-    # Handle single file or multiple files
-    files = csv if isinstance(csv, list) else [csv]
+    """
+    Run backtest using local datasets with Monte Carlo simulation support.
+
+    This endpoint allows running backtests on local datasets without file upload.
+    Supports both regular backtests and Monte Carlo simulations.
+    """
+    # Map symbol to dataset file
+    symbol_to_file = {
+        "aapl": "AAPL.csv",
+        "amzn": "AMZN.csv",
+        "fb": "FB.csv",
+        "googl": "GOOGL.csv",
+        "msft": "MSFT.csv",
+        "nflx": "NFLX.csv",
+        "nvda": "NVDA.csv",
+    }
+
+    symbol_lower = symbol.lower()
+    if symbol_lower not in symbol_to_file:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}"
+        )
+
+    # Load and filter dataset
+    datasets_path = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
+    csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
+
+    if not os.path.exists(csv_file_path):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dataset file not found for symbol {symbol}"
+        )
+
+    # Read and filter data by date range
+    df = pd.read_csv(csv_file_path)
+    df.columns = [str(c).strip().lower() for c in df.columns]
+
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+        # Parse date parameters
+        try:
+            from datetime import datetime
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError as e:
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid date format. Use YYYY-MM-DD"
+            ) from e
+
+        # Filter by date range
+        df = df[(df["date"] >= start_dt) & (df["date"] <= end_dt)]
+
+        if df.empty:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No data available for {symbol} in the specified date range"
+            )
+
+    # Convert filtered DataFrame to CSV bytes and create mock UploadFile
+    csv_buffer = BytesIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_data = csv_buffer.getvalue()
+
+    # Create a mock UploadFile object
+    class MockUploadFile:
+        def __init__(self, content: bytes, filename: str):
+            self.content = content
+            self.filename = filename
+            self._file = BytesIO(content)
+
+        async def read(self) -> bytes:
+            return self.content
+
+        def seek(self, offset: int) -> None:
+            self._file.seek(offset)
+
+    mock_file = MockUploadFile(csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv")
+    files = [mock_file]
+
+    # Normalize strategy aliases
+    strat = strategy.strip().lower()
+
+    # Validate strategy parameters
+    if strat in {"sma_crossover", "sma"}:
+        if sma_short is None or sma_long is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Missing required parameters for SMA: sma_short and sma_long",
+            )
+    elif strat in {"rsi", "rsi_reversion"}:
+        if period is None or overbought is None or oversold is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Missing required parameters for RSI: period, overbought, oversold",
+            )
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
+
+    # Regular backtest mode (existing logic)
+    return await run_regular_backtest(
+        files=files,
+        strategy=strat,
+        strategy_params={
+            "sma_short": sma_short,
+            "sma_long": sma_long,
+            "period": period,
+            "overbought": overbought,
+            "oversold": oversold,
+        },
+        include_aggregated=include_aggregated,
+        price_type=price_type,
+    )
+@router.post("/backtest", response_model=BacktestResponse)
+async def backtest_post(
+    # Dataset parameters (alternative to CSV upload)
+    symbol: str | None = Query(None, description="Symbol to use from local datasets (e.g., AAPL, AMZN)"),
+    start_date: str | None = Query(None, description="Start date for dataset filtering (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date for dataset filtering (YYYY-MM-DD)"),
+    strategy: str = Query(
+        "sma_crossover",
+        description="Strategy name (e.g., sma_crossover, rsi)",
+    ),
+    # Price type selection
+    price_type: str = Query(
+        "close", description="Price type to use: 'close' or 'adj_close'"
+    ),
+    # SMA parameters (optional, required only if strategy = sma_crossover/sma)
+    sma_short: int | None = Query(None, gt=0, description="Short SMA window"),
+    sma_long: int | None = Query(None, gt=0, description="Long SMA window"),
+    # RSI parameters (optional, required only if strategy = rsi/rsi_reversion)
+    period: int | None = Query(None, gt=0, description="RSI period"),
+    overbought: float | None = Query(
+        None, ge=0, le=100, description="Overbought threshold (0-100)"
+    ),
+    oversold: float | None = Query(
+        None, ge=0, le=100, description="Oversold threshold (0-100)"
+    ),
+    include_aggregated: bool = Query(
+        False, description="Include aggregated metrics across all files"
+    ),
+    # Monte Carlo parameters
+    # Monte Carlo parameters (removed from this endpoint)
+    # CSV upload (optional, alternative to symbol)
+    csv: list[UploadFile] = File(default=[]),
+):
+    """
+    Run backtest with Monte Carlo simulation support.
+
+    Supports both CSV file upload and local dataset usage.
+    When using local datasets, provide symbol, start_date, and end_date parameters.
+    """
+    # Handle dataset selection: either uploaded files or local dataset
+    files = []
+
+    if symbol and start_date and end_date:
+        # Use local dataset
+        # Map symbol to dataset file
+        symbol_to_file = {
+            "aapl": "AAPL.csv",
+            "amzn": "AMZN.csv",
+            "fb": "FB.csv",
+            "googl": "GOOGL.csv",
+            "msft": "MSFT.csv",
+            "nflx": "NFLX.csv",
+            "nvda": "NVDA.csv",
+        }
+
+        symbol_lower = symbol.lower()
+        if symbol_lower not in symbol_to_file:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}"
+            )
+
+        # Load and filter dataset
+        datasets_path = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
+        csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
+
+        if not os.path.exists(csv_file_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Dataset file not found for symbol {symbol}"
+            )
+
+        # Read and filter data by date range
+        df = pd.read_csv(csv_file_path)
+        df.columns = [str(c).strip().lower() for c in df.columns]
+
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+            # Parse date parameters
+            try:
+                from datetime import datetime
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            except ValueError as e:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Invalid date format. Use YYYY-MM-DD"
+                ) from e
+
+            # Filter by date range
+            df = df[(df["date"] >= start_dt) & (df["date"] <= end_dt)]
+
+            if df.empty:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No data available for {symbol} in the specified date range"
+                )
+
+        # Convert filtered DataFrame to CSV bytes and create mock UploadFile
+        csv_buffer = BytesIO()
+        df.to_csv(csv_buffer, index=False)
+        csv_data = csv_buffer.getvalue()
+
+        # Create a mock UploadFile object
+        class MockUploadFile:
+            def __init__(self, content: bytes, filename: str):
+                self.content = content
+                self.filename = filename
+                self._file = BytesIO(content)
+
+            async def read(self) -> bytes:
+                return self.content
+
+            def seek(self, offset: int) -> None:
+                self._file.seek(offset)
+
+        mock_file = MockUploadFile(csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv")
+        files = [mock_file]
+
+    elif csv:
+         # Use uploaded files - csv is now always a list
+         files = csv
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Either csv file(s) or symbol with start_date and end_date must be provided"
+        )
 
     # Validate file count
     if len(files) > 10:
@@ -102,66 +320,35 @@ async def backtest(
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
 
-    # Validate Monte Carlo method
-    if method not in {"bootstrap", "gaussian"}:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported method: {method}. Use 'bootstrap' or 'gaussian'",
-        )
 
-    # Determine if this is a Monte Carlo run
-    is_monte_carlo = monte_carlo_runs > 1
-
-    if is_monte_carlo:
-        # Monte Carlo mode
-        return await run_monte_carlo_backtest(
-            files=files,
-            strategy=strat,
-            strategy_params={
-                "sma_short": sma_short,
-                "sma_long": sma_long,
-                "period": period,
-                "overbought": overbought,
-                "oversold": oversold,
-            },
-            monte_carlo_runs=monte_carlo_runs,
-            method=method,
-            method_params={
-                "sample_fraction": sample_fraction,
-                "gaussian_scale": gaussian_scale,
-            },
-            parallel_workers=parallel_workers,
-            include_equity_percentiles=include_equity_percentiles,
-            include_aggregated=include_aggregated,
-            job_id=job_id,
-        )
-    else:
-        # Regular backtest mode (existing logic)
-        return await run_regular_backtest(
-            files=files,
-            strategy=strat,
-            strategy_params={
-                "sma_short": sma_short,
-                "sma_long": sma_long,
-                "period": period,
-                "overbought": overbought,
-                "oversold": oversold,
-            },
-            include_aggregated=include_aggregated,
-        )
+    print("Calling run_regular_backtest")
+    return await run_regular_backtest(
+        files=files,
+        strategy=strat,
+        strategy_params={
+            "sma_short": sma_short,
+            "sma_long": sma_long,
+            "period": period,
+            "overbought": overbought,
+            "oversold": oversold,
+        },
+        include_aggregated=include_aggregated,
+        price_type=price_type,
+    )
 
 async def run_regular_backtest(
     files: list[UploadFile],
     strategy: str,
     strategy_params: dict,
     include_aggregated: bool,
+    price_type: str = "close",
 ) -> BacktestResponse:
     results = []
 
     # Process each CSV file
     for file in files:
         try:
-            source = CsvBytesPriceSeriesSource(await file.read())
+            source = CsvBytesPriceSeriesSource(await file.read(), price_type)
 
             # Run backtest based on strategy
             if strategy in {"sma_crossover", "sma"}:
@@ -219,215 +406,6 @@ async def run_regular_backtest(
         )
 
     return MultiBacktestResponse(
-        results=results,
-        aggregated_metrics=aggregated_metrics,
-    )
-
-async def run_monte_carlo_backtest(
-    files: list[UploadFile],
-    strategy: str,
-    strategy_params: dict,
-    monte_carlo_runs: int,
-    method: str,
-    method_params: dict,
-    parallel_workers: int,
-    include_equity_percentiles: bool,
-    include_aggregated: bool,
-    job_id: str | None,
-) -> MonteCarloResponse:
-    """Run Monte Carlo backtesting on multiple CSV files."""
-    results = []
-    total_units = max(1, monte_carlo_runs * max(1, len(files)))
-    completed_units = 0
-    started_sent = False
-
-    # Lazy import to avoid circulars
-    from infrastructure.db import SessionLocal
-    from infrastructure.repositories.jobs import JobRepository
-
-    # Process each CSV file
-    for file in files:
-        try:
-            # Read CSV data
-            csv_bytes = await file.read()
-            source = CsvBytesPriceSeriesSource(csv_bytes)
-            # Convert to dataframe for processing
-            source.to_dataframe()
-
-            # Emit an immediate 'processing' status and 0% progress with run counters
-            if job_id and not started_sent:
-                async def _initial_report():
-                    async with SessionLocal() as session:
-                        repo = JobRepository(session)
-                        started_at = datetime.now(UTC)
-                        try:
-                            await repo.update_job_status(job_id, "processing")
-                        except Exception:
-                            pass
-                        await repo.update_job_progress(
-                            job_id,
-                            0.0,
-                            f"Starting {file.filename or 'file'}...",
-                            current_run=0,
-                            total_runs=monte_carlo_runs,
-                            started_at=started_at,
-                        )
-                try:
-                    loop = asyncio.get_running_loop()
-                    loop.create_task(_initial_report())
-                except RuntimeError:
-                    asyncio.run(_initial_report())
-                started_sent = True
-
-            # Progress callback: updates JobRepository so WS can stream progress
-            def progress_callback(processed: int, total: int, _file=file, _completed_units=completed_units):
-                if not job_id:
-                    return
-                # Compute global progress across all files
-                try:
-                    local_progress_units = _completed_units + processed
-                    progress_ratio = float(local_progress_units) / float(total_units)
-                except Exception:
-                    progress_ratio = 0.0
-
-                # Build a human-friendly message
-                msg = f"Processing {_file.filename or 'file'}: {processed}/{total} runs"
-
-                async def _report():
-                    async with SessionLocal() as session:
-                        repo = JobRepository(session)
-                        started_at = None
-                        nonlocal started_sent
-                        if not started_sent:
-                            started_at = datetime.now(UTC)
-                            started_sent = True
-                            # Also mark status processing on first progress
-                            try:
-                                await repo.update_job_status(job_id, "processing")
-                            except Exception:
-                                pass
-                        await repo.update_job_progress(
-                            job_id,
-                            progress_ratio,
-                            msg,
-                            current_run=processed,
-                            total_runs=total,
-                            started_at=started_at,
-                        )
-
-                try:
-                    loop = asyncio.get_running_loop()
-                    loop.create_task(_report())
-                except RuntimeError:
-                    # No running loop (unlikely in FastAPI), fallback to synchronous run
-                    asyncio.run(_report())
-
-            # Run Monte Carlo simulation
-            mc_result = run_monte_carlo_on_df(
-                csv_data=csv_bytes,
-                filename=file.filename or f"file_{len(results) + 1}.csv",
-                strategy_name=strategy,
-                strategy_params=strategy_params,
-                runs=monte_carlo_runs,
-                method=method,
-                method_params=method_params,
-                parallel_workers=parallel_workers,
-                include_equity_envelope=include_equity_percentiles,
-                progress_callback=progress_callback,
-            )
-
-            # After finishing this file, advance the global completed units
-            try:
-                completed_units += monte_carlo_runs
-                if job_id:
-                    # Send a final per-file progress tick to ensure smooth WS updates
-                    final_msg = f"Completed {file.filename or 'file'} ({monte_carlo_runs}/{monte_carlo_runs} runs)"
-
-                    async def _final_report(_completed_units=completed_units, _final_msg=final_msg):
-                        async with SessionLocal() as session:
-                            repo = JobRepository(session)
-                            await repo.update_job_progress(
-                                job_id,
-                                min(1.0, float(_completed_units) / float(total_units)),
-                                _final_msg,
-                                current_run=monte_carlo_runs,
-                                total_runs=monte_carlo_runs,
-                                completed_at=datetime.now(UTC),
-                            )
-
-                    try:
-                        loop = asyncio.get_running_loop()
-                        loop.create_task(_final_report())
-                    except RuntimeError:
-                        asyncio.run(_final_report())
-            except Exception:
-                pass
-
-            # Convert to response format - no conversion needed, types are already compatible
-            monte_carlo_result = MonteCarloBacktestResult(
-                filename=file.filename or f"file_{len(results) + 1}.csv",
-                method=method,
-                runs=monte_carlo_runs,
-                successful_runs=mc_result.successful_runs,
-                metrics_distribution=mc_result.metrics_distribution,
-                equity_envelope=mc_result.equity_envelope,
-            )
-            results.append(monte_carlo_result)
-
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Error processing Monte Carlo for file '{file.filename}': {str(e)}",
-            ) from e
-
-    # Calculate aggregated metrics if requested
-    aggregated_metrics = None
-    if include_aggregated and results:
-        avg_pnl = sum(r.metrics_distribution["pnl"].mean for r in results) / len(
-            results
-        )
-        avg_sharpe = sum(r.metrics_distribution["sharpe"].mean for r in results) / len(
-            results
-        )
-        avg_drawdown = sum(
-            r.metrics_distribution["drawdown"].mean for r in results
-        ) / len(results)
-
-        aggregated_metrics = AggregatedMetrics(
-            average_pnl=avg_pnl,
-            average_sharpe=avg_sharpe,
-            average_drawdown=avg_drawdown,
-            total_files_processed=len(results),
-        )
-    # Mark job completed in repository
-    if job_id:
-
-        async def _mark_completed():
-            async with SessionLocal() as session:
-                repo = JobRepository(session)
-                try:
-                    await repo.update_job_status(
-                        job_id,
-                        "completed",
-                        progress=1.0,
-                        completed_at=datetime.utcnow(),
-                    )
-                except Exception:
-                    # If status update fails, still try to set progress to 1
-                    await repo.update_job_progress(
-                        job_id,
-                        1.0,
-                        "Monte Carlo completed",
-                        completed_at=datetime.utcnow(),
-                    )
-
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(_mark_completed())
-        except RuntimeError:
-            asyncio.run(_mark_completed())
-
-    return MonteCarloResponse(
         results=results,
         aggregated_metrics=aggregated_metrics,
     )

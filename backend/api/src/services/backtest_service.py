@@ -14,7 +14,7 @@ from strategies.rsi_reversion import RSIParams, RSIReversionStrategy
 
 logger = logging.getLogger("services.backtest")
 
-def _read_csv_to_series(file_obj: io.BytesIO | bytes) -> pd.Series:
+def _read_csv_to_series(file_obj: io.BytesIO | bytes, price_type: str = "close") -> pd.Series:
     if isinstance(file_obj, (bytes, bytearray)):
         buffer = io.BytesIO(file_obj)
         df = pd.read_csv(buffer)
@@ -23,9 +23,22 @@ def _read_csv_to_series(file_obj: io.BytesIO | bytes) -> pd.Series:
 
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    price_col = next(
-        (c for c in ["close", "adj close", "adj_close"] if c in df.columns), None
-    )
+    # Determine which price column to use based on price_type
+    if price_type == "adj_close":
+        price_col = next(
+            (c for c in ["adj close", "adj_close"] if c in df.columns), None
+        )
+        if not price_col:
+            # Fallback to close if adj_close not available
+            price_col = next(
+                (c for c in ["close"] if c in df.columns), None
+            )
+    else:
+        # Default to close
+        price_col = next(
+            (c for c in ["close"] if c in df.columns), None
+        )
+
     if not price_col:
         raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
 
@@ -39,11 +52,12 @@ def _read_csv_to_series(file_obj: io.BytesIO | bytes) -> pd.Series:
     return pd.Series(df[price_col].astype(float).values, dtype=float)
 
 class CsvBytesPriceSeriesSource(PriceSeriesSource):
-    def __init__(self, data: bytes | io.BytesIO):
+    def __init__(self, data: bytes | io.BytesIO, price_type: str = "close"):
         self._data = data
+        self._price_type = price_type
 
     def get_prices(self) -> pd.Series:
-        return _read_csv_to_series(self._data)
+        return _read_csv_to_series(self._data, self._price_type)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert CSV data to DataFrame for Monte Carlo processing."""
@@ -55,10 +69,22 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
 
         df.columns = [str(c).strip().lower() for c in df.columns]
 
-        # Ensure we have required columns
-        price_col = next(
-            (c for c in ["close", "adj close", "adj_close"] if c in df.columns), None
-        )
+        # Determine which price column to use based on price_type
+        if self._price_type == "adj_close":
+            price_col = next(
+                (c for c in ["adj close", "adj_close"] if c in df.columns), None
+            )
+            if not price_col:
+                # Fallback to close if adj_close not available
+                price_col = next(
+                    (c for c in ["close"] if c in df.columns), None
+                )
+        else:
+            # Default to close
+            price_col = next(
+                (c for c in ["close"] if c in df.columns), None
+            )
+
         if not price_col:
             raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
 
