@@ -15,7 +15,6 @@ from api.routers.backtest import router as backtest_router
 from api.routes.monte_carlo import router as monte_carlo_router
 from api.routes.performance import router as performance_router
 from core.logging import REQUEST_ID, setup_logging
-from infrastructure.cache import cache_manager
 from infrastructure.db import engine, init_db
 from infrastructure.monitoring import monitoring_service
 
@@ -29,9 +28,6 @@ setup_logging()
 async def app_lifespan(app: FastAPI):
     logging.getLogger("app").info("Startup")
     await init_db()
-
-    # Initialize cache manager
-    await cache_manager.connect()
 
     # Register database health check
     def db_health_check():
@@ -48,7 +44,6 @@ async def app_lifespan(app: FastAPI):
     yield
 
     # Cleanup on shutdown
-    await cache_manager.disconnect()
     logging.getLogger("app").info("Shutdown")
 
 app = FastAPI(title="Trading Backtest API", version="0.1.0", lifespan=app_lifespan)

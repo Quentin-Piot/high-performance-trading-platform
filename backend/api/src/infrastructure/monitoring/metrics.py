@@ -8,6 +8,7 @@ import asyncio
 import logging
 import threading
 import time
+from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from collections.abc import Callable
 from contextlib import asynccontextmanager
@@ -15,9 +16,26 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from domain.queue import MonitoringInterface
-
 logger = logging.getLogger(__name__)
+
+
+class MonitoringInterface(ABC):
+    """Interface for monitoring services"""
+
+    @abstractmethod
+    async def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
+        """Record a metric value"""
+        pass
+
+    @abstractmethod
+    async def increment_counter(self, name: str, tags: dict[str, str] | None = None) -> None:
+        """Increment a counter metric"""
+        pass
+
+    @abstractmethod
+    async def record_timing(self, name: str, duration_ms: float, tags: dict[str, str] | None = None) -> None:
+        """Record a timing metric"""
+        pass
 
 @dataclass
 class MetricPoint:

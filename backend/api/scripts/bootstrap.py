@@ -1,4 +1,3 @@
-import asyncio
 import os
 import signal
 import subprocess
@@ -274,23 +273,33 @@ def start_uvicorn_process() -> subprocess.Popen:
 
 
 def start_worker_in_thread() -> threading.Thread:
-    """Start the Monte Carlo worker in a background thread."""
+    """Start the Monte Carlo worker in a background thread (DISABLED for sync mode)."""
     def worker_main():
-        # Explicitly set the path for the worker
-        sys.path.insert(0, os.path.abspath("src"))
-        from workers.main import main as worker_main_async
-        
-        # Create a new event loop for the worker thread
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(worker_main_async())
-        finally:
-            loop.close()
+        # Worker is disabled since we're using synchronous Monte Carlo execution
+        print("Monte Carlo worker is disabled - using synchronous execution mode")
 
-    thread = threading.Thread(target=worker_main, name="MonteCarloWorkerThread", daemon=True)
+        # Initialize simple worker for async capabilities
+        try:
+            sys.path.insert(0, os.path.abspath("src"))
+            from workers.simple_worker import get_simple_worker, start_cleanup_task
+
+            # Initialize the simple worker
+            worker = get_simple_worker()
+            print(f"Simple Monte Carlo worker initialized with {worker.max_concurrent_jobs} max concurrent jobs")
+
+            # Start cleanup task
+            start_cleanup_task()
+            print("Simple worker cleanup task started")
+
+        except Exception as e:
+            print(f"Failed to initialize simple worker: {e}")
+
+        return
+
+    # Return a dummy thread that doesn't actually start a worker
+    thread = threading.Thread(target=worker_main, name="MonteCarloWorkerThread-Disabled", daemon=True)
     thread.start()
-    print("Monte Carlo worker started in a background thread.")
+    print("Monte Carlo worker disabled - using synchronous execution mode with simple async worker.")
     return thread
 
 
@@ -310,10 +319,9 @@ def main() -> None:
     run_worker = os.getenv("RUN_WORKER", "false").lower() in ("1", "true", "yes")
 
     api_proc = start_uvicorn_process()
-    worker_thread = None
 
     if run_worker:
-        worker_thread = start_worker_in_thread()
+        start_worker_in_thread()
 
     # Graceful shutdown on signals
     def _shutdown(signum, frame):
@@ -328,8 +336,8 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _shutdown)
 
     # Monitor API process; if it exits, the script will terminate
-    api_proc.wait()
-    print(f"API process exited with code {api_proc.returncode}")
+
+    signal.pause()
 
     # The worker thread is a daemon, so it will exit automatically
 

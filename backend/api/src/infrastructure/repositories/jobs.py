@@ -12,7 +12,6 @@ from typing import Any
 from sqlalchemy import and_, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from infrastructure.cache import cache_manager, cached_result
 from infrastructure.models import Job
 from infrastructure.repositories.db_utils import (
     BatchOperationManager,
@@ -167,18 +166,10 @@ class JobRepository:
                 operation_name="create_job"
             )
 
-    @cached_result("job", ttl=300)  # Cache for 5 minutes
     async def get_job_by_id(self, job_id: str) -> Job | None:
-        """Get job by ID with caching"""
+        """Get job by ID"""
         result = await self.session.execute(select(Job).where(Job.id == job_id))
-        job = result.scalar_one_or_none()
-
-        # Invalidate cache if job is completed or failed
-        if job and job.status in ["completed", "failed"]:
-            cache_key = cache_manager._generate_key("job", "get_job_by_id", args=str((job_id,)), kwargs=[])
-            await cache_manager.delete(cache_key)
-
-        return job
+        return result.scalar_one_or_none()
 
     async def get_job_by_dedup_key(self, dedup_key: str) -> Job | None:
         """Get job by deduplication key"""
@@ -213,10 +204,9 @@ class JobRepository:
         )
         return result.scalar_one_or_none()
 
-    @cached_result("job_counts", ttl=60)  # Cache for 1 minute
     async def get_job_counts_by_status(self) -> dict[str, int]:
         """
-        Get job counts grouped by status for metrics with caching.
+        Get job counts grouped by status for metrics.
 
         Returns:
             Dictionary mapping status to count
@@ -428,22 +418,8 @@ class JobRepository:
                 raise DatabaseError(f"Failed to update job status: {str(e)}") from e
 
     async def _invalidate_job_caches(self, job_id: str) -> None:
-        """Invalidate caches related to a specific job"""
-        try:
-            # Invalidate job-specific cache
-            job_cache_key = cache_manager._generate_key("job", "get_job_by_id", args=str((job_id,)), kwargs=[])
-            await cache_manager.delete(job_cache_key)
-
-            # Invalidate job counts cache
-            await cache_manager.delete_pattern("job_counts:*")
-
-            logger.debug("Invalidated job caches", extra={"job_id": job_id})
-
-        except Exception as e:
-            logger.warning("Failed to invalidate job caches", extra={
-                "job_id": job_id,
-                "error": str(e)
-            })
+        """Invalidate caches related to a specific job (no-op since cache is disabled)"""
+        logger.debug("Cache invalidation skipped (cache disabled)", extra={"job_id": job_id})
 
     async def increment_attempts(self, job_id: str) -> bool:
         """

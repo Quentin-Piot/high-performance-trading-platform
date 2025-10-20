@@ -119,8 +119,8 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
     Worker function for Monte Carlo simulation.
 
     Args:
-        args: Either a tuple (csv_data, strategy_name, strategy_params, method, method_params, seed)
-              or a dict with keys: csv_data/df, strategy_name, strategy_params, method, method_params, seed/rng_seed
+        args: Either a tuple (csv_data, strategy_name, strategy_params, method, method_params, seed, price_type)
+              or a dict with keys: csv_data/df, strategy_name, strategy_params, method, method_params, seed/rng_seed, price_type
 
     Returns:
         MonteCarloResult or None if failed
@@ -139,8 +139,14 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
             method = args["method"]
             method_params = args.get("method_params", {})
             seed = args.get("seed") or args.get("rng_seed")
+            price_type = args.get("price_type", "close")
         else:
-            csv_data, strategy_name, strategy_params, method, method_params, seed = args
+            if len(args) >= 7:
+                csv_data, strategy_name, strategy_params, method, method_params, seed, price_type = args
+            else:
+                # Backward compatibility
+                csv_data, strategy_name, strategy_params, method, method_params, seed = args
+                price_type = "close"
             df = None
 
         # Set up RNG with seed
@@ -152,7 +158,7 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
             original_prices = df["close"]
         else:
             # Load from CSV data
-            source = CsvBytesPriceSeriesSource(csv_data)
+            source = CsvBytesPriceSeriesSource(csv_data, price_type)
             original_prices = source.get_prices()
 
         # Generate synthetic data based on method
@@ -173,12 +179,21 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
 
         # Create synthetic CSV data
         synthetic_df = pd.DataFrame({"close": synthetic_prices})
-        if hasattr(synthetic_prices.index, 'to_pydatetime'):
-            synthetic_df["date"] = synthetic_prices.index
+
+        # Add date column if original data had dates
+        if hasattr(synthetic_prices, 'index') and hasattr(synthetic_prices.index, 'to_pydatetime'):
+            try:
+                synthetic_df["date"] = synthetic_prices.index
+            except Exception:
+                # If date conversion fails, create a simple date range
+                synthetic_df["date"] = pd.date_range(start='2023-01-01', periods=len(synthetic_prices), freq='D')
+        else:
+            # Create a simple date range if no date index exists
+            synthetic_df["date"] = pd.date_range(start='2023-01-01', periods=len(synthetic_prices), freq='D')
 
         # Convert back to CSV bytes
         csv_buffer = synthetic_df.to_csv(index=False).encode()
-        synthetic_source = CsvBytesPriceSeriesSource(csv_buffer)
+        synthetic_source = CsvBytesPriceSeriesSource(csv_buffer, price_type)
 
         # Run strategy on synthetic data
         if strategy_name == "sma_crossover":
@@ -222,8 +237,11 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
             equity_curve=result.equity
         )
 
-    except Exception:
-        logger.error("Monte Carlo worker failed:", exc_info=True)
+    except Exception as e:
+        logger.error(f"Monte Carlo worker failed: {str(e)}", exc_info=True)
+        print(f"DEBUG: Monte Carlo worker exception: {str(e)}")  # Debug print
+        import traceback
+        print(f"DEBUG: Full traceback: {traceback.format_exc()}")  # Debug traceback
         return None
 
 def compute_equity_envelope(equity_curves: list[pd.Series], timestamps: list[str]) -> EquityEnvelope:
@@ -272,7 +290,8 @@ def run_monte_carlo_on_df(
     parallel_workers: int = DEFAULT_PARALLEL_WORKERS,
     seed: int | None = None,
     include_equity_envelope: bool = True,
-    progress_callback: Callable[[int, int], None] | None = None
+    progress_callback: Callable[[int, int], None] | None = None,
+    price_type: str = "close",
 ) -> MonteCarloSummary:
     """
     Run Monte Carlo simulation on CSV data with enhanced progress reporting.
@@ -293,7 +312,7 @@ def run_monte_carlo_on_df(
     rng = default_rng(seed)
     for _i in range(runs):
         worker_seed = rng.integers(0, 2**32 - 1)
-        worker_args.append((csv_data, strategy_name, strategy_params, method, method_params, worker_seed))
+        worker_args.append((csv_data, strategy_name, strategy_params, method, method_params, worker_seed, price_type))
 
     results = []
     successful_runs = 0
@@ -314,20 +333,20 @@ def run_monte_carlo_on_df(
             completed_runs += 1
             current_time = time.time()
             current_progress = completed_runs / runs if runs > 0 else 0
-            
+
             # Send progress update if:
             # 1. At least 0.5 seconds have passed since last update, OR
             # 2. Progress increased by at least 5%, OR
             # 3. This is the final run
             time_elapsed = current_time - last_progress_time
             progress_delta = current_progress - last_reported_progress
-            
+
             should_update = (
                 time_elapsed >= 0.5 or  # Every 500ms minimum
                 progress_delta >= 0.05 or  # Every 5% progress
                 completed_runs == runs  # Final update
             )
-            
+
             if should_update and progress_callback:
                 # This call is now thread-safe thanks to run_coroutine_threadsafe
                 progress_callback(completed_runs, runs)
@@ -350,7 +369,7 @@ def run_monte_carlo_on_df(
             logger.info("Parallel processing finished.")
     else:
         logger.info("Using sequential processing")
-        for i, args in enumerate(worker_args):
+        for _i, args in enumerate(worker_args):
             result = monte_carlo_worker(args)
             if result is not None:
                 results.append(result)

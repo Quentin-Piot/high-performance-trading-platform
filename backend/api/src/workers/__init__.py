@@ -1,10 +1,6 @@
 """
 Worker implementations for background job processing.
 """
-from .monte_carlo_worker import (
-    MonteCarloJobProcessor,
-    MonteCarloWorker,
-    WorkerProgressCallback,
-)
+from .simple_worker import SimpleMonteCarloWorker, get_simple_worker
 
-__all__ = ["MonteCarloWorker", "MonteCarloJobProcessor", "WorkerProgressCallback"]
+__all__ = ["SimpleMonteCarloWorker", "get_simple_worker"]

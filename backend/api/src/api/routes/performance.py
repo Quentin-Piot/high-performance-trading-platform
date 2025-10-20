@@ -11,7 +11,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from infrastructure.cache import cache_manager
 from infrastructure.db import get_pool_status, get_session
 from infrastructure.db_indexes import IndexManager, analyze_database_performance
 
@@ -84,37 +83,19 @@ async def get_cache_performance() -> CacheStatsResponse:
     Get cache performance metrics.
 
     Returns:
-        Cache statistics including hit ratio, memory usage, and connection info
+        Cache statistics (disabled - no cache system)
     """
-    try:
-        stats = await cache_manager.get_stats()
-
-        # Calculate hit ratio
-        hits = stats.get("keyspace_hits", 0)
-        misses = stats.get("keyspace_misses", 0)
-        total_requests = hits + misses
-        hit_ratio = (hits / total_requests) if total_requests > 0 else 0.0
-
-        return CacheStatsResponse(
-            enabled=stats.get("enabled", False),
-            connected_clients=stats.get("connected_clients", 0),
-            used_memory=stats.get("used_memory", 0),
-            used_memory_human=stats.get("used_memory_human", "0B"),
-            keyspace_hits=hits,
-            keyspace_misses=misses,
-            total_commands_processed=stats.get("total_commands_processed", 0),
-            uptime_in_seconds=stats.get("uptime_in_seconds", 0),
-            hit_ratio=hit_ratio
-        )
-
-    except Exception as e:
-        logger.error("Failed to get cache performance metrics", extra={
-            "error": str(e)
-        })
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve cache performance metrics"
-        ) from e
+    return CacheStatsResponse(
+        enabled=False,
+        connected_clients=0,
+        used_memory=0,
+        used_memory_human="0B",
+        keyspace_hits=0,
+        keyspace_misses=0,
+        total_commands_processed=0,
+        uptime_in_seconds=0,
+        hit_ratio=0.0
+    )
 
 @router.get("/metrics", response_model=PerformanceMetricsResponse)
 async def get_performance_metrics(
@@ -240,36 +221,12 @@ async def clear_cache() -> dict[str, Any]:
     Clear all cache entries.
 
     Returns:
-        Cache clearing results
+        Cache clearing results (disabled - no cache system)
     """
-    try:
-        if not cache_manager.enabled:
-            return {
-                "success": False,
-                "message": "Cache is not enabled"
-            }
-
-        # Clear all cache entries
-        cleared_count = await cache_manager.delete_pattern("*")
-
-        logger.info("Cache cleared", extra={
-            "cleared_count": cleared_count
-        })
-
-        return {
-            "success": True,
-            "message": f"Cleared {cleared_count} cache entries",
-            "cleared_count": cleared_count
-        }
-
-    except Exception as e:
-        logger.error("Failed to clear cache", extra={
-            "error": str(e)
-        })
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to clear cache"
-        ) from e
+    return {
+        "success": False,
+        "message": "Cache system is disabled"
+    }
 
 @router.delete("/cache/pattern/{pattern}")
 async def clear_cache_pattern(pattern: str) -> dict[str, Any]:
@@ -280,36 +237,10 @@ async def clear_cache_pattern(pattern: str) -> dict[str, Any]:
         pattern: Redis pattern to match (e.g., "job:*", "user:*")
 
     Returns:
-        Cache clearing results
+        Cache clearing results (disabled - no cache system)
     """
-    try:
-        if not cache_manager.enabled:
-            return {
-                "success": False,
-                "message": "Cache is not enabled"
-            }
-
-        # Clear cache entries matching pattern
-        cleared_count = await cache_manager.delete_pattern(pattern)
-
-        logger.info("Cache pattern cleared", extra={
-            "pattern": pattern,
-            "cleared_count": cleared_count
-        })
-
-        return {
-            "success": True,
-            "message": f"Cleared {cleared_count} cache entries matching pattern '{pattern}'",
-            "pattern": pattern,
-            "cleared_count": cleared_count
-        }
-
-    except Exception as e:
-        logger.error("Failed to clear cache pattern", extra={
-            "pattern": pattern,
-            "error": str(e)
-        })
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to clear cache pattern '{pattern}'"
-        ) from e
+    return {
+        "success": False,
+        "message": "Cache system is disabled",
+        "pattern": pattern
+    }
