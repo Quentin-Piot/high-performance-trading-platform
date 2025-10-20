@@ -1,5 +1,5 @@
 import { BACKTEST_STRATEGIES, type StrategyId } from '@/config/backtestStrategies'
-import { postFormData } from '@/services/apiClient'
+import { postFormData, BASE_URL } from '@/services/apiClient'
 
 // Strategy definitions from centralized config
 export type DateRange = { startDate?: string; endDate?: string }
@@ -12,8 +12,8 @@ export type BacktestRequest = {
   method?: 'bootstrap' | 'gaussian';  // default: 'bootstrap'
   sample_fraction?: number;  // 0.1-2.0, default: 1.0
   gaussian_scale?: number;   // 0.1-5.0, default: 1.0
-  // Optional job id to let backend stream progress to WS
-  job_id?: string;
+  // Price type selection
+  price_type?: 'close' | 'adj_close';  // default: 'close'
 }
 
 // Monte Carlo specific types
@@ -123,65 +123,7 @@ export function isMonteCarloResponse(response: any): response is MonteCarloRespo
   return false
 }
 
-// Fonction pour normaliser les données equity_envelope du backend
-function normalizeEquityEnvelope(envelope: any): EquityEnvelope {
-  const normalizeArray = (arr: any[]): number[] => {
-    return arr.map(item => {
-      if (typeof item === 'number') return item
-      if (typeof item === 'object' && item.parsedValue !== undefined) {
-        return typeof item.parsedValue === 'number' ? item.parsedValue : parseFloat(item.parsedValue)
-      }
-      if (typeof item === 'string') return parseFloat(item)
-      return 0
-    })
-  }
 
-  return {
-    timestamps: envelope.timestamps || [],
-    p5: normalizeArray(envelope.p5 || []),
-    p25: normalizeArray(envelope.p25 || []),
-    median: normalizeArray(envelope.median || []),
-    p75: normalizeArray(envelope.p75 || []),
-    p95: normalizeArray(envelope.p95 || [])
-  }
-}
-
-// Fonction pour normaliser les résultats Monte Carlo
-function normalizeMonteCarloResponse(response: any): MonteCarloResponse {
-  // Handle numeric key structure (e.g., {"0": {...}, "1": {...}})
-  const keys = Object.keys(response)
-  const numericKeys = keys.filter(key => /^\d+$/.test(key))
-  
-  if (numericKeys.length > 0) {
-    // Convert numeric key structure to results array
-    const results = numericKeys.map(key => {
-      const result = response[key]
-      return {
-        ...result,
-        equity_envelope: result.equity_envelope ? normalizeEquityEnvelope(result.equity_envelope) : undefined
-      }
-    })
-    
-    return {
-      results,
-      aggregated_metrics: response.aggregated_metrics || {
-        average_pnl: 0,
-        average_sharpe: 0,
-        average_drawdown: 0,
-        total_files_processed: results.length
-      }
-    }
-  }
-  
-  // Handle standard structure
-  return {
-    results: response.results.map((result: any) => ({
-      ...result,
-      equity_envelope: normalizeEquityEnvelope(result.equity_envelope)
-    })),
-    aggregated_metrics: response.aggregated_metrics
-  }
-}
 
 export type BacktestErrorCode =
   | 'error.invalid_csv'
@@ -221,35 +163,28 @@ function validateStrategy(strategy: StrategyId, params: Record<string, number>):
 }
 
 function buildQuery(req: BacktestRequest, includeAggregated: boolean = false): string {
-  const q = new URLSearchParams()
-  q.set('strategy', req.strategy)
-  const cfg = BACKTEST_STRATEGIES[req.strategy]
-  for (const param of cfg.params) {
-    const val = req.params[param.key]
-    if (val !== undefined && val !== null) q.set(param.key, String(val))
-  }
-  if (req.dates?.startDate) q.set('start_date', req.dates.startDate)
-  if (req.dates?.endDate) q.set('end_date', req.dates.endDate)
+  const params = new URLSearchParams()
+  params.set('strategy', req.strategy)
   
-  // Monte Carlo parameters
-  if (req.monte_carlo_runs !== undefined && req.monte_carlo_runs > 1) {
-    q.set('monte_carlo_runs', String(req.monte_carlo_runs))
-  }
-  if (req.method) {
-    q.set('method', req.method)
-  }
-  if (req.sample_fraction !== undefined) {
-    q.set('sample_fraction', String(req.sample_fraction))
-  }
-  if (req.gaussian_scale !== undefined) {
-    q.set('gaussian_scale', String(req.gaussian_scale))
-  }
-  if (req.job_id) {
-    q.set('job_id', req.job_id)
-  }
+  // Add strategy parameters
+  Object.entries(req.params).forEach(([key, value]) => {
+    params.set(key, value.toString())
+  })
   
-  if (includeAggregated) q.set('include_aggregated', 'true')
-  return `?${q.toString()}`
+  // Add date range if provided
+  if (req.dates?.startDate) params.set('start_date', req.dates.startDate)
+  if (req.dates?.endDate) params.set('end_date', req.dates.endDate)
+  
+  // Add Monte Carlo parameters if provided
+  if (req.monte_carlo_runs) params.set('monte_carlo_runs', req.monte_carlo_runs.toString())
+  if (req.method) params.set('method', req.method)
+  if (req.sample_fraction) params.set('sample_fraction', req.sample_fraction.toString())
+  if (req.gaussian_scale) params.set('gaussian_scale', req.gaussian_scale.toString())
+  
+  // Add aggregated flag if requested
+  if (includeAggregated) params.set('aggregated', 'true')
+  
+  return params.toString() ? `?${params.toString()}` : ''
 }
 
 type RawBacktestResponse = {
@@ -371,28 +306,67 @@ export async function runMultipleBacktests(files: File[], req: BacktestRequest):
   return normalizeMultipleResponse(data)
 }
 
-export async function runBacktestUnified(files: File[], req: BacktestRequest): Promise<BacktestApiResponse> {
+export async function runBacktestUnified(files: File[], req: BacktestRequest, selectedDatasets?: string[]): Promise<BacktestApiResponse> {
   // Determine if this is a Monte Carlo request
   const isMonteCarlo = req.monte_carlo_runs && req.monte_carlo_runs > 1
 
   if (isMonteCarlo) {
-    // For Monte Carlo, we need to handle the response differently
-    validateCsvFiles(files)
+    // Use the dedicated Monte Carlo endpoint with Query parameters
     validateStrategy(req.strategy, req.params)
-
-    const formData = new FormData()
-    files.forEach(file => formData.append('csv', file))
     
-    const query = buildQuery(req, true) // Include aggregated for Monte Carlo
-    const rawResponse = await postFormData(`/backtest${query}`, formData)
+    // Build query parameters for Monte Carlo endpoint
+    const params = new URLSearchParams()
     
-    // Check if this is a Monte Carlo response and normalize it
-    if (isMonteCarloResponse(rawResponse as BacktestApiResponse)) {
-      return normalizeMonteCarloResponse(rawResponse)
+    // Always add dataset parameters if selectedDatasets is provided (required by Monte Carlo endpoint)
+    if (selectedDatasets && selectedDatasets.length > 0) {
+      params.set('symbol', selectedDatasets[0]!) // Use first selected dataset as symbol
+      if (req.dates?.startDate) {
+        params.set('start_date', req.dates.startDate)
+      }
+      if (req.dates?.endDate) {
+        params.set('end_date', req.dates.endDate)
+      }
     }
     
-    // If not detected as Monte Carlo, return as-is (fallback)
-    return rawResponse as BacktestApiResponse
+    // Add Monte Carlo parameters
+    params.set('num_runs', req.monte_carlo_runs!.toString())
+    params.set('initial_capital', '10000') // Default initial capital
+    
+    // Add strategy and its parameters
+    params.set('strategy', req.strategy)
+    Object.entries(req.params).forEach(([key, value]) => {
+      params.set(key, value.toString())
+    })
+    
+    // Add optional Monte Carlo parameters
+    if (req.method) params.set('method', req.method)
+    if (req.sample_fraction) params.set('sample_fraction', req.sample_fraction.toString())
+    if (req.gaussian_scale) params.set('gaussian_scale', req.gaussian_scale.toString())
+    if (req.price_type) params.set('price_type', req.price_type)
+    
+    // Prepare form data for file upload (if any)
+    const formData = new FormData()
+    if (files.length > 0) {
+      validateCsvFiles(files)
+      files.forEach(file => {
+        formData.append('file', file)
+      })
+    }
+    
+    // Call the Monte Carlo endpoint
+    const url = `/monte-carlo/run?${params.toString()}`
+    const response = await fetch(`${BASE_URL}${url}`, {
+      method: 'POST',
+      body: files.length > 0 ? formData : undefined,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+      throw new Error(`HTTP ${response.status}: ${errorData.detail || 'Request failed'}`)
+    }
+
+    const rawResponse = await response.json()
+    return rawResponse as MonteCarloResponse
   }
 
   // Non-Monte Carlo logic (existing)

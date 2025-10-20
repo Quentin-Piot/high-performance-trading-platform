@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
 
-const props = defineProps<{ label: string; value: number | null; percentage?: boolean }>()
+const props = defineProps<{ label: string; value: number | null | undefined; percentage?: boolean }>()
 
 const formattedValue = computed(() => {
   if (props.value === null || props.value === undefined) return '—'

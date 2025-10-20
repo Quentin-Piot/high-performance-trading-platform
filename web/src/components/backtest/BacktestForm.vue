@@ -11,6 +11,7 @@ import DatasetSelectionSection from './DatasetSelectionSection.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import StrategyParametersSection from './StrategyParametersSection.vue'
 import MonteCarloSection from './MonteCarloSection.vue'
+import PriceTypeSection from './PriceTypeSection.vue'
 import {
   validateDateRange,
   calculateDateRangeWithCsvFiles
@@ -48,8 +49,11 @@ const dateValidationError = ref<string | null>(null)
 // Monte Carlo parameters
 const monteCarloRuns = ref<number>(1)
 const monteCarloMethod = ref<'bootstrap' | 'gaussian' | ''>('bootstrap')
-const sampleFraction = ref<number>(1.0)
-const gaussianScale = ref<number>(1.0)
+const sampleFraction = ref<number>(0.8)
+const gaussianScale = ref<number>(0.1)
+
+// Price type selection
+const priceType = ref<'close' | 'adj_close'>('close')
 
 // Computed property to check if Monte Carlo is enabled
 const isMonteCarloEnabled = computed(() => monteCarloRuns.value > 1)
@@ -226,59 +230,12 @@ async function onSubmit() {
     monte_carlo_runs: monteCarloRuns.value,
     method: monteCarloMethod.value || undefined,
     sample_fraction: sampleFraction.value,
-    gaussian_scale: gaussianScale.value
+    gaussian_scale: gaussianScale.value,
+    price_type: priceType.value
   }
   
-  // Soumettre un job Monte Carlo au worker pour la progression via WebSocket
-  if (isMonteCarloEnabled.value) {
-    const today = new Date().toISOString().slice(0, 10)
-    const addDays = (iso: string, days: number) => {
-      const d = new Date(iso)
-      d.setDate(d.getDate() + days)
-      return d.toISOString().slice(0, 10)
-    }
-    const symbolGuess = selectedDatasets.value[0] 
-      || (selectedFiles.value[0]?.name?.replace(/\.[^/.]+$/, '') ?? 'SIM')
-    const start = startDate.value || today
-    let end = endDate.value || addDays(today, 1)
-    // Ensure end_date is strictly after start_date
-    if (new Date(end) <= new Date(start)) {
-      end = addDays(start, 1)
-    }
-    // If a file or dataset is selected, submit via upload endpoint to support arbitrary CSV
-    if (allFiles.length > 0) {
-      const file = allFiles[0]!
-      await store.submitMonteCarloJobUpload(file, {
-        start_date: start,
-        end_date: end,
-        initial_capital: 10000,
-        num_runs: monteCarloRuns.value,
-        strategy_params: { ...params },
-        method: monteCarloMethod.value || undefined,
-      })
-    } else {
-      // Fallback: submit JSON using symbol guess (legacy path)
-      await store.submitMonteCarloJob({
-        symbol: symbolGuess,
-        start_date: start,
-        end_date: end,
-        initial_capital: 10000,
-        num_runs: monteCarloRuns.value,
-        strategy_params: { ...params },
-        method: monteCarloMethod.value || undefined,
-        sample_fraction: sampleFraction.value,
-        gaussian_scale: gaussianScale.value,
-      })
-    }
-  }
-  
-  // Inject job_id into request if Monte Carlo job was submitted
-  const reqWithJobId = {
-    ...req,
-    job_id: store.monteCarloJobId || undefined,
-  }
   // Use the new unified backtest function that handles both single and multiple files
-  await store.runBacktestUnified(allFiles, reqWithJobId)
+  await store.runBacktestUnified(allFiles, req, selectedDatasets.value)
 }
 
 function onReset() {
@@ -309,6 +266,12 @@ function onReset() {
     <!-- Dataset Selection Section -->
     <DatasetSelectionSection
       v-model:selected-datasets="selectedDatasets"
+    />
+
+    <!-- Price Type Selection Section -->
+    <PriceTypeSection
+      :price-type="priceType"
+      @update:price-type="(value) => priceType = value"
     />
 
     <!-- Strategy Selection avec style moderne -->

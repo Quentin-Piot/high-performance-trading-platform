@@ -7,7 +7,7 @@ import MetricsCard from "@/components/common/MetricsCard.vue";
 import DistributionMetricsCard from "@/components/common/DistributionMetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { useBacktestStore } from "@/stores/backtestStore";
-import { computed, ref, watch, onBeforeUnmount } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,11 +18,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Download, BarChart3, LineChart, Activity, Clock, Zap, Wifi } from "lucide-vue-next";
+import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { buildEquityPoints } from "@/composables/useEquitySeries";
-import { toast } from "vue-sonner";
-import { monteCarloWebSocketService as wsService } from "@/services/webSocketService";
 // Local chart types avoiding dependency on lightweight-charts TS exports
 type BusinessDay = { year: number; month: number; day: number };
 type ChartTime = number | BusinessDay;
@@ -104,62 +102,6 @@ const displaySeries = computed<EquitySeries>(() => {
     const base: EquitySeries = store.equitySeries || [];
     const ranged = applyRange(base, activeRange.value);
     return downsample(ranged, selectedResolution.value);
-});
-
-// --- Monte Carlo progress via WebSocket ---
-
-const mcProgressVisible = computed(() => !!store.monteCarloJobId);
-
-// Utiliser l'état du service WebSocket
-const mcPercent = wsService.state.percent;
-const mcCurrent = wsService.state.current;
-const mcTotal = wsService.state.total;
-const mcEtaSeconds = wsService.state.etaSeconds;
-const mcMetrics = wsService.state.metrics;
-
-// Variables pour l'affichage des informations détaillées
-const mcShowDetailedInfo = ref(false);
-
-// Computed properties basées sur le service
-const mcStatusLabel = computed(() => wsService.getStatusLabel());
-
-function formatEta(): string {
-    return wsService.formatEta();
-}
-
-// Configurer les callbacks du service WebSocket
-wsService.setCallbacks({
-  onMessage: (message) => {
-    // Le throttling est maintenant dans le service, le log ici peut être simplifié ou supprimé
-    console.log("[UI] Message reçu:", message);
-  },
-  onStatusChange: () => {
-    if (wsService.state.current.value === 1 && wsService.state.total.value > 0) {
-      toast.info("Job Monte Carlo démarré", {
-        description: `${wsService.state.total.value} runs en cours…`,
-      });
-    }
-  },
-  onCompletion: (status) => {
-    toast.success("Simulation Monte Carlo terminée !", { description: `Statut final: ${status}` });
-    store.monteCarloJobId = null;
-  }
-});
-
-watch(
-  () => store.monteCarloJobId,
-  (jobId) => {
-    if (jobId) {
-      wsService.connect(jobId, store.monteCarloJobRuns || undefined);
-    } else {
-      wsService.disconnect();
-    }
-  },
-  { immediate: true } // Exécuter immédiatement au montage
-);
-
-onBeforeUnmount(() => {
-  wsService.disconnect();
 });
 
 const chartSeries = computed<LinePoint[]>(() =>
@@ -469,103 +411,6 @@ function downloadCsv() {
                     </CardHeader>
 
                     <CardContent class="p-3 sm:p-4 relative">
-                        <!-- Overlay de progression Monte Carlo (visible même hors état de chargement) -->
-                        <div
-                            v-if="mcProgressVisible"
-                            class="absolute inset-x-0 top-0 z-10 p-3 sm:p-4"
-                        >
-                            <div
-                                class="rounded-lg bg-gradient-to-r from-trading-blue/10 to-trading-purple/10 border border-secondary/40 shadow-soft"
-                            >
-                                <div
-                                    class="flex items-center justify-between gap-3 p-2"
-                                >
-                                    <div
-                                        class="text-xs sm:text-sm text-muted-foreground"
-                                    >
-                                        {{
-                                            t(
-                                                "simulate.results.monte_carlo.progress_title",
-                                            ) || "Monte Carlo en cours"
-                                        }}
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <div class="text-xs font-semibold">
-                                            {{ mcPercent }}%
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            class="h-6 w-6 p-0 hover:bg-secondary/50"
-                                            @click="mcShowDetailedInfo = !mcShowDetailedInfo"
-                                        >
-                                            <Activity class="size-3" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div
-                                    class="mx-2 mb-2 h-2 bg-secondary/50 rounded-full overflow-hidden"
-                                >
-                                    <div
-                                        class="h-full bg-trading-blue"
-                                        :style="{
-                                            width: mcPercent + '%',
-                                        }"
-                                    ></div>
-                                </div>
-                                <div
-                                    class="px-2 pb-2 text-[11px] text-muted-foreground"
-                                >
-                                    {{ mcCurrent }}/{{ mcTotal }} runs ·
-                                    {{ mcStatusLabel }}
-                                    <span v-if="mcEtaSeconds != null">
-                                        · ETA {{ formatEta() }}</span
-                                    >
-                                    <span v-if="mcMetrics.speed && mcMetrics.speed > 0">
-                                        · {{ mcMetrics.speed?.toFixed(1) || 0 }} runs/s</span
-                                    >
-                                </div>
-                                
-                                <!-- Panneau d'informations détaillées -->
-                                <div
-                                    v-if="mcShowDetailedInfo"
-                                    class="mx-2 mb-2 p-3 bg-secondary/20 rounded-md border border-secondary/30"
-                                >
-                                    <div class="text-xs font-medium text-foreground mb-2 flex items-center gap-1">
-                                        <Zap class="size-3" />
-                                        Diagnostic WebSocket
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
-                                        <div class="flex items-center gap-1">
-                                            <Wifi class="size-2.5" />
-                                            <span>Connexion:</span>
-                                            <span class="font-mono">{{ mcMetrics.connectionDelay?.toFixed(2) || '--' }}s</span>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <Clock class="size-2.5" />
-                                            <span>Traitement:</span>
-                                            <span class="font-mono">{{ mcMetrics.processingDelay?.toFixed(2) || '--' }}s</span>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <Activity class="size-2.5" />
-                                            <span>Messages:</span>
-                                            <span class="font-mono">{{ mcMetrics.messageCount }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <Clock class="size-2.5" />
-                                            <span>Durée totale:</span>
-                                            <span class="font-mono">{{ mcMetrics.totalDuration?.toFixed(1) || '--' }}s</span>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2 pt-2 border-t border-secondary/30">
-                                        <div class="text-[10px] text-muted-foreground">
-                                            <span class="font-medium">Job ID:</span>
-                                            <span class="font-mono ml-1">{{ wsService.currentJobId?.slice(-8) || '--' }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <template v-if="loading">
                             <div
                                 class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center"
