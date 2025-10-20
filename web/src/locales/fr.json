@@ -151,6 +151,12 @@
         "start_date": "Date de Début",
         "end_date": "Date de Fin"
       },
+      "price_type": {
+        "label": "Type de Prix",
+        "close": "Prix de Clôture",
+        "adj_close": "Prix Ajusté",
+        "description": "Choisissez entre le prix de clôture brut ou le prix ajusté pour les dividendes et splits"
+      },
       "buttons": {
         "run": "Lancer",
         "reset": "Réinitialiser"
@@ -209,6 +215,19 @@
       "drawdown": "Drawdown Max",
       "sharpe": "Ratio de Sharpe"
     },
+    "distributions": {
+      "mean": "Moyenne",
+      "median": "Médiane", 
+      "std": "Écart-type",
+      "volatility": "Volatilité",
+      "p5": "5e percentile",
+      "p25": "25e percentile", 
+      "p75": "75e percentile",
+      "p95": "95e percentile",
+      "statistics": "Statistiques de Distribution",
+      "showing_median": "Affichage des valeurs médianes avec plages de distribution",
+      "percentile_short": "%ile"
+    },
     "errors": {
       "backtest": "Erreur lors du backtest"
     },
@@ -257,5 +276,26 @@
     "network_error": "Erreur réseau",
     "request_timeout": "Délai de la requête dépassé",
     "retrying": "Nouvelle tentative…"
+  },
+  "todo": {
+    "title": "Liste des Tâches",
+    "add": "Ajouter",
+    "add_new": "Nouvelle Tâche",
+    "task": "Tâche",
+    "task_placeholder": "Décrivez votre tâche...",
+    "empty": "Aucune tâche pour le moment",
+    "priority": {
+      "label": "Priorité",
+      "select": "Sélectionner une priorité",
+      "low": "Faible",
+      "medium": "Moyenne", 
+      "high": "Élevée"
+    }
+  },
+  "common": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier"
   }
 }

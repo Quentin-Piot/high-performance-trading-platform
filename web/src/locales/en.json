@@ -151,6 +151,12 @@
         "start_date": "Start Date",
         "end_date": "End Date"
       },
+      "price_type": {
+        "label": "Price Type",
+        "close": "Close Price",
+        "adj_close": "Adjusted Close",
+        "description": "Choose between raw closing price or adjusted price for dividends and splits"
+      },
       "buttons": {
         "run": "Run",
         "reset": "Reset"
@@ -255,7 +261,28 @@
     "auth_login_failed": "Login failed",
     "auth_register_failed": "Registration failed",
     "network_error": "Network error",
-    "request_timeout": "Request timed out",
+    "request_timeout": "Request timeout",
     "retrying": "Retrying…"
+  },
+  "todo": {
+    "title": "Task List",
+    "add": "Add",
+    "add_new": "New Task",
+    "task": "Task",
+    "task_placeholder": "Describe your task...",
+    "empty": "No tasks yet",
+    "priority": {
+      "label": "Priority",
+      "select": "Select priority",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit"
   }
 }

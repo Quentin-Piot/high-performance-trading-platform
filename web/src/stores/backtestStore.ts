@@ -14,11 +14,6 @@ import {
   type MetricsDistribution,
   type EquityEnvelope,
 } from "@/services/backtestService";
-import {
-  submitMonteCarloJob as submitMonteCarloJobSvc,
-  submitMonteCarloJobUpload as submitMonteCarloJobUploadSvc,
-  type MonteCarloJobRequest,
-} from "@/services/monteCarloJobService";
 import { useErrorStore } from "@/stores/errorStore";
 import { buildEquityPoints, toLineData } from "@/composables/useEquitySeries";
 
@@ -50,10 +45,6 @@ export const useBacktestStore = defineStore("backtest", {
       drawdown: MetricsDistribution;
     } | null,
     equityEnvelope: null as EquityEnvelope | null,
-
-    // Worker Monte Carlo job tracking
-    monteCarloJobId: null as string | null,
-    monteCarloJobRuns: null as number | null,
   }),
   getters: {
     equitySeries(state) {
@@ -82,7 +73,6 @@ export const useBacktestStore = defineStore("backtest", {
       this.monteCarloResults = [];
       this.metricsDistribution = null;
       this.equityEnvelope = null;
-      this.monteCarloJobId = null;
     },
     async runBacktest(file: File, req: BacktestRequest) {
       this.status = "loading";
@@ -115,7 +105,7 @@ export const useBacktestStore = defineStore("backtest", {
         this.status = "error";
       }
     },
-    async runBacktestUnified(files: File[], req: BacktestRequest) {
+    async runBacktestUnified(files: File[], req: BacktestRequest, selectedDatasets?: string[]) {
       this.status = "loading";
       this.errorCode = null;
       this.errorMessage = null;
@@ -123,6 +113,7 @@ export const useBacktestStore = defineStore("backtest", {
         const resp: BacktestApiResponse = await runBacktestUnifiedSvc(
           files,
           req,
+          selectedDatasets,
         );
 
         if (isMultipleBacktestResponse(resp)) {
@@ -170,8 +161,7 @@ export const useBacktestStore = defineStore("backtest", {
             this.equityCurve = firstResult.equity_envelope.median;
           }
 
-          // Note: Keep monteCarloJobId for WebSocket connection
-          // this.monteCarloJobId = null;
+
         } else {
           // Handle single result (backward compatible)
           const curve = resp.equity_curve || [];
@@ -212,36 +202,6 @@ export const useBacktestStore = defineStore("backtest", {
         } else if (this.lastFile) {
           await this.runBacktest(this.lastFile, this.lastRequest);
         }
-      }
-    },
-
-    async submitMonteCarloJob(jobReq: MonteCarloJobRequest) {
-      try {
-        const res = await submitMonteCarloJobSvc(jobReq);
-        this.monteCarloJobId = res.job_id;
-        this.monteCarloJobRuns = jobReq.num_runs;
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
-        useErrorStore().log("error.montecarlo_submit_failed", msg, jobReq as unknown as Record<string, unknown>);
-      }
-    },
-    async submitMonteCarloJobUpload(file: File, fields: {
-      start_date: string;
-      end_date: string;
-      num_runs: number;
-      initial_capital: number;
-      strategy_params?: Record<string, any>;
-      method?: string;
-      priority?: 1 | 2 | 3 | 4;
-      timeout_seconds?: number;
-    }) {
-      try {
-        const res = await submitMonteCarloJobUploadSvc(file, fields);
-        this.monteCarloJobId = res.job_id;
-        this.monteCarloJobRuns = fields.num_runs;
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
-        useErrorStore().log("error.montecarlo_submit_failed", msg, fields as unknown as Record<string, unknown>);
       }
     },
   },
