@@ -30,7 +30,9 @@ class RSIReversionStrategy(Strategy):
         down = -delta.clip(upper=0.0)
         roll_up = up.rolling(window=window, min_periods=1).mean()
         roll_down = down.rolling(window=window, min_periods=1).mean()
-        rs = roll_up / (roll_down.replace(0, np.nan))
+        rs = roll_up / roll_down.replace(0, np.nan)
+        # Avoid division by zero and handle NaN values properly
+        rs = rs.replace([np.inf, -np.inf], np.nan)
         rsi = 100 - (100 / (1 + rs))
         rsi = rsi.fillna(50)
         return rsi
@@ -42,9 +44,11 @@ class RSIReversionStrategy(Strategy):
             data = data.set_index("date")
         data = data.sort_index()
         if params.start_date:
-            data = data.loc[data.index >= pd.to_datetime(params.start_date)]
+            mask = data.index >= pd.to_datetime(params.start_date)
+            data = data.loc[mask]
         if params.end_date:
-            data = data.loc[data.index <= pd.to_datetime(params.end_date)]
+            mask = data.index <= pd.to_datetime(params.end_date)
+            data = data.loc[mask]
         if data.empty:
             raise ValueError("No data in selected date range")
 

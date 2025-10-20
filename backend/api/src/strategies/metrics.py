@@ -43,7 +43,20 @@ def trade_summary_from_positions(
     # pair entries/exits in order
     while i_e < len(entries):
         entry_date = entries[i_e]
-        exit_date = exits[i_x] if i_x < len(exits) and exits[i_x] > entry_date else None
+        # Ensure we're comparing scalar values, not pandas objects
+        exit_date = None
+        if i_x < len(exits):
+            exit_candidate = exits[i_x]
+            # Convert to comparable format if needed
+            if hasattr(exit_candidate, 'item'):
+                exit_candidate = exit_candidate.item()
+            if hasattr(entry_date, 'item'):
+                entry_date_scalar = entry_date.item()
+            else:
+                entry_date_scalar = entry_date
+
+            if exit_candidate > entry_date_scalar:
+                exit_date = exits[i_x]
         if exit_date is None:
             exit_date = price.index[-1]
             i_e += 1

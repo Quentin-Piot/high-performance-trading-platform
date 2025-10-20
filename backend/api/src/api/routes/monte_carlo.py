@@ -151,7 +151,8 @@ async def run_monte_carlo_sync(
         # Handle both 'date' and 'Date' column names
         date_column = 'date' if 'date' in df.columns else 'Date'
         df[date_column] = pd.to_datetime(df[date_column])
-        filtered_df = df[(df[date_column] >= start_date) & (df[date_column] <= end_date)]
+        mask = (df[date_column] >= start_date) & (df[date_column] <= end_date)
+        filtered_df = df.loc[mask]
         print(f"Date column: {date_column}")
         print(f"Filtered DataFrame head:\n{filtered_df.head()}")
         print(f"Filtered DataFrame tail:\n{filtered_df.tail()}")
@@ -189,7 +190,7 @@ async def run_monte_carlo_sync(
 
         # Convert MonteCarloSummary to MonteCarloResponse format expected by frontend
         from domain.schemas.backtest import MonteCarloBacktestResult, MonteCarloResponse
-        
+
         monte_carlo_result = MonteCarloBacktestResult(
             filename=result.filename,
             method=result.method,
@@ -198,12 +199,12 @@ async def run_monte_carlo_sync(
             metrics_distribution=result.metrics_distribution,
             equity_envelope=result.equity_envelope
         )
-        
+
         response = MonteCarloResponse(
             results=[monte_carlo_result],
             aggregated_metrics=None  # Single file, no aggregation needed
         )
-        
+
         return response.model_dump()
 
     except HTTPException:
@@ -334,8 +335,9 @@ async def submit_async_job(
 
             if "date" in df.columns:
                 df["date"] = pd.to_datetime(df["date"], errors="coerce")
-                # Filter data by date range
-                filtered_df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+                # Filter by date range
+                mask = (df["date"] >= start_date) & (df["date"] <= end_date)
+                filtered_df = df.loc[mask]
 
                 if filtered_df.empty:
                     raise HTTPException(
