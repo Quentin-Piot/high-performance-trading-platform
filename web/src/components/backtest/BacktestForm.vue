@@ -26,7 +26,8 @@ import {
   RotateCcw, 
   AlertTriangle, 
   XCircle, 
-  AlertCircle
+  AlertCircle,
+  Calendar
 } from 'lucide-vue-next'
 
 const store = useBacktestStore()

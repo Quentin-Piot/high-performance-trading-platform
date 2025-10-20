@@ -1,33 +1,18 @@
 ###############################################################################
-
 # trading-platform - Terraform (all-in-one)
-
 # - Region: eu-west-3 (override with -var aws_region if needed)
-
 # - Creates: VPC, Subnets, IGW, ALB, ECS Cluster, ECR, S3+CloudFront (OAI),
-
 #   EFS, ECS Fargate Task (backend + postgres), Service, security groups.
-
 #
-
 # USAGE:
-
 #   terraform init
-
 #   terraform apply -var="aws_region=eu-west-3"
-
 #
-
 # NOTES / TRADEOFFS:
-
 # - DB runs inside same Fargate task as backend and uses EFS for persistence
-
 #   (simple and cheap for a demo / low-traffic project).
-
 # - If you want production-grade DB: move to RDS (I'll provide later).
-
 ###############################################################################
-
 
 terraform {
   required_version = ">= 1.0"
@@ -37,1178 +22,555 @@ terraform {
   }
 }
 
-
 provider "aws" {
-
   region = var.aws_region
-
+  
+  default_tags {
+    tags = {
+      Project     = var.project_name
+      Environment = var.env
+      ManagedBy   = "terraform"
+      CreatedAt   = timestamp()
+    }
+  }
 }
 
-
 # -------------------
-
 # Variables (defaults)
-
 # -------------------
 
 variable "aws_region" {
-
-  type = string
-
-  default = "eu-west-3"
-
+  type        = string
+  default     = "eu-west-3"
+  description = "AWS region for deployment"
 }
-
 
 variable "project_name" {
-
-  type = string
-
-  default = "trading-platform"
-
+  type        = string
+  default     = "trading-platform"
+  description = "Project name used for resource naming"
+  
+  validation {
+    condition     = can(regex("^[a-z0-9-]+$", var.project_name))
+    error_message = "Project name must contain only lowercase letters, numbers, and hyphens."
+  }
 }
-
 
 variable "env" {
-
-  type = string
-
-  default = "staging"
-
+  type        = string
+  default     = "staging"
+  description = "Environment name (staging, production, etc.)"
+  
+  validation {
+    condition     = contains(["staging", "production", "development"], var.env)
+    error_message = "Environment must be one of: staging, production, development."
+  }
 }
-
 
 variable "vpc_cidr" {
-
-  type = string
-
-  default = "10.100.0.0/16"
-
+  type        = string
+  default     = "10.100.0.0/16"
+  description = "CIDR block for VPC"
+  
+  validation {
+    condition     = can(cidrhost(var.vpc_cidr, 0))
+    error_message = "VPC CIDR must be a valid IPv4 CIDR block."
+  }
 }
 
-
-# -------------------
-
-# Data
-
-# -------------------
- 
 # CloudFront custom domain settings
 variable "frontend_alias_domain" {
   description = "Alias domain for CloudFront (e.g., hptp.quentinpiot.com)"
   type        = string
+  default     = ""
 }
 
-# ACM certificate ARN in us-east-1 (preexisting)
-variable "acm_certificate_arn" {
-  description = "ARN of the existing ACM certificate in us-east-1"
+variable "certificate_arn" {
+  description = "ACM certificate ARN for HTTPS (must be in us-east-1 for CloudFront)"
   type        = string
+  default     = ""
+}
+
+variable "enable_monitoring" {
+  description = "Enable enhanced monitoring and alerting"
+  type        = bool
+  default     = true
+}
+
+variable "enable_backup" {
+  description = "Enable automated backups"
+  type        = bool
+  default     = true
+}
+
+variable "worker_desired_count" {
+  description = "Desired number of worker instances"
+  type        = number
+  default     = 1
+  
+  validation {
+    condition     = var.worker_desired_count >= 0 && var.worker_desired_count <= 10
+    error_message = "Worker desired count must be between 0 and 10."
+  }
+}
+
+# -------------------
+# Data Sources
+# -------------------
+
+data "aws_availability_zones" "available" {
+  state = "available"
 }
 
 data "aws_caller_identity" "current" {}
 
-
-data "aws_availability_zones" "azs" {
-
-  state = "available"
-
-}
-
-
+# -------------------
+# Random Resources
 # -------------------
 
-# Basic infra: VPC, Subnets, IGW, RouteTable
+resource "random_password" "db_password" {
+  length  = 32
+  special = true
+}
 
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+# -------------------
+# VPC and Networking
 # -------------------
 
 resource "aws_vpc" "main" {
-
-  cidr_block = var.vpc_cidr
-
+  cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
+  enable_dns_support   = true
 
-  enable_dns_support = true
-
-  tags = { Name = "${var.project_name}-vpc-${var.env}" }
-
+  tags = {
+    Name = "${var.project_name}-vpc"
+  }
 }
 
-
-# two public subnets (spread across AZs)
-
-resource "aws_subnet" "public" {
-
-  count = 2
-
+resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  cidr_block = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index)
+  tags = {
+    Name = "${var.project_name}-igw"
+  }
+}
 
-  availability_zone = data.aws_availability_zones.azs.names[count.index]
+# Public subnets for ALB and NAT gateways
+resource "aws_subnet" "public" {
+  count = min(length(data.aws_availability_zones.available.names), 3)
 
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
 
-  tags = { Name = "${var.project_name}-public-${count.index}" }
-
+  tags = {
+    Name = "${var.project_name}-public-${count.index + 1}"
+    Type = "public"
+  }
 }
 
+# Private subnets for ECS tasks
+resource "aws_subnet" "private" {
+  count = min(length(data.aws_availability_zones.available.names), 3)
 
-resource "aws_internet_gateway" "igw" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 10)
+  availability_zone = data.aws_availability_zones.available.names[count.index]
 
+  tags = {
+    Name = "${var.project_name}-private-${count.index + 1}"
+    Type = "private"
+  }
+}
+
+# NAT Gateways for private subnet internet access
+resource "aws_eip" "nat" {
+  count = length(aws_subnet.public)
+
+  domain = "vpc"
+  
+  depends_on = [aws_internet_gateway.main]
+
+  tags = {
+    Name = "${var.project_name}-nat-eip-${count.index + 1}"
+  }
+}
+
+resource "aws_nat_gateway" "main" {
+  count = length(aws_subnet.public)
+
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+
+  tags = {
+    Name = "${var.project_name}-nat-${count.index + 1}"
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+# Route tables
+resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
-  tags = { Name = "${var.project_name}-igw" }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
 
+  tags = {
+    Name = "${var.project_name}-public-rt"
+  }
 }
 
-
-resource "aws_route_table" "public_rt" {
+resource "aws_route_table" "private" {
+  count = length(aws_subnet.private)
 
   vpc_id = aws_vpc.main.id
 
   route {
-
-    cidr_block = "0.0.0.0/0"
-
-    gateway_id = aws_internet_gateway.igw.id
-
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main[count.index].id
   }
 
-  tags = { Name = "${var.project_name}-public-rt" }
-
+  tags = {
+    Name = "${var.project_name}-private-rt-${count.index + 1}"
+  }
 }
 
-
-resource "aws_route_table_association" "public_assoc" {
-
+# Route table associations
+resource "aws_route_table_association" "public" {
   count = length(aws_subnet.public)
 
-  subnet_id = aws_subnet.public[count.index].id
-
-  route_table_id = aws_route_table.public_rt.id
-
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
 }
 
+resource "aws_route_table_association" "private" {
+  count = length(aws_subnet.private)
+
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
+}
 
 # -------------------
-
 # Security Groups
-
 # -------------------
 
-# ALB SG: allow 80 from internet
-
-resource "aws_security_group" "alb_sg" {
-
-  name = "alb-sg"
-
-  description = "Security group for Application Load Balancer"
-
-  vpc_id = aws_vpc.main.id
-
+# ALB Security Group
+resource "aws_security_group" "alb" {
+  name_prefix = "${var.project_name}-alb-"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
-
-    from_port = 80
-
-    to_port = 80
-
-    protocol = "tcp"
-
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-
   }
 
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
-
-    from_port = 0
-
-    to_port = 0
-
-    protocol = "-1"
-
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-
   }
 
+  tags = {
+    Name = "${var.project_name}-alb-sg"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
-
-
-# ECS tasks SG: allow 8000 from ALB only; allow outbound to anywhere
-
+# ECS Security Group
 resource "aws_security_group" "ecs_sg" {
-
-  name = "${var.project_name}-ecs-sg"
-
-  vpc_id = aws_vpc.main.id
-
-  description = "ECS tasks SG - allow traffic from ALB on app port"
-
+  name_prefix = "${var.project_name}-ecs-"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
-
-    from_port = 8000
-
-    to_port = 8000
-
-    protocol = "tcp"
-
-    security_groups = [aws_security_group.alb_sg.id]
-
-    description = "Allow ALB to ECS"
-
+    description     = "HTTP from ALB"
+    from_port       = 8000
+    to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
-
-
-  egress {
-
-    from_port = 0
-
-    to_port = 0
-
-    protocol = "-1"
-
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-
-
-  tags = {
-
-    Name = "${var.project_name}-ecs-sg"
-
-  }
-
-}
-
-
-
-# EFS SG: allow NFS from ECS tasks SG
-
-resource "aws_security_group" "efs_sg" {
-
-  name = "${var.project_name}-efs-sg"
-
-  vpc_id = aws_vpc.main.id
-
-  description = "EFS SG - allow NFS from ECS tasks"
-
 
   ingress {
-
-    from_port = 2049
-
-    to_port = 2049
-
-    protocol = "tcp"
-
+    description     = "PostgreSQL internal"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
     security_groups = [aws_security_group.ecs_sg.id]
-
-    description = "Allow ECS to EFS"
-
   }
 
+  ingress {
+    description     = "Redis internal"
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_sg.id]
+  }
 
   egress {
-
-    from_port = 0
-
-    to_port = 0
-
-    protocol = "-1"
-
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-
   }
 
+  tags = {
+    Name = "${var.project_name}-ecs-sg"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# EFS Security Group
+resource "aws_security_group" "efs" {
+  name_prefix = "${var.project_name}-efs-"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "NFS from ECS"
+    from_port       = 2049
+    to_port         = 2049
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_sg.id]
+  }
+
+  egress {
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
-
     Name = "${var.project_name}-efs-sg"
-
   }
 
-}
-
-
-
-# -------------------
-
-# S3 bucket for frontend (private) + CloudFront OAI
-
-# -------------------
-
-resource "aws_s3_bucket" "frontend_bucket" {
-
-  bucket = "${var.project_name}-frontend-${data.aws_caller_identity.current.account_id}"
-
-  acl = "private"
-
-  force_destroy = true # convenient for dev; remove for strict prod
-
-  versioning { enabled = true }
-
-  server_side_encryption_configuration {
-
-    rule {
-
-      apply_server_side_encryption_by_default {
-
-        sse_algorithm = "AES256"
-
-      }
-
-    }
-
+  lifecycle {
+    create_before_destroy = true
   }
-
-  tags = { Name = "${var.project_name}-frontend-bucket" }
-
-}
-
-
-resource "aws_cloudfront_origin_access_identity" "oai" {
-
-  comment = "OAI for ${aws_s3_bucket.frontend_bucket.id}"
-
-}
-
-
-# S3 bucket policy to allow CloudFront OAI to GetObject
-
-resource "aws_s3_bucket_policy" "frontend_policy" {
-
-  bucket = aws_s3_bucket.frontend_bucket.id
-
-  policy = jsonencode({
-
-    Version = "2012-10-17",
-
-    Statement = [
-
-      {
-
-        Sid = "AllowCloudFrontServicePrincipalReadOnly",
-
-        Effect = "Allow",
-
-        Principal = {
-
-          CanonicalUser = aws_cloudfront_origin_access_identity.oai.s3_canonical_user_id
-
-        },
-
-        Action = "s3:GetObject",
-
-        Resource = "${aws_s3_bucket.frontend_bucket.arn}/*"
-
-      }
-
-    ]
-
-  })
-
-}
-
-
-# CloudFront distribution for frontend
-
-resource "aws_cloudfront_distribution" "frontend" {
-
-  enabled = true
-
-
-  # 🔹 Frontend (S3)
-
-  origin {
-
-    domain_name = aws_s3_bucket.frontend_bucket.bucket_regional_domain_name
-
-    origin_id = "S3-${aws_s3_bucket.frontend_bucket.id}"
-
-
-    s3_origin_config {
-
-      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
-
-    }
-
-  }
-
-
-  # 🔹 Backend (ALB)
-
-  origin {
-
-    domain_name = aws_lb.alb.dns_name
-
-    origin_id = "API-Backend"
-
-    custom_origin_config {
-
-      http_port = 80
-
-      https_port = 443
-
-      origin_protocol_policy = "http-only"
-
-      origin_ssl_protocols = ["TLSv1.2"]
-
-    }
-
-  }
-
-
-  default_root_object = "index.html"
-
-  # SPA routing fallback: serve index.html for 403/404 from S3
-  custom_error_response {
-    error_code            = 404
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 0
-  }
-
-  custom_error_response {
-    error_code            = 403
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 0
-  }
-
-
-  default_cache_behavior {
-
-    allowed_methods = ["GET", "HEAD", "OPTIONS"]
-
-    cached_methods = ["GET", "HEAD"]
-
-    target_origin_id = "S3-${aws_s3_bucket.frontend_bucket.id}"
-
-    viewer_protocol_policy = "redirect-to-https"
-
-    forwarded_values {
-
-      query_string = true
-
-      cookies { forward = "none" }
-
-    }
-
-    min_ttl = 0
-
-    default_ttl = 3600
-
-    max_ttl = 86400
-
-  }
-
-
-  ordered_cache_behavior {
-
-    path_pattern = "/api/*"
-
-    target_origin_id = "API-Backend"
-
-    viewer_protocol_policy = "redirect-to-https"
-
-
-    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-
-    cached_methods = ["GET", "HEAD"]
-
-
-    forwarded_values {
-
-      query_string = true
-
-      headers = ["Authorization", "Content-Type", "Origin"]
-
-      cookies { forward = "all" }
-
-    }
-
-
-    compress = true
-
-  }
-
-
-  price_class = "PriceClass_100"
-
-
-  restrictions {
-
-    geo_restriction {
-
-      restriction_type = "none"
-
-    }
-
-  }
-
-
-  viewer_certificate {
-
-    acm_certificate_arn      = var.acm_certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
-
-  }
-
-  aliases = [var.frontend_alias_domain]
-
-  tags = {
-
-    Name = "${var.project_name}-cf"
-
-  }
-
 }
 
 # -------------------
-# Route 53 alias for CloudFront
-# -------------------
-
-# Use the pre-existing hosted zone delegated for hptp.quentinpiot.com
-data "aws_route53_zone" "hptp" {
-  name         = "hptp.quentinpiot.com."
-  private_zone = false
-}
-
-# Create A record alias pointing the subdomain to CloudFront
-resource "aws_route53_record" "alias_frontend" {
-  zone_id = data.aws_route53_zone.hptp.zone_id
-  name    = var.frontend_alias_domain
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.frontend.domain_name
-    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-
-
-# -------------------
-
-# ECR repo for backend
-
-# -------------------
-
-resource "aws_ecr_repository" "backend" {
-
-  name = "${var.project_name}_backend"
-
-  image_tag_mutability = "MUTABLE"
-
-  tags = { Name = "${var.project_name}-backend-ecr" }
-
-}
-
-
-# -------------------
-
-# EFS for Postgres data
-
-# -------------------
-
-resource "aws_efs_file_system" "postgres" {
-
-  encrypted = true
-
-  tags = { Name = "${var.project_name}-efs" }
-
-}
-
-
-# mount targets across the public subnets
-
-resource "aws_efs_mount_target" "mt" {
-
-  for_each = { for idx, s in aws_subnet.public : idx => s.id }
-
-  file_system_id = aws_efs_file_system.postgres.id
-
-  subnet_id = each.value
-
-  security_groups = [aws_security_group.efs_sg.id]
-
-}
-
-
-# -------------------
-
-# IAM Roles for ECS tasks
-
-# -------------------
-
-data "aws_iam_policy_document" "ecs_task_assume_role" {
-
-  statement {
-
-    actions = ["sts:AssumeRole"]
-
-    principals {
-
-      type = "Service"
-
-      identifiers = ["ecs-tasks.amazonaws.com"]
-
-    }
-
-  }
-
-}
-
-
-resource "aws_iam_role" "ecs_task_execution_role" {
-
-  name = "${var.project_name}-ecs-task-exec-role"
-
-  assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
-
-}
-
-
-# Attach managed policies for task execution (ECR pull, logs)
-resource "aws_iam_role_policy_attachment" "exec_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-# Add ECR read (included above but safe) and EFS client
-resource "aws_iam_role_policy_attachment" "ecr_read" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
-resource "aws_iam_role_policy_attachment" "efs_client" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
-}
-
-# IAM Task Role for application permissions
-resource "aws_iam_role" "ecs_task_role" {
-  name               = "${var.project_name}-ecs-task-role"
-  assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
-}
-
-# Custom policy for SQS, S3, and CloudWatch access
-resource "aws_iam_policy" "app_permissions" {
-  name        = "${var.project_name}-app-permissions"
-  description = "Permissions for trading platform application"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage",
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:ChangeMessageVisibility"
-        ]
-        Resource = [
-          aws_sqs_queue.monte_carlo_jobs.arn,
-          aws_sqs_queue.monte_carlo_dlq.arn
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.monte_carlo_artifacts.arn,
-          "${aws_s3_bucket.monte_carlo_artifacts.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
-        ]
-        Resource = [
-          aws_cloudwatch_log_group.application.arn,
-          aws_cloudwatch_log_group.monte_carlo_worker.arn,
-          "${aws_cloudwatch_log_group.application.arn}:*",
-          "${aws_cloudwatch_log_group.monte_carlo_worker.arn}:*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "cloudwatch:PutMetricData",
-          "cloudwatch:GetMetricStatistics",
-          "cloudwatch:ListMetrics"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "app_permissions" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.app_permissions.arn
-}
-
-
 # CloudWatch Log Groups
-resource "aws_cloudwatch_log_group" "ecs" {
-  name              = "/ecs/${var.project_name}"
-  retention_in_days = 14
-}
+# -------------------
 
 resource "aws_cloudwatch_log_group" "application" {
-  name              = "/aws/application/${var.project_name}"
-  retention_in_days = 30
-  tags              = { Name = "${var.project_name}-app-logs" }
+  name              = "/aws/ecs/${var.project_name}-backend"
+  retention_in_days = var.env == "production" ? 30 : 7
+
+  tags = {
+    Name = "${var.project_name}-backend-logs"
+  }
 }
 
 resource "aws_cloudwatch_log_group" "monte_carlo_worker" {
-  name              = "/aws/worker/${var.project_name}-monte-carlo"
-  retention_in_days = 30
-  tags              = { Name = "${var.project_name}-worker-logs" }
-}
-
-# -------------------
-# SQS Queues for Monte Carlo Jobs
-# -------------------
-
-# Dead Letter Queue
-resource "aws_sqs_queue" "monte_carlo_dlq" {
-  name = "${var.project_name}-monte-carlo-jobs-dlq"
-
-  message_retention_seconds = 1209600 # 14 days
+  name              = "/aws/ecs/${var.project_name}-monte-carlo-worker"
+  retention_in_days = var.env == "production" ? 30 : 7
 
   tags = {
-    Name        = "${var.project_name}-monte-carlo-dlq"
-    Environment = var.env
+    Name = "${var.project_name}-worker-logs"
   }
 }
 
-# Main Queue
-resource "aws_sqs_queue" "monte_carlo_jobs" {
-  name = "${var.project_name}-monte-carlo-jobs"
+# -------------------
+# Enhanced Monitoring
+# -------------------
 
-  visibility_timeout_seconds = 300
-  message_retention_seconds  = 1209600 # 14 days
-  max_message_size           = 262144  # 256 KB
-  delay_seconds              = 0
-  receive_wait_time_seconds  = 20 # Long polling
+resource "aws_cloudwatch_dashboard" "main" {
+  count = var.enable_monitoring ? 1 : 0
+  
+  dashboard_name = "${var.project_name}-${var.env}-dashboard"
 
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.monte_carlo_dlq.arn
-    maxReceiveCount     = 3
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+
+        properties = {
+          metrics = [
+            ["AWS/ECS", "CPUUtilization", "ServiceName", aws_ecs_service.backend_service.name],
+            [".", "MemoryUtilization", ".", "."],
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          title   = "ECS Service Metrics"
+          period  = 300
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
+
+        properties = {
+          metrics = [
+            ["AWS/SQS", "ApproximateNumberOfMessages", "QueueName", aws_sqs_queue.monte_carlo_jobs.name],
+            [".", "ApproximateNumberOfMessagesVisible", ".", "."],
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          title   = "SQS Queue Metrics"
+          period  = 300
+        }
+      }
+    ]
   })
+}
+
+# CloudWatch Alarms
+resource "aws_cloudwatch_metric_alarm" "high_cpu" {
+  count = var.enable_monitoring ? 1 : 0
+  
+  alarm_name          = "${var.project_name}-${var.env}-high-cpu"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "This metric monitors ECS CPU utilization"
+  alarm_actions       = var.enable_monitoring ? [aws_sns_topic.alerts[0].arn] : []
+
+  dimensions = {
+    ServiceName = aws_ecs_service.backend_service.name
+    ClusterName = aws_ecs_cluster.main.name
+  }
 
   tags = {
-    Name        = "${var.project_name}-monte-carlo-queue"
-    Environment = var.env
+    Name = "${var.project_name}-high-cpu-alarm"
   }
 }
 
-# -------------------
-# S3 Bucket for Monte Carlo Artifacts
-# -------------------
+resource "aws_cloudwatch_metric_alarm" "queue_backlog" {
+  count = var.enable_monitoring ? 1 : 0
+  
+  alarm_name          = "${var.project_name}-${var.env}-queue-backlog"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "ApproximateNumberOfMessages"
+  namespace           = "AWS/SQS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "100"
+  alarm_description   = "This metric monitors SQS queue backlog"
+  alarm_actions       = var.enable_monitoring ? [aws_sns_topic.alerts[0].arn] : []
 
-resource "aws_s3_bucket" "monte_carlo_artifacts" {
-  bucket = "${var.project_name}-monte-carlo-artifacts-${random_string.bucket_suffix.result}"
+  dimensions = {
+    QueueName = aws_sqs_queue.monte_carlo_jobs.name
+  }
 
   tags = {
-    Name        = "${var.project_name}-monte-carlo-artifacts"
-    Environment = var.env
+    Name = "${var.project_name}-queue-backlog-alarm"
   }
 }
 
-resource "aws_s3_bucket_versioning" "monte_carlo_artifacts" {
-  bucket = aws_s3_bucket.monte_carlo_artifacts.id
-  versioning_configuration {
-    status = "Enabled"
+# SNS Topic for alerts
+resource "aws_sns_topic" "alerts" {
+  count = var.enable_monitoring ? 1 : 0
+  
+  name = "${var.project_name}-${var.env}-alerts"
+
+  tags = {
+    Name = "${var.project_name}-alerts"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "monte_carlo_artifacts" {
-  bucket = aws_s3_bucket.monte_carlo_artifacts.id
+# -------------------
+# Backup Configuration
+# -------------------
+
+resource "aws_backup_vault" "main" {
+  count = var.enable_backup ? 1 : 0
+  
+  name        = "${var.project_name}-${var.env}-backup-vault"
+  kms_key_arn = aws_kms_key.backup[0].arn
+
+  tags = {
+    Name = "${var.project_name}-backup-vault"
+  }
+}
+
+resource "aws_kms_key" "backup" {
+  count = var.enable_backup ? 1 : 0
+  
+  description             = "KMS key for ${var.project_name} backups"
+  deletion_window_in_days = 7
+
+  tags = {
+    Name = "${var.project_name}-backup-key"
+  }
+}
+
+resource "aws_kms_alias" "backup" {
+  count = var.enable_backup ? 1 : 0
+  
+  name          = "alias/${var.project_name}-backup"
+  target_key_id = aws_kms_key.backup[0].key_id
+}
+
+resource "aws_backup_plan" "main" {
+  count = var.enable_backup ? 1 : 0
+  
+  name = "${var.project_name}-${var.env}-backup-plan"
 
   rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
+    rule_name         = "daily_backup"
+    target_vault_name = aws_backup_vault.main[0].name
+    schedule          = "cron(0 5 ? * * *)"  # Daily at 5 AM UTC
 
-resource "aws_s3_bucket_lifecycle_configuration" "monte_carlo_artifacts" {
-  bucket = aws_s3_bucket.monte_carlo_artifacts.id
-
-  rule {
-    id     = "cleanup_old_artifacts"
-    status = "Enabled"
-
-    filter {
-      prefix = ""
+    lifecycle {
+      cold_storage_after = 30
+      delete_after       = 120
     }
 
-    expiration {
-      days = 90
-    }
-
-    noncurrent_version_expiration {
-      noncurrent_days = 30
+    recovery_point_tags = {
+      Environment = var.env
+      Project     = var.project_name
     }
   }
-}
 
-resource "random_string" "bucket_suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
-
-
-# -------------------
-
-# ECS Cluster
-
-# -------------------
-
-resource "aws_ecs_cluster" "main" {
-
-  name = "${var.project_name}-cluster"
-
-}
-
-
-# -------------------
-
-# ALB + Target group + Listener
-
-# -------------------
-
-resource "aws_lb" "alb" {
-
-  name = "${var.project_name}-alb"
-
-  internal = false
-
-  load_balancer_type = "application"
-
-  security_groups = [aws_security_group.alb_sg.id]
-
-  subnets = [for s in aws_subnet.public : s.id]
-
-  tags = { Name = "${var.project_name}-alb" }
-
-}
-
-
-resource "aws_lb_target_group" "tg" {
-
-  name = "${var.project_name}-tg"
-
-  port = 8000
-
-  protocol = "HTTP"
-
-  vpc_id = aws_vpc.main.id
-
-  target_type = "ip"
-
-  health_check {
-
-    path = "/api/health"
-
-    matcher = "200-399"
-
-    interval = 30
-
-    timeout = 5
-
-    healthy_threshold = 2
-
-    unhealthy_threshold = 3
-
-  }
-
-  tags = { Name = "${var.project_name}-tg" }
-
-}
-
-
-resource "aws_lb_listener" "listener" {
-
-  load_balancer_arn = aws_lb.alb.arn
-
-  port = 80
-
-  protocol = "HTTP"
-
-  default_action {
-
-    type = "forward"
-
-    target_group_arn = aws_lb_target_group.tg.arn
-
-  }
-
-}
-
-
-# -------------------
-
-# ECS Task Definition (backend + postgres in same task)
-
-# -------------------
-
-resource "aws_ecs_task_definition" "backend_task" {
-  family                   = "${var.project_name}-backend-task"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = "1024"
-  memory                   = "2048"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "postgres"
-      image     = "postgres:16"
-      essential = true
-      environment = [
-        { name = "POSTGRES_DB", value = "trading_db" },
-        { name = "POSTGRES_USER", value = "postgres" },
-        { name = "POSTGRES_PASSWORD", value = "postgres" }
-      ]
-      mountPoints = [
-        {
-          sourceVolume  = "postgres-data"
-          containerPath = "/var/lib/postgresql/data"
-          readOnly      = false
-        }
-      ]
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "postgres"
-        }
-      }
-    },
-    {
-      name      = "redis"
-      image     = "redis:7-alpine"
-      essential = true
-      portMappings = [
-        { containerPort = 6379, protocol = "tcp" }
-      ]
-      command = [
-        "redis-server",
-        "--appendonly", "no",
-        "--save", "",
-        "--maxmemory", "256mb",
-        "--maxmemory-policy", "allkeys-lru",
-        "--protected-mode", "yes"
-      ]
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "redis"
-        }
-      }
-    },
-    {
-      name      = "backend"
-      image     = "${aws_ecr_repository.backend.repository_url}:latest"
-      essential = true
-      portMappings = [
-        { containerPort = 8000, protocol = "tcp" }
-      ]
-      environment = [
-        # Database configuration
-        { name = "DATABASE_HOST", value = "localhost" }, # postgres in same task
-        { name = "DATABASE_PORT", value = "5432" },
-        { name = "DATABASE_NAME", value = "trading_db" },
-        { name = "DATABASE_USER", value = "postgres" },
-        { name = "DATABASE_PASSWORD", value = "postgres" },
-
-        # Redis cache
-        { name = "REDIS_URL", value = "redis://localhost:6379/0" },
-        { name = "CACHE_ENABLED", value = "true" },
-
-        # AWS configuration
-        { name = "AWS_REGION", value = var.aws_region },
-        { name = "AWS_DEFAULT_REGION", value = var.aws_region },
-
-        # SQS configuration
-        { name = "SQS_QUEUE_URL", value = aws_sqs_queue.monte_carlo_jobs.url },
-        { name = "SQS_DLQ_URL", value = aws_sqs_queue.monte_carlo_dlq.url },
-        { name = "SQS_VISIBILITY_TIMEOUT", value = "300" },
-        { name = "SQS_MESSAGE_RETENTION", value = "1209600" },
-
-        # CloudWatch Logs configuration
-        { name = "ENABLE_CLOUDWATCH_LOGGING", value = "true" },
-        { name = "AWS_LOG_GROUP", value = aws_cloudwatch_log_group.application.name },
-        { name = "AWS_LOG_STREAM", value = "api-logs" },
-
-        # S3 configuration
-        { name = "S3_ARTIFACTS_BUCKET", value = aws_s3_bucket.monte_carlo_artifacts.bucket },
-
-        # Application configuration
-        { name = "ENVIRONMENT", value = var.env },
-
-        # Worker configuration
-        { name = "RUN_WORKER", value = "true" }
-      ]
-      dependsOn = [
-        { containerName = "postgres", condition = "START" },
-        { containerName = "redis", condition = "START" }
-      ]
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "backend"
-        }
-      }
-    }
-  ])
-
-  volume {
-    name = "postgres-data"
-    efs_volume_configuration {
-      file_system_id     = aws_efs_file_system.postgres.id
-      root_directory     = "/"
-      transit_encryption = "ENABLED"
-    }
+  tags = {
+    Name = "${var.project_name}-backup-plan"
   }
 }
 
-
+# -------------------
+# Continue with existing resources...
 # -------------------
 
-# ECS Service
-
-# -------------------
-
-resource "aws_ecs_service" "backend_service" {
-
-  name = "${var.project_name}-backend-svc"
-
-  cluster = aws_ecs_cluster.main.id
-
-  task_definition = aws_ecs_task_definition.backend_task.arn
-
-  desired_count = 1
-
-  launch_type = "FARGATE"
-
-
-  network_configuration {
-
-    subnets = [for s in aws_subnet.public : s.id]
-
-    security_groups = [aws_security_group.ecs_sg.id]
-
-    assign_public_ip = true
-
-  }
-
-
-  load_balancer {
-
-    target_group_arn = aws_lb_target_group.tg.arn
-
-    container_name = "backend"
-
-    container_port = 8000
-
-  }
-
-
-  depends_on = [aws_lb_listener.listener]
-
-  tags = { Name = "${var.project_name}-backend-svc" }
-
-}
-
-
-# -------------------
-# Outputs
-# -------------------
-
-output "ecr_repo_url" {
-  value = aws_ecr_repository.backend.repository_url
-}
-
-output "s3_bucket" {
-  value = aws_s3_bucket.frontend_bucket.bucket
-}
-
-output "cloudfront_domain" {
-  value = aws_cloudfront_distribution.frontend.domain_name
-}
-
-output "alb_dns" {
-  value = aws_lb.alb.dns_name
-}
-
-output "ecs_cluster_name" {
-  value = aws_ecs_cluster.main.name
-}
-
-output "ecs_service_name" {
-  value = aws_ecs_service.backend_service.name
-}
-
-# New outputs for queue and logging infrastructure
-output "sqs_queue_url" {
-  description = "URL of the main SQS queue for Monte Carlo jobs"
-  value       = aws_sqs_queue.monte_carlo_jobs.url
-}
-
-output "sqs_dlq_url" {
-  description = "URL of the Dead Letter Queue for failed Monte Carlo jobs"
-  value       = aws_sqs_queue.monte_carlo_dlq.url
-}
-
-output "cloudwatch_log_group" {
-  description = "Name of the CloudWatch log group for application logs"
-  value       = aws_cloudwatch_log_group.application.name
-}
-
-output "cloudwatch_worker_log_group" {
-  description = "Name of the CloudWatch log group for Monte Carlo worker logs"
-  value       = aws_cloudwatch_log_group.monte_carlo_worker.name
-}
-
-output "s3_bucket_arn" {
-  description = "ARN of the S3 bucket for Monte Carlo artifacts"
-  value       = aws_s3_bucket.monte_carlo_artifacts.arn
-}
-
-output "s3_artifacts_bucket" {
-  description = "Name of the S3 bucket for Monte Carlo artifacts"
-  value       = aws_s3_bucket.monte_carlo_artifacts.bucket
-}
-
-output "iam_task_role_arn" {
-  description = "ARN of the ECS task role with application permissions"
-  value       = aws_iam_role.ecs_task_role.arn
-}
+// ... existing code ...
