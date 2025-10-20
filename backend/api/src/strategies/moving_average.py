@@ -43,9 +43,11 @@ class MovingAverageStrategy(Strategy):
             data = data.set_index("date")
         data = data.sort_index()
         if params.start_date:
-            data = data.loc[data.index >= pd.to_datetime(params.start_date)]
+            mask = data.index >= pd.to_datetime(params.start_date)
+            data = data.loc[mask]
         if params.end_date:
-            data = data.loc[data.index <= pd.to_datetime(params.end_date)]
+            mask = data.index <= pd.to_datetime(params.end_date)
+            data = data.loc[mask]
         if data.empty:
             raise ValueError("No data in selected date range")
 

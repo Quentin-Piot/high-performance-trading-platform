@@ -103,7 +103,8 @@ async def backtest_get(
             ) from e
 
         # Filter by date range
-        df = df[(df["date"] >= start_dt) & (df["date"] <= end_dt)]
+        mask = (df["date"] >= start_dt) & (df["date"] <= end_dt)
+        df = df.loc[mask]
 
         if df.empty:
             raise HTTPException(
@@ -255,8 +256,9 @@ async def backtest_post(
                     detail="Invalid date format. Use YYYY-MM-DD"
                 ) from e
 
-            # Filter by date range
-            df = df[(df["date"] >= start_dt) & (df["date"] <= end_dt)]
+            # Filter data by date range
+            mask = (df["date"] >= start_dt) & (df["date"] <= end_dt)
+            df = df.loc[mask]
 
             if df.empty:
                 raise HTTPException(

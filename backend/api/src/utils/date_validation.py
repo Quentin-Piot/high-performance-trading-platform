@@ -103,7 +103,8 @@ def validate_date_range_for_csv_bytes(
             raise ValueError("No valid dates found in CSV")
 
         # Filter by date range
-        filtered_df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+        mask = (df["date"] >= start_date) & (df["date"] <= end_date)
+        filtered_df = df.loc[mask]
 
         # Convert filtered DataFrame back to CSV bytes
         csv_buffer = io.BytesIO()
