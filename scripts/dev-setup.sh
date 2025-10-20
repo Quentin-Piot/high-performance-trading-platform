@@ -45,10 +45,10 @@ fi
 
 # Démarrer LocalStack en arrière-plan
 echo "🐳 Démarrage de LocalStack..."
-if pgrep -f "localstack" > /dev/null; then
+if localstack status &> /dev/null; then
     echo "⚠️  LocalStack semble déjà en cours d'exécution. Arrêt..."
-    pkill -f localstack || true
-    sleep 2
+    localstack stop
+    sleep 5
 fi
 
 # Configurer les variables d'environnement pour LocalStack
@@ -61,9 +61,9 @@ localstack start --detached
 
 # Attendre que LocalStack soit prêt
 echo "⏳ Attente de LocalStack..."
-timeout=60
+timeout=120
 counter=0
-until curl -s http://localhost:4566/_localstack/health | grep -q '"sqs": "available"' || [ $counter -eq $timeout ]; do
+until curl -s http://localhost:4566/_localstack/health | grep -q '"sqs": "running"' || [ $counter -eq $timeout ]; do
     echo "Attente de LocalStack... ($counter/$timeout)"
     sleep 2
     ((counter++))

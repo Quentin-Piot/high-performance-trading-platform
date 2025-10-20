@@ -170,8 +170,8 @@ export const useBacktestStore = defineStore("backtest", {
             this.equityCurve = firstResult.equity_envelope.median;
           }
 
-          // Clear Monte Carlo job ID when results are received
-          this.monteCarloJobId = null;
+          // Note: Keep monteCarloJobId for WebSocket connection
+          // this.monteCarloJobId = null;
         } else {
           // Handle single result (backward compatible)
           const curve = resp.equity_curve || [];
