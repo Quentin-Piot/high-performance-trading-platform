@@ -30,13 +30,13 @@ class GoogleOAuthService:
         # Check if we're in development mode with LocalStack AND using mock OAuth
         # Use mock ONLY when Google OAuth credentials are not configured
         self.is_development = (
-            self.settings.env == "development" and 
-            hasattr(self.settings, 'aws_endpoint_url') and 
+            self.settings.env == "development" and
+            hasattr(self.settings, 'aws_endpoint_url') and
             self.settings.aws_endpoint_url == "http://localhost:4566" and
             # Use mock only if Google OAuth credentials are not configured
             (not self.client_id or not self.client_secret)
         )
-        
+
         # Debug logging
         logger.info(f"GoogleOAuthService initialized - Environment: {self.settings.env}, "
                    f"AWS Endpoint: {getattr(self.settings, 'aws_endpoint_url', 'None')}, "
@@ -45,10 +45,10 @@ class GoogleOAuthService:
     def get_authorization_url(self, state: str | None = None) -> str:
         """
         Generate Google OAuth authorization URL.
-        
+
         Args:
             state: Optional state parameter for CSRF protection
-            
+
         Returns:
             str: Authorization URL
         """
@@ -69,13 +69,13 @@ class GoogleOAuthService:
     async def exchange_code_for_tokens(self, code: str) -> dict[str, Any]:
         """
         Exchange authorization code for access and ID tokens.
-        
+
         Args:
             code: Authorization code from Google
-            
+
         Returns:
             Dict containing tokens and user info
-            
+
         Raises:
             Exception: If token exchange fails
         """
@@ -150,10 +150,10 @@ class GoogleOAuthService:
     async def _get_user_info(self, access_token: str) -> dict[str, Any]:
         """
         Get user information from Google API.
-        
+
         Args:
             access_token: Google access token
-            
+
         Returns:
             Dict containing user information
         """
@@ -182,10 +182,10 @@ class GoogleOAuthService:
     async def refresh_access_token(self, refresh_token: str) -> dict[str, Any] | None:
         """
         Refresh access token using refresh token.
-        
+
         Args:
             refresh_token: Google refresh token
-            
+
         Returns:
             Dict containing new tokens or None if failed
         """
@@ -208,10 +208,10 @@ class GoogleOAuthService:
     def verify_id_token(self, id_token_str: str) -> dict[str, Any] | None:
         """
         Verify Google ID token.
-        
+
         Args:
             id_token_str: ID token string
-            
+
         Returns:
             Dict containing token claims or None if invalid
         """

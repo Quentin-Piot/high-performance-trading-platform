@@ -7,7 +7,6 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from infrastructure.db import get_session
 from fastapi import (
     APIRouter,
     Depends,
@@ -21,7 +20,8 @@ from fastapi import (
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.simple_auth import get_current_user_simple, SimpleUser
+from core.simple_auth import SimpleUser, get_current_user_simple
+from infrastructure.db import get_session
 from infrastructure.repositories.backtest_history_repository import (
     BacktestHistoryRepository,
 )

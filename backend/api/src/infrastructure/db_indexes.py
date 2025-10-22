@@ -163,7 +163,7 @@ class IndexManager:
 
             # Get row count with a separate, safer query
             count_query = text(f"""
-                SELECT count(*) as row_count 
+                SELECT count(*) as row_count
                 FROM {table_name}
             """)
 

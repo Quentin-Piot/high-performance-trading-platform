@@ -25,7 +25,6 @@ import {
     Globe,
     Menu,
     X,
-    User,
     LogOut,
     Settings,
     History,

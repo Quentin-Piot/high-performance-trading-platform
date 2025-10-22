@@ -189,7 +189,7 @@ def validate_date_range_for_symbol(
     if datasets_path is None:
         current_dir = os.path.dirname(os.path.dirname(__file__))  # Go up to src/
         datasets_path = os.path.join(current_dir, "datasets")
-    
+
     symbol_to_file = {
         "aapl": "AAPL.csv",
         "amzn": "AMZN.csv",
@@ -274,7 +274,7 @@ def get_all_symbols_date_ranges(
     if datasets_path is None:
         current_dir = os.path.dirname(os.path.dirname(__file__))  # Go up to src/
         datasets_path = os.path.join(current_dir, "datasets")
-    
+
     symbol_to_file = {
         "aapl": "AAPL.csv",
         "amzn": "AMZN.csv",

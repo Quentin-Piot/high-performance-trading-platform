@@ -66,15 +66,15 @@ async def get_current_user_simple(
 ) -> SimpleUser:
     """
     Dependency to get the current authenticated user from JWT token.
-    
+
     Args:
         credentials: Bearer token from Authorization header
         auth_service: Simple auth service instance
         db: Database session
-        
+
     Returns:
         SimpleUser: Authenticated user information
-        
+
     Raises:
         HTTPException: If token is invalid or user not found
     """
@@ -124,12 +124,12 @@ async def get_current_user_simple_optional(
 ) -> SimpleUser | None:
     """
     Optional dependency to get the current user if authenticated.
-    
+
     Args:
         credentials: Optional Bearer token from Authorization header
         auth_service: Simple auth service instance
         db: Database session
-        
+
     Returns:
         Optional[SimpleUser]: User information if authenticated, None otherwise
     """

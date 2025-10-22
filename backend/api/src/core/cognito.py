@@ -64,10 +64,10 @@ class CognitoService:
                 logger.info("Using mock JWKS for LocalStack development")
                 self._jwks = {"keys": []}
                 return self._jwks
-            
+
             # Production JWKS fetching
             jwks_url = f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}/.well-known/jwks.json"
-            
+
             try:
                 with urlopen(jwks_url) as response:
                     self._jwks = json.loads(response.read())
@@ -93,7 +93,7 @@ class CognitoService:
             if settings.env == "development":
                 # Decode without verification for LocalStack testing
                 payload = jwt.get_unverified_claims(token)
-                
+
                 return CognitoUser(
                     sub=payload.get('sub', 'test-user-id'),
                     email=payload.get('email', 'test@example.com'),
@@ -148,11 +148,11 @@ class CognitoService:
                     'name': 'Test User'
                 }
             }
-            
+
         if not self.cognito_client:
             logger.warning("Cognito client not configured")
             return None
-            
+
         try:
             response = self.cognito_client.get_user(AccessToken=access_token)
 
@@ -177,11 +177,11 @@ class CognitoService:
         if settings.env == "development":
             logger.info(f"Mock user creation for LocalStack development: {email}")
             return email
-            
+
         if not self.cognito_client:
             logger.warning("Cognito client not configured")
             return None
-            
+
         try:
             response = self.cognito_client.admin_create_user(
                 UserPoolId=self.user_pool_id,
@@ -205,11 +205,11 @@ class CognitoService:
         if settings.env == "development":
             logger.info(f"Mock user deletion for LocalStack development: {username}")
             return True
-            
+
         if not self.cognito_client:
             logger.warning("Cognito client not configured")
             return False
-            
+
         try:
             self.cognito_client.admin_delete_user(
                 UserPoolId=self.user_pool_id,
@@ -227,11 +227,11 @@ class CognitoService:
         if settings.env == "development":
             logger.info(f"Mock federated user creation for LocalStack development: {user_info.get('email', 'unknown')}")
             return user_info.get('email', 'test@example.com')
-            
+
         if not self.cognito_client:
             logger.warning("Cognito client not configured")
             return None
-            
+
         try:
             # Try to find existing user by email
             try:
@@ -258,7 +258,7 @@ class CognitoService:
                 ],
                 MessageAction='SUPPRESS'
             )
-            
+
             logger.info(f"Created new federated user: {user_info['email']}")
             return response['User']['Username']
 
@@ -280,11 +280,11 @@ class CognitoService:
                     'Expiration': '2025-12-31T23:59:59Z'
                 }
             }
-            
+
         if not self.cognito_identity_client:
             logger.warning("Cognito Identity client not configured")
             return None
-            
+
         try:
             # Get identity ID
             identity_response = self.cognito_identity_client.get_id(
@@ -293,9 +293,9 @@ class CognitoService:
                     f'cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}': id_token
                 }
             )
-            
+
             identity_id = identity_response['IdentityId']
-            
+
             # Get credentials for the identity
             credentials_response = self.cognito_identity_client.get_credentials_for_identity(
                 IdentityId=identity_id,
@@ -303,7 +303,7 @@ class CognitoService:
                     f'cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}': id_token
                 }
             )
-            
+
             return {
                 'identity_id': identity_id,
                 'credentials': credentials_response['Credentials']

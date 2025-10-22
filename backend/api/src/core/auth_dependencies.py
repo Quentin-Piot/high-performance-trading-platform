@@ -17,14 +17,14 @@ async def get_current_user(
 ) -> CognitoUser:
     """
     Dependency to get the current authenticated user from JWT token.
-    
+
     Args:
         credentials: Bearer token from Authorization header
         cognito_service: Cognito service instance
-        
+
     Returns:
         CognitoUser: Authenticated user information
-        
+
     Raises:
         HTTPException: If token is invalid or user not found
     """
@@ -52,11 +52,11 @@ async def get_current_user_optional(
 ) -> CognitoUser | None:
     """
     Optional dependency to get the current user if authenticated.
-    
+
     Args:
         credentials: Optional Bearer token from Authorization header
         cognito_service: Cognito service instance
-        
+
     Returns:
         Optional[CognitoUser]: User information if authenticated, None otherwise
     """
@@ -71,13 +71,13 @@ async def require_verified_email(
 ) -> CognitoUser:
     """
     Dependency that requires the user to have a verified email.
-    
+
     Args:
         current_user: Current authenticated user
-        
+
     Returns:
         CognitoUser: User with verified email
-        
+
     Raises:
         HTTPException: If email is not verified
     """
