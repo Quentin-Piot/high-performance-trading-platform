@@ -58,6 +58,7 @@ jobs:
       - name: Install frontend dependencies & build (Vite / Vue)
         working-directory: ./web
         run: |
+          cat src/stores/authStore.ts
           pnpm install --frozen-lockfile
           pnpm run build
 
