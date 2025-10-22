@@ -40,7 +40,14 @@ def _read_csv_to_series(file_obj: io.BytesIO | bytes, price_type: str = "close")
         )
 
     if not price_col:
-        raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
+        # Check if adj close is available when close is not
+        adj_close_col = next(
+            (c for c in ["adj close", "adj_close"] if c in df.columns), None
+        )
+        if adj_close_col:
+            price_col = adj_close_col
+        else:
+            raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
 
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")

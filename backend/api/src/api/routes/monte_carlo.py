@@ -7,8 +7,10 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from infrastructure.db import get_session
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     HTTPException,
     Query,
@@ -17,7 +19,13 @@ from fastapi import (
     status,
 )
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.simple_auth import get_current_user_simple, SimpleUser
+from infrastructure.repositories.backtest_history_repository import (
+    BacktestHistoryRepository,
+)
+from infrastructure.repositories.user_repository import UserRepository
 from utils.date_validation import (
     get_all_symbols_date_ranges,
     validate_date_range_for_csv_bytes,
@@ -58,10 +66,13 @@ async def run_monte_carlo_sync(
     overbought: float | None = Query(None, ge=0, le=100, description="Overbought threshold (0-100)"),
     oversold: float | None = Query(None, ge=0, le=100, description="Oversold threshold (0-100)"),
     file: UploadFile | None = File(None),
+    # Authentication and database dependencies
+    current_user: SimpleUser = Depends(get_current_user_simple),
+    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """
     Run Monte Carlo simulation synchronously.
-    
+
     This endpoint executes the simulation immediately and returns results.
     For large simulations, consider using the /async endpoint.
     """
@@ -205,6 +216,72 @@ async def run_monte_carlo_sync(
             aggregated_metrics=None  # Single file, no aggregation needed
         )
 
+        # Save Monte Carlo simulation to history if user is authenticated
+        try:
+            # Get user from database
+            user_repo = UserRepository(session)
+            user = await user_repo.get_by_id(current_user.id)
+
+            if user:
+                # Create history repository
+                history_repo = BacktestHistoryRepository(session)
+
+                # Prepare datasets used list
+                datasets_used = []
+                if symbol:
+                    datasets_used = [symbol.upper()]
+                elif file:
+                    datasets_used = [file.filename or "uploaded_file.csv"]
+
+                # Extract results for history from Monte Carlo summary
+                total_return = None
+                sharpe_ratio = None
+                max_drawdown = None
+
+                if result.metrics_distribution:
+                    # Use mean values from distribution
+                    metrics = result.metrics_distribution
+                    if 'pnl' in metrics:
+                        total_return = float(metrics['pnl']['mean'])
+                    if 'sharpe' in metrics:
+                        sharpe_ratio = float(metrics['sharpe']['mean'])
+                    if 'drawdown' in metrics:
+                        max_drawdown = float(metrics['drawdown']['mean'])
+
+                # Create history entry
+                history_entry = await history_repo.create_history_entry(
+                    user_id=user.id,
+                    strategy=strategy,
+                    strategy_params={
+                        "sma_short": sma_short,
+                        "sma_long": sma_long,
+                        "period": period,
+                        "overbought": overbought,
+                        "oversold": oversold,
+                    },
+                    start_date=start_date.strftime("%Y-%m-%d"),
+                    end_date=end_date.strftime("%Y-%m-%d"),
+                    initial_capital=initial_capital,
+                    monte_carlo_runs=num_runs,
+                    monte_carlo_method="bootstrap",  # Default method
+                    datasets_used=datasets_used,
+                    price_type="close",  # Default price type
+                )
+
+                # Update results if we have them
+                if total_return is not None:
+                    await history_repo.update_results(
+                        history_id=history_entry.id,
+                        total_return=total_return,
+                        sharpe_ratio=sharpe_ratio,
+                        max_drawdown=max_drawdown,
+                        status="completed"
+                    )
+
+        except Exception as e:
+            # Log error but don't fail the Monte Carlo simulation
+            logger.warning(f"Failed to save Monte Carlo simulation to history: {str(e)}")
+
         return response.model_dump()
 
     except HTTPException:
@@ -239,7 +316,7 @@ async def submit_async_job(
 ) -> dict[str, Any]:
     """
     Submit Monte Carlo simulation job for asynchronous processing.
-    
+
     This endpoint uses a simple in-process worker without Redis/queue dependencies.
     """
     try:
@@ -468,7 +545,7 @@ async def list_async_jobs() -> dict[str, Any]:
 async def get_symbols_date_ranges() -> AllSymbolsDateRangesResponse:
     """
     Get available date ranges for all supported symbols.
-    
+
     Returns:
         Date range information for all symbols
     """
@@ -499,7 +576,7 @@ async def get_symbols_date_ranges() -> AllSymbolsDateRangesResponse:
 async def websocket_job_progress(websocket: WebSocket, job_id: str):
     """
     WebSocket endpoint for real-time job progress updates.
-    
+
     This endpoint provides real-time updates for asynchronous jobs.
     """
     await websocket.accept()
@@ -561,5 +638,5 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
         logger.info("WebSocket connection closed", extra={"job_id": job_id})
         try:
             await websocket.close()
-        except:
+        except Exception:
             pass

@@ -137,46 +137,51 @@ class IndexManager:
             await self.session.execute(text(f"ANALYZE {table_name}"))
 
             # Get table size and row count
-            stats_query = text("""
+            # Get column statistics from pg_stats
+            stats_query = text(f"""
                 SELECT
                     schemaname,
                     tablename,
                     attname,
                     n_distinct,
-                    correlation,
-                    most_common_vals,
-                    most_common_freqs
+                    correlation
                 FROM pg_stats
-                WHERE tablename = :table_name
+                WHERE tablename = '{table_name}'
                 ORDER BY attname
             """)
 
-            result = await self.session.execute(stats_query, {"table_name": table_name})
+            result = await self.session.execute(stats_query)
             stats = result.fetchall()
 
             # Get table size information
-            size_query = text("""
+            # Use direct table name interpolation for PostgreSQL functions
+            size_query = text(f"""
                 SELECT
-                    pg_size_pretty(pg_total_relation_size(:table_name)) as total_size,
-                    pg_size_pretty(pg_relation_size(:table_name)) as table_size,
-                    (SELECT count(*) FROM """ + table_name + """) as row_count
+                    pg_size_pretty(pg_total_relation_size('{table_name}')) as total_size,
+                    pg_size_pretty(pg_relation_size('{table_name}')) as table_size
             """)
 
-            size_result = await self.session.execute(size_query, {"table_name": table_name})
+            # Get row count with a separate, safer query
+            count_query = text(f"""
+                SELECT count(*) as row_count 
+                FROM {table_name}
+            """)
+
+            size_result = await self.session.execute(size_query)
+            count_result = await self.session.execute(count_query)
             size_info = size_result.fetchone()
+            count_info = count_result.fetchone()
 
             return {
                 "table_name": table_name,
                 "total_size": size_info.total_size if size_info else "Unknown",
                 "table_size": size_info.table_size if size_info else "Unknown",
-                "row_count": size_info.row_count if size_info else 0,
+                "row_count": count_info.row_count if count_info else 0,
                 "column_stats": [
                     {
                         "column": stat.attname,
                         "n_distinct": stat.n_distinct,
-                        "correlation": stat.correlation,
-                        "most_common_vals": stat.most_common_vals,
-                        "most_common_freqs": stat.most_common_freqs
+                        "correlation": stat.correlation
                     }
                     for stat in stats
                 ]
@@ -364,7 +369,8 @@ async def analyze_database_performance(session: AsyncSession) -> dict[str, Any]:
 
         # Get table statistics for main tables
         table_stats = {}
-        main_tables = ["jobs", "users"]
+        # Updated to match actual database tables
+        main_tables = ["jobs", "users", "backtests", "strategies", "alembic_version"]
 
         for table_name in main_tables:
             try:
