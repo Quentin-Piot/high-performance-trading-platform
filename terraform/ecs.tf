@@ -116,6 +116,12 @@ resource "aws_ecs_task_definition" "backend_task" {
         { name = "GOOGLE_CLIENT_SECRET", value = var.google_client_secret },
         { name = "GOOGLE_REDIRECT_URI", value = var.google_redirect_uri },
 
+        # Cognito configuration
+        { name = "COGNITO_REGION", value = var.aws_region },
+        { name = "COGNITO_USER_POOL_ID", value = aws_cognito_user_pool.main.id },
+        { name = "COGNITO_CLIENT_ID", value = aws_cognito_user_pool_client.web_client.id },
+        { name = "COGNITO_IDENTITY_POOL_ID", value = aws_cognito_identity_pool.main.id },
+
         # Worker configuration
         { name = "RUN_WORKER", value = "true" }
       ]

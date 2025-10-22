@@ -146,7 +146,10 @@ async def run_monte_carlo_sync(
                 )
 
             # Load historical data
-            datasets_path = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
+            # Use relative path that works in both dev and prod
+            import os
+            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Go up to src/
+            datasets_path = os.path.join(current_dir, "datasets")
             data_file = symbol_to_file[symbol_lower]
             file_path = os.path.join(datasets_path, data_file)
 
@@ -397,7 +400,9 @@ async def submit_async_job(
                 )
 
             # Load and filter dataset
-            datasets_path = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
+            # Use relative path that works in both dev and prod
+            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Go up to src/
+            datasets_path = os.path.join(current_dir, "datasets")
             csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
 
             if not os.path.exists(csv_file_path):
