@@ -102,10 +102,11 @@ resource "aws_cognito_user_pool_client" "web_client" {
   allowed_oauth_flows                  = ["code", "implicit"]
   allowed_oauth_scopes                 = ["email", "openid", "profile"]
 
-  # Callback URLs - will be updated with actual domain
+  # Callback URLs - corrected with /api/v1 prefix for backend endpoints
   callback_urls = [
     "http://localhost:5173/auth/callback",
-    "https://${var.frontend_alias_domain != "" ? var.frontend_alias_domain : "localhost"}/auth/callback"
+    "http://localhost:8000/api/v1/auth/google/callback",
+    "https://${var.frontend_alias_domain != "" ? var.frontend_alias_domain : "localhost"}/api/v1/auth/google/callback"
   ]
 
   logout_urls = [

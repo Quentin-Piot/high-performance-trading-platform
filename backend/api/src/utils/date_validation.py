@@ -164,8 +164,8 @@ def validate_date_range_for_symbol(
     symbol: str,
     start_date: datetime,
     end_date: datetime,
-    # Use backend datasets by default; we'll refine this later via env/config
-    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/backend/api/src/datasets"
+    # Use relative path that works in both dev and prod
+    datasets_path: str = None
 ) -> dict[str, any]:
     """
     Validate if the requested date range is available for a given symbol.
@@ -185,6 +185,11 @@ def validate_date_range_for_symbol(
             'suggested_range': {'start_date': datetime, 'end_date': datetime} (if not valid)
         }
     """
+    # Set default datasets path if not provided
+    if datasets_path is None:
+        current_dir = os.path.dirname(os.path.dirname(__file__))  # Go up to src/
+        datasets_path = os.path.join(current_dir, "datasets")
+    
     symbol_to_file = {
         "aapl": "AAPL.csv",
         "amzn": "AMZN.csv",
@@ -253,8 +258,8 @@ def validate_date_range_for_symbol(
 
 
 def get_all_symbols_date_ranges(
-    # Use backend datasets by default; we'll refine this later via env/config
-    datasets_path: str = "/Users/juliettecattin/WebstormProjects/high-performance-trading-platform/web/public/data/datasets"
+    # Use relative path that works in both dev and prod
+    datasets_path: str = None
 ) -> dict[str, dict[str, datetime]]:
     """
     Get date ranges for all available symbols.
@@ -265,6 +270,11 @@ def get_all_symbols_date_ranges(
     Returns:
         Dict mapping symbol to {'min_date': datetime, 'max_date': datetime}
     """
+    # Set default datasets path if not provided
+    if datasets_path is None:
+        current_dir = os.path.dirname(os.path.dirname(__file__))  # Go up to src/
+        datasets_path = os.path.join(current_dir, "datasets")
+    
     symbol_to_file = {
         "aapl": "AAPL.csv",
         "amzn": "AMZN.csv",

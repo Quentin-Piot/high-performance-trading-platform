@@ -50,7 +50,7 @@ resource "aws_iam_role" "ecs_task_role" {
   }
 }
 
-# Custom policy for SQS, S3, and CloudWatch access
+# Custom policy for SQS, S3, CloudWatch, and Cognito access
 resource "aws_iam_policy" "app_permissions" {
   name        = "${var.project_name}-app-permissions"
   description = "Permissions for trading platform application"
@@ -108,6 +108,23 @@ resource "aws_iam_policy" "app_permissions" {
           "cloudwatch:ListMetrics"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminUpdateUserAttributes",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminConfirmSignUp",
+          "cognito-idp:ListUsers",
+          "cognito-identity:GetId",
+          "cognito-identity:GetCredentialsForIdentity"
+        ]
+        Resource = [
+          "arn:aws:cognito-idp:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:userpool/*",
+          "arn:aws:cognito-identity:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identitypool/*"
+        ]
       }
     ]
   })

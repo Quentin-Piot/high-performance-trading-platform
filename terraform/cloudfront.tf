@@ -30,7 +30,7 @@ resource "aws_cloudfront_distribution" "frontend" {
 
   default_root_object = "index.html"
 
-  # SPA routing fallback: serve index.html for 403/404 from S3
+  # SPA routing fallback: serve index.html for 403/404 from S3 (but not for API routes)
   custom_error_response {
     error_code            = 404
     response_code         = 200
@@ -81,6 +81,7 @@ resource "aws_cloudfront_distribution" "frontend" {
 
     compress = true
   }
+
 
   price_class = "PriceClass_100"
 
