@@ -29,6 +29,21 @@ class Settings(BaseSettings):
     cache_ttl: int = Field(default=300, description="Default cache TTL in seconds")
     cache_enabled: bool = Field(default=True, description="Enable caching layer")
 
+    # AWS Cognito settings
+    aws_endpoint_url: str = Field(default="", description="AWS endpoint URL for LocalStack")
+    cognito_region: str = Field(default="eu-west-3", description="AWS Cognito region")
+    cognito_user_pool_id: str = Field(default="", description="Cognito User Pool ID")
+    cognito_client_id: str = Field(default="", description="Cognito App Client ID")
+    cognito_identity_pool_id: str = Field(default="", description="Cognito Identity Pool ID")
+
+    # Google OAuth settings
+    google_client_id: str = Field(default="", description="Google OAuth Client ID")
+    google_client_secret: str = Field(default="", description="Google OAuth Client Secret")
+    google_redirect_uri: str = Field(default="", description="Google OAuth Redirect URI")
+    
+    # Frontend URL settings
+    frontend_url: str = Field(default="http://localhost:5173", description="Frontend URL for redirects")
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )

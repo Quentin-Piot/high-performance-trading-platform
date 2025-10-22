@@ -48,5 +48,15 @@ allowed_ssh_cidr = "0.0.0.0/0"
 
 # ------------- Custom Domain -------------
 # Configure a custom domain for CloudFront using an existing ACM certificate
-frontend_alias_domain = "hptp.quentinpiot.com"
-acm_certificate_arn   = "<arn>"
+frontend_alias_domain = ""  # ex: "your-domain.com" or empty for default CloudFront domain
+acm_certificate_arn   = ""  # ARN of your ACM certificate in us-east-1
+
+# Frontend URL for OAuth redirects (should match your domain)
+frontend_url = ""  # ex: "https://your-domain.com" or "https://d123456789.cloudfront.net"
+
+# ------------- Google OAuth Configuration -------------
+# Google OAuth Client ID and Secret for Cognito Identity Provider
+# These values should be obtained from Google Cloud Console
+# Leave empty to disable Google OAuth integration
+google_client_id     = ""
+google_client_secret = ""

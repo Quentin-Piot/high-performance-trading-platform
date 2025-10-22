@@ -17,56 +17,43 @@ export AWS_ENDPOINT_URL=http://localhost:4566
 echo "⏳ Attente de LocalStack..."
 timeout=30
 counter=0
-until curl -s http://localhost:4566/_localstack/health | grep -q '"sqs": "running"' || [ $counter -eq $timeout ]; do
-  echo "Attente de SQS... ($counter/$timeout)"
+until curl -s http://localhost:4566/_localstack/health | grep -q '"s3": "available"' || [ $counter -eq $timeout ]; do
+  echo "Attente de LocalStack... ($counter/$timeout)"
   sleep 2
   ((counter++))
 done
 
 if [ $counter -eq $timeout ]; then
-    echo "❌ Timeout: SQS n'est pas disponible dans LocalStack"
+    echo "❌ Timeout: LocalStack n'est pas disponible"
     echo "🔍 Status LocalStack:"
-    curl -s http://localhost:4566/_localstack/health | jq .services.sqs || echo "jq non disponible"
+    curl -s http://localhost:4566/_localstack/health | jq .services || echo "jq non disponible"
     exit 1
 fi
 
 echo "✅ LocalStack est prêt !"
 
-# Créer les queues SQS
-echo "📨 Création des queues SQS..."
+# Créer le User Pool Cognito (simulé avec S3 pour LocalStack Community)
+echo "👤 Simulation du User Pool Cognito avec S3..."
+# Note: Cognito n'est pas disponible dans LocalStack Community
+# On utilise des valeurs par défaut configurées dans .env
 
-# Dead Letter Queue
-aws --endpoint-url=http://localhost:4566 sqs create-queue \
-    --queue-name trading-platform-monte-carlo-jobs-dlq \
-    --attributes '{
-        "MessageRetentionPeriod": "1209600"
-    }' || echo "DLQ existe déjà"
+USER_POOL_ID="eu-west-3_test123"
+CLIENT_ID="test_client_id"
+IDENTITY_POOL_ID="eu-west-3:test-identity-pool-id"
 
-# Queue principale avec DLQ
-aws --endpoint-url=http://localhost:4566 sqs create-queue \
-    --queue-name trading-platform-monte-carlo-jobs \
-    --attributes '{
-        "MessageRetentionPeriod": "1209600",
-        "VisibilityTimeout": "300"
-    }' || echo "Queue principale existe déjà"
+echo "User Pool ID: $USER_POOL_ID (simulé)"
+echo "Client ID: $CLIENT_ID (simulé)"
+echo "Identity Pool ID: $IDENTITY_POOL_ID (simulé)"
 
 # Créer le bucket S3 pour les artefacts
 echo "🪣 Création du bucket S3..."
-aws --endpoint-url=http://localhost:4566 s3 mb s3://trading-platform-monte-carlo-artifacts-local || echo "Bucket existe déjà"
+aws --endpoint-url=http://localhost:4566 s3 mb s3://trading-platform-bucket || echo "Bucket existe déjà"
 
-# Créer les log groups CloudWatch
-echo "📊 Création des log groups CloudWatch..."
-aws --endpoint-url=http://localhost:4566 logs create-log-group \
-    --log-group-name /aws/application/trading-platform || echo "Log group application existe déjà"
-
-aws --endpoint-url=http://localhost:4566 logs create-log-group \
-    --log-group-name /aws/worker/trading-platform-monte-carlo || echo "Log group worker existe déjà"
-
-# Afficher les URLs des queues
 echo "📋 Ressources créées :"
-echo "  SQS Queue URL: http://localhost:4566/000000000000/trading-platform-monte-carlo-jobs"
-echo "  SQS DLQ URL: http://localhost:4566/000000000000/trading-platform-monte-carlo-jobs-dlq"
-echo "  S3 Bucket: s3://trading-platform-monte-carlo-artifacts-local"
-echo "  Redis: redis://localhost:4510 (via LocalStack) ou redis://localhost:6379 (standalone)"
+echo "  User Pool ID: $USER_POOL_ID"
+echo "  Client ID: $CLIENT_ID"
+echo "  Identity Pool ID: $IDENTITY_POOL_ID"
+echo "  S3 Bucket: s3://trading-platform-bucket"
+echo "  Cognito Endpoint: http://localhost:4566"
 
 echo "✅ Initialisation terminée !"

@@ -12,6 +12,8 @@ from starlette.routing import Route, WebSocketRoute
 
 from api.routers.auth import router as auth_router
 from api.routers.backtest import router as backtest_router
+from api.routers.google_auth import router as google_auth_router
+from api.routers.history import router as history_router
 from api.routes.monte_carlo import router as monte_carlo_router
 from api.routes.performance import router as performance_router
 from core.logging import REQUEST_ID, setup_logging
@@ -260,5 +262,7 @@ def list_routes():
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")
+app.include_router(google_auth_router, prefix="/api/v1")
+app.include_router(history_router, prefix="/api/v1")
 app.include_router(performance_router, prefix="/api/v1")
 app.include_router(monte_carlo_router, prefix="/api/v1")

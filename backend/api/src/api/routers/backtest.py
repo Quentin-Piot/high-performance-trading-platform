@@ -2,8 +2,11 @@ import os
 from io import BytesIO
 
 import pandas as pd
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from infrastructure.db import get_session
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.simple_auth import get_current_user_simple, SimpleUser
 from domain.schemas.backtest import (
     AggregatedMetrics,
     BacktestResponse,
@@ -11,6 +14,10 @@ from domain.schemas.backtest import (
     SingleBacktestResponse,
     SingleBacktestResult,
 )
+from infrastructure.repositories.backtest_history_repository import (
+    BacktestHistoryRepository,
+)
+from infrastructure.repositories.user_repository import UserRepository
 from services.backtest_service import (
     CsvBytesPriceSeriesSource,
     run_rsi,
@@ -194,10 +201,12 @@ async def backtest_post(
     include_aggregated: bool = Query(
         False, description="Include aggregated metrics across all files"
     ),
-    # Monte Carlo parameters
     # Monte Carlo parameters (removed from this endpoint)
     # CSV upload (optional, alternative to symbol)
     csv: list[UploadFile] = File(default=[]),
+    # Authentication and database dependencies
+    current_user: SimpleUser = Depends(get_current_user_simple),
+    session: AsyncSession = Depends(get_session),
 ):
     """
     Run backtest with Monte Carlo simulation support.
@@ -324,7 +333,7 @@ async def backtest_post(
 
 
     print("Calling run_regular_backtest")
-    return await run_regular_backtest(
+    result = await run_regular_backtest(
         files=files,
         strategy=strat,
         strategy_params={
@@ -337,6 +346,75 @@ async def backtest_post(
         include_aggregated=include_aggregated,
         price_type=price_type,
     )
+
+    # Save backtest to history if user is authenticated
+    try:
+        # Get user from database
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_id(current_user.id)
+
+        if user:
+            # Create history repository
+            history_repo = BacktestHistoryRepository(session)
+
+            # Prepare datasets used list
+            datasets_used = []
+            if symbol:
+                datasets_used = [symbol.upper()]
+            elif csv:
+                datasets_used = [f.filename or f"file_{i+1}.csv" for i, f in enumerate(csv)]
+
+            # Extract results for history
+            total_return = None
+            sharpe_ratio = None
+            max_drawdown = None
+
+            if hasattr(result, 'pnl'):
+                # Single backtest result
+                total_return = float(result.pnl)
+                sharpe_ratio = float(result.sharpe)
+                max_drawdown = float(result.drawdown)
+            elif hasattr(result, 'results') and result.results:
+                # Multiple backtest results - use first result or average
+                first_result = result.results[0]
+                total_return = float(first_result.pnl)
+                sharpe_ratio = float(first_result.sharpe)
+                max_drawdown = float(first_result.drawdown)
+
+            # Create history entry
+            history_entry = await history_repo.create_history_entry(
+                user_id=user.id,
+                strategy=strategy,
+                strategy_params={
+                    "sma_short": sma_short,
+                    "sma_long": sma_long,
+                    "period": period,
+                    "overbought": overbought,
+                    "oversold": oversold,
+                },
+                start_date=start_date,
+                end_date=end_date,
+                initial_capital=10000.0,  # Default value
+                monte_carlo_runs=1,  # Regular backtest
+                datasets_used=datasets_used,
+                price_type=price_type,
+            )
+
+            # Update results if we have them
+            if total_return is not None:
+                await history_repo.update_results(
+                    history_id=history_entry.id,
+                    total_return=total_return,
+                    sharpe_ratio=sharpe_ratio,
+                    max_drawdown=max_drawdown,
+                    status="completed"
+                )
+
+    except Exception as e:
+        # Log error but don't fail the backtest
+        print(f"Warning: Failed to save backtest to history: {str(e)}")
+
+    return result
 
 async def run_regular_backtest(
     files: list[UploadFile],

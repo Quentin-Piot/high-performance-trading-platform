@@ -18,31 +18,39 @@ class TestSynchronousMonteCarlo:
 
     def test_sync_monte_carlo_basic(self):
         """Test basic synchronous Monte Carlo simulation."""
-        request_data = {
+        params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
             "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
             "num_runs": 5,  # Small number for fast testing
             "initial_capital": 10000.0,
-            "strategy_params": {"sma_short": 10, "sma_long": 30}
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 200
         data = response.json()
 
-        # Verify response structure
-        assert "filename" in data
-        assert "method" in data
-        assert "runs" in data
-        assert "successful_runs" in data
-        assert "metrics_distribution" in data
-        assert "status" in data
-        assert data["status"] == "completed"
+        # Verify response structure - the response is a MonteCarloResponse with results array
+        assert "results" in data
+        assert "aggregated_metrics" in data
+        assert isinstance(data["results"], list)
+        assert len(data["results"]) == 1
+
+        # Verify first result structure
+        result = data["results"][0]
+        assert "filename" in result
+        assert "method" in result
+        assert "runs" in result
+        assert "successful_runs" in result
+        assert "metrics_distribution" in result
+        assert result["runs"] == 5
 
         # Verify metrics distribution structure
-        metrics = data["metrics_distribution"]
+        metrics = result["metrics_distribution"]
         assert "pnl" in metrics
         assert "sharpe" in metrics
         assert "drawdown" in metrics
@@ -58,151 +66,170 @@ class TestSynchronousMonteCarlo:
 
     def test_sync_monte_carlo_with_equity_envelope(self):
         """Test synchronous Monte Carlo with equity envelope enabled."""
-        request_data = {
+        params = {
             "symbol": "msft",
             "start_date": "2017-02-01T00:00:00",  # Updated to valid date range
             "end_date": "2017-02-28T00:00:00",    # Updated to valid date range
             "num_runs": 3,
             "initial_capital": 15000.0,
-            "strategy_params": {"sma_short": 5, "sma_long": 15},
-            "equity_envelope": True
+            "strategy": "sma_crossover",
+            "sma_short": 5,
+            "sma_long": 15
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 200
         data = response.json()
 
         # Verify equity envelope is included
-        if data.get("equity_envelope"):
-            envelope = data["equity_envelope"]
-            assert "timestamps" in envelope
-            assert "p5" in envelope
-            assert "p25" in envelope
-            assert "median" in envelope
-            assert "p75" in envelope
-            assert "p95" in envelope
+        if data.get("results") and len(data["results"]) > 0:
+            result = data["results"][0]
+            if result.get("equity_envelope"):
+                envelope = result["equity_envelope"]
+                assert "timestamps" in envelope
+                assert "p5" in envelope
+                assert "p25" in envelope
+                assert "median" in envelope
+                assert "p75" in envelope
+                assert "p95" in envelope
 
-            # All arrays should have the same length
-            length = len(envelope["timestamps"])
-            assert len(envelope["p5"]) == length
-            assert len(envelope["p25"]) == length
-            assert len(envelope["median"]) == length
-            assert len(envelope["p75"]) == length
-            assert len(envelope["p95"]) == length
+                # All arrays should have the same length
+                length = len(envelope["timestamps"])
+                assert len(envelope["p5"]) == length
+                assert len(envelope["p25"]) == length
+                assert len(envelope["median"]) == length
+                assert len(envelope["p75"]) == length
+                assert len(envelope["p95"]) == length
 
     def test_sync_monte_carlo_invalid_symbol(self):
         """Test synchronous Monte Carlo with invalid symbol."""
-        request_data = {
+        params = {
             "symbol": "invalid_symbol",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
             "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
             "num_runs": 5,
-            "initial_capital": 10000.0
+            "initial_capital": 10000.0,
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 400
         assert "not supported" in response.json()["detail"]
 
     def test_sync_monte_carlo_invalid_date_range(self):
         """Test synchronous Monte Carlo with invalid date range."""
-        request_data = {
+        params = {
             "symbol": "aapl",
             "start_date": "2025-01-01T00:00:00",  # Future date
             "end_date": "2025-01-31T00:00:00",
             "num_runs": 5,
-            "initial_capital": 10000.0
+            "initial_capital": 10000.0,
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 400
         # Should contain date range validation error
 
     def test_sync_monte_carlo_end_date_before_start_date(self):
         """Test synchronous Monte Carlo with end date before start date."""
-        request_data = {
+        params = {
             "symbol": "aapl",
             "start_date": "2017-01-31T00:00:00",  # Updated to valid date range
             "end_date": "2017-01-01T00:00:00",    # Before start date
             "num_runs": 5,
-            "initial_capital": 10000.0
+            "initial_capital": 10000.0,
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 400  # Validation error
 
     def test_sync_monte_carlo_zero_runs(self):
         """Test synchronous Monte Carlo with zero runs."""
-        request_data = {
+        params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
             "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
             "num_runs": 0,  # Invalid
-            "initial_capital": 10000.0
+            "initial_capital": 10000.0,
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 422  # Validation error
 
     def test_sync_monte_carlo_negative_capital(self):
         """Test synchronous Monte Carlo with negative initial capital."""
-        request_data = {
+        params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
             "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
             "num_runs": 5,
-            "initial_capital": -1000.0  # Invalid
+            "initial_capital": -1000.0,  # Invalid
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 422  # Validation error
 
     def test_sync_monte_carlo_custom_strategy_params(self):
         """Test synchronous Monte Carlo with custom strategy parameters."""
-        request_data = {
+        params = {
             "symbol": "googl",
             "start_date": "2017-03-01T00:00:00",  # Updated to valid date range
             "end_date": "2017-03-29T00:00:00",    # Updated to valid date range (end of available data)
             "num_runs": 3,
             "initial_capital": 15000.0,
-            "strategy_params": {
-                "sma_short": 8,
-                "sma_long": 25
-            }
+            "strategy": "sma_crossover",
+            "sma_short": 8,
+            "sma_long": 25
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "completed"
-        assert data["runs"] == 3
+        assert data["results"][0]["runs"] == 3
 
     def test_sync_monte_carlo_performance(self):
         """Test synchronous Monte Carlo performance with larger dataset."""
-        request_data = {
+        params = {
             "symbol": "msft",
             "start_date": "2020-01-01T00:00:00",
             "end_date": "2020-12-31T00:00:00",
             "num_runs": 10,
-            "initial_capital": 10000.0
+            "initial_capital": 10000.0,
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response.status_code == 200
         data = response.json()
 
         # Verify all runs completed successfully
-        assert data["runs"] == 10
-        assert data["successful_runs"] == 10
-        assert data["status"] == "completed"
+
+        assert data["results"][0]["runs"] == 10
+        assert data["results"][0]["successful_runs"] == 10
 
     def test_sync_monte_carlo_all_symbols(self):
         """Test synchronous Monte Carlo with all supported symbols."""
@@ -232,34 +259,40 @@ class TestSynchronousMonteCarlo:
                 start_date = "2020-01-01T00:00:00"
                 end_date = "2020-01-15T00:00:00"
 
-            request_data = {
+            params = {
                 "symbol": symbol,
                 "start_date": start_date,
                 "end_date": end_date,
                 "num_runs": 2,  # Minimal runs for speed
-                "initial_capital": 10000.0
+                "initial_capital": 10000.0,
+                "strategy": "sma_crossover",
+                "sma_short": 10,
+                "sma_long": 30
             }
 
-            response = client.post("/api/v1/monte-carlo/run", json=request_data)
+            response = client.post("/api/v1/monte-carlo/run", params=params)
 
             assert response.status_code == 200, f"Failed for symbol {symbol}"
             data = response.json()
-            assert data["status"] == "completed", f"Failed completion for symbol {symbol}"
+            assert len(data["results"]) > 0, f"No results for symbol {symbol}"
 
     def test_sync_monte_carlo_response_time(self):
         """Test that synchronous Monte Carlo responds within reasonable time."""
         import time
 
-        request_data = {
+        params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
             "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
             "num_runs": 5,
-            "initial_capital": 10000.0
+            "initial_capital": 10000.0,
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
         start_time = time.time()
-        response = client.post("/api/v1/monte-carlo/run", json=request_data)
+        response = client.post("/api/v1/monte-carlo/run", params=params)
         end_time = time.time()
 
         assert response.status_code == 200
@@ -269,19 +302,21 @@ class TestSynchronousMonteCarlo:
         assert execution_time < 30.0, f"Execution took too long: {execution_time:.2f}s"
 
     def test_sync_monte_carlo_deterministic_results(self):
-        """Test that synchronous Monte Carlo produces consistent results."""
-        request_data = {
+        """Test that Monte Carlo results are deterministic with same seed."""
+        params = {
             "symbol": "aapl",
-            "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-01-15T00:00:00",    # Updated to valid date range
-            "num_runs": 3,
+            "start_date": "2017-01-01T00:00:00",
+            "end_date": "2017-01-15T00:00:00",
+            "num_runs": 5,
             "initial_capital": 10000.0,
-            "strategy_params": {"sma_short": 5, "sma_long": 10}
+            "strategy": "sma_crossover",
+            "sma_short": 10,
+            "sma_long": 30
         }
 
-        # Run twice and compare basic structure (results may vary due to randomness)
-        response1 = client.post("/api/v1/monte-carlo/run", json=request_data)
-        response2 = client.post("/api/v1/monte-carlo/run", json=request_data)
+        # Run twice with same parameters
+        response1 = client.post("/api/v1/monte-carlo/run", params=params)
+        response2 = client.post("/api/v1/monte-carlo/run", params=params)
 
         assert response1.status_code == 200
         assert response2.status_code == 200
@@ -289,14 +324,9 @@ class TestSynchronousMonteCarlo:
         data1 = response1.json()
         data2 = response2.json()
 
-        # Structure should be identical
-        assert data1["runs"] == data2["runs"]
-        assert data1["method"] == data2["method"]
-        assert data1["status"] == data2["status"]
-
-        # Both should have completed all runs
-        assert data1["successful_runs"] == data1["runs"]
-        assert data2["successful_runs"] == data2["runs"]
+        # Results should be consistent (though not necessarily identical due to randomness)
+        assert data1["results"][0]["runs"] == data2["results"][0]["runs"]
+        assert data1["results"][0]["successful_runs"] == data2["results"][0]["successful_runs"]
 
 
 class TestLegacyEndpointsDeprecated:

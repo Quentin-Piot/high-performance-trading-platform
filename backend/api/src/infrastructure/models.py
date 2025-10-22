@@ -26,12 +26,15 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=True)  # Made nullable for Cognito users
+    cognito_sub: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=True)  # Cognito user ID
+    name: Mapped[str] = mapped_column(String(255), nullable=True)  # User's display name
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
 
     strategies: Mapped[list["Strategy"]] = relationship(back_populates="owner")
+    backtest_histories: Mapped[list["BacktestHistory"]] = relationship(back_populates="user")
 
 # -----------------------------------------
 # Strategy
@@ -100,3 +103,48 @@ class Job(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+
+
+# -----------------------------------------
+# BacktestHistory (for user backtest tracking)
+# -----------------------------------------
+class BacktestHistory(Base):
+    __tablename__ = "backtest_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+
+    # Backtest parameters
+    strategy: Mapped[str] = mapped_column(String(100), nullable=False)
+    strategy_params: Mapped[dict] = mapped_column(JSON, nullable=False)
+    start_date: Mapped[str] = mapped_column(String(50), nullable=True)
+    end_date: Mapped[str] = mapped_column(String(50), nullable=True)
+    initial_capital: Mapped[float] = mapped_column(Float, nullable=False, default=10000.0)
+
+    # Monte Carlo parameters
+    monte_carlo_runs: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    monte_carlo_method: Mapped[str] = mapped_column(String(50), nullable=True)
+    sample_fraction: Mapped[float] = mapped_column(Float, nullable=True)
+    gaussian_scale: Mapped[float] = mapped_column(Float, nullable=True)
+
+    # Data source information
+    datasets_used: Mapped[dict] = mapped_column(JSON, nullable=True)
+    price_type: Mapped[str] = mapped_column(String(20), nullable=False, default="close")
+
+    # Results summary
+    total_return: Mapped[float] = mapped_column(Float, nullable=True)
+    sharpe_ratio: Mapped[float] = mapped_column(Float, nullable=True)
+    max_drawdown: Mapped[float] = mapped_column(Float, nullable=True)
+    win_rate: Mapped[float] = mapped_column(Float, nullable=True)
+    total_trades: Mapped[int] = mapped_column(Integer, nullable=True)
+
+    # Execution metadata
+    execution_time_seconds: Mapped[float] = mapped_column(Float, nullable=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="completed")
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="backtest_histories")
