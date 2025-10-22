@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { PopoverRootEmits, PopoverRootProps } from "reka-ui"
-import { PopoverRoot, useForwardPropsEmits } from "reka-ui"
+import { PopoverRoot, type PopoverRootEmits, type PopoverRootProps, useForwardPropsEmits } from "reka-ui"
+
+defineOptions({
+  name: 'PopoverComponent'
+})
 
 const props = defineProps<PopoverRootProps>()
 const emits = defineEmits<PopoverRootEmits>()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from "@/router";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -9,8 +10,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { useI18n } from "vue-i18n";
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import {
     Home,
     BarChart3,
@@ -19,15 +25,25 @@ import {
     Globe,
     Menu,
     X,
+    User,
+    LogOut,
+    Settings,
 } from "lucide-vue-next";
 
 const { navigate } = useRouter();
 const { t } = useI18n();
 const i18n = useI18n();
+const auth = useAuthStore();
+
 const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } })
     .locale;
 const selectedLocale = ref<"en" | "fr">(localeRef?.value ?? "en");
 const mobileMenuOpen = ref(false);
+
+// Computed properties for authentication state
+const isAuthenticated = computed(() => auth.isAuthenticated);
+const userName = computed(() => auth.userName || auth.userEmail || 'User');
+const userProvider = computed(() => auth.user?.provider || 'cognito');
 
 watch(selectedLocale, (val) => {
     if (localeRef) localeRef.value = val;
@@ -45,6 +61,12 @@ function goHome() {
 
 function toggleMobileMenu() {
     mobileMenuOpen.value = !mobileMenuOpen.value;
+}
+
+async function handleLogout() {
+    await auth.logout();
+    navigate("/");
+    mobileMenuOpen.value = false;
 }
 </script>
 
@@ -124,6 +146,78 @@ function toggleMobileMenu() {
 
                 <!-- Divider -->
                 <div class="w-px h-6 bg-white/20 mx-2"></div>
+
+                <!-- Authentication Section -->
+                <div v-if="isAuthenticated" class="flex items-center gap-2">
+                    <!-- User Popover -->
+                    <Popover>
+                        <PopoverTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="h-9 px-3 text-white/90 hover:bg-trading-cyan/20 hover:text-trading-cyan transition-all duration-300 hover-scale group"
+                            >
+                                <User class="size-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                                <span class="max-w-32 truncate">{{ userName }}</span>
+                                <div class="ml-1 size-2 rounded-full" :class="{
+                                    'bg-blue-400': userProvider === 'google',
+                                    'bg-orange-400': userProvider === 'cognito'
+                                }"></div>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-56 border-white/10 bg-card/95 backdrop-blur-sm p-0">
+                            <div class="p-3 border-b border-white/10">
+                                <div class="text-white/90 font-medium">
+                                    {{ userName }}
+                                </div>
+                                <div class="text-xs text-white/60">
+                                    {{ userProvider === 'google' ? 'Google Account' : 'Cognito Account' }}
+                                </div>
+                            </div>
+                            <div class="p-1">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="w-full justify-start h-8 px-2 hover:bg-trading-blue/10 hover:text-trading-blue"
+                                >
+                                    <Settings class="size-4 mr-2" />
+                                    Settings
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="w-full justify-start h-8 px-2 hover:bg-red-500/10 hover:text-red-400"
+                                    @click="handleLogout"
+                                >
+                                    <LogOut class="size-4 mr-2" />
+                                    Logout
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+
+                <!-- Auth buttons for non-authenticated users -->
+                <div v-else class="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="h-9 px-4 border-trading-blue/20 hover:border-trading-blue hover:bg-trading-blue/5 hover:text-trading-blue transition-all duration-300 hover-scale group"
+                        @click="go('/login')"
+                    >
+                        <LogIn class="size-4 mr-2 group-hover:-rotate-12 transition-transform duration-300" />
+                        {{ t("nav.login") }}
+                    </Button>
+
+                    <Button
+                        size="sm"
+                        class="h-9 px-4 bg-trading-blue text-white rounded-lg border border-trading-blue hover:bg-trading-blue/80 hover:border-trading-blue/80 transition-all duration-300 hover-scale group"
+                        @click="go('/register')"
+                    >
+                        <UserPlus class="size-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                        {{ t("nav.register") }}
+                    </Button>
+                </div>
 
                 <!-- Language selector -->
                 <div class="relative ml-2">
@@ -253,8 +347,47 @@ function toggleMobileMenu() {
                 <!-- Divider -->
                 <div class="h-px bg-border/50 my-3"></div>
 
-                <!-- Auth buttons mobile -->
-                <div class="space-y-2">
+                <!-- Auth section mobile -->
+                <div v-if="isAuthenticated" class="space-y-2">
+                    <!-- User info -->
+                    <div class="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/5">
+                        <User class="size-4 text-trading-cyan" />
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-white/90 truncate">{{ userName }}</div>
+                            <div class="text-xs text-white/60">
+                                {{ userProvider === 'google' ? 'Google Account' : 'Cognito Account' }}
+                            </div>
+                        </div>
+                        <div class="size-2 rounded-full" :class="{
+                            'bg-blue-400': userProvider === 'google',
+                            'bg-orange-400': userProvider === 'cognito'
+                        }"></div>
+                    </div>
+
+                    <!-- Settings button -->
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="w-full justify-start h-10 px-4 hover:bg-trading-blue/10 hover:text-trading-blue transition-all duration-300 group"
+                    >
+                        <Settings class="size-4 mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                        Settings
+                    </Button>
+
+                    <!-- Logout button -->
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="w-full justify-start h-10 px-4 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group"
+                        @click="handleLogout"
+                    >
+                        <LogOut class="size-4 mr-3 group-hover:-rotate-12 transition-transform duration-300" />
+                        Logout
+                    </Button>
+                </div>
+
+                <!-- Auth buttons mobile for non-authenticated users -->
+                <div v-else class="space-y-2">
                     <Button
                         variant="outline"
                         size="sm"

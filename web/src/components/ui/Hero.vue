@@ -1,4 +1,8 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+defineOptions({
+  name: 'HeroSection'
+})
+</script>
 <template>
     <section class="wrapper">
         <div class="hero"></div>
@@ -6,7 +10,7 @@
             <h1 class="h1--scalingSize" data-text="An awesome title">
                 An awesome title
             </h1>
-            <input type="checkbox" id="switch" />
+            <input id="switch" type="checkbox" />
             <label for="switch"
                 ><span><span class="icon">→</span> switch bg</span></label
             >

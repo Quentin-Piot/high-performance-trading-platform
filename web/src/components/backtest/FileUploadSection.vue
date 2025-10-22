@@ -23,7 +23,7 @@
       <!-- Animated background effect -->
       <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
       
-      <input ref="inputEl" type="file" accept=".csv" multiple @change="onFileChange" class="hidden" />
+      <input ref="inputEl" type="file" accept=".csv" multiple class="hidden" @change="onFileChange" />
       
       <div class="relative z-10 flex flex-col items-center gap-3">
         <div class="rounded-full bg-secondary/50 p-3 group-hover:bg-trading-blue/10 transition-colors">
@@ -38,11 +38,13 @@
               {{ selectedFiles.length }} {{ t('simulate.form.csv.files_selected') }}
             </p>
             <div class="max-h-32 overflow-y-auto space-y-1">
-              <div v-for="(file, index) in selectedFiles" :key="index" 
+              <div
+v-for="(file, index) in selectedFiles" :key="index" 
                    class="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2 text-xs">
                 <span class="truncate flex-1">{{ file.name }}</span>
-                <button @click.stop="removeFile(index)" 
-                        class="ml-2 p-1 hover:bg-red-100 rounded-full transition-colors">
+                <button
+class="ml-2 p-1 hover:bg-red-100 rounded-full transition-colors" 
+                        @click.stop="removeFile(index)">
                   <X class="size-3 text-red-500" />
                 </button>
               </div>

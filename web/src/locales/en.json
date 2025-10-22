@@ -4,6 +4,7 @@
     "subtitle": "Trading Platform",
     "home": "Home",
     "simulate": "Simulate",
+    "history": "History",
     "legacy": "Legacy",
     "login": "Login",
     "register": "Register"
@@ -283,6 +284,44 @@
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
-    "edit": "Edit"
+    "edit": "Edit",
+    "loading": "Loading...",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "history": {
+    "title": "Backtest History",
+    "description": "View and manage your previous backtest runs",
+    "filter_by_strategy": "Filter by strategy",
+    "all_strategies": "All strategies",
+    "backtest_history": "Backtest History",
+    "no_history": "No backtest history found",
+    "run_first_backtest": "Run your first backtest",
+    "view_details": "View Details",
+    "rerun": "Rerun",
+    "confirm_delete": "Are you sure you want to delete this backtest?",
+    "date_range": "Date Range",
+    "total_return": "Total Return",
+    "sharpe_ratio": "Sharpe Ratio",
+    "max_drawdown": "Max Drawdown",
+    "created_at": "Created",
+    "parameters": "Parameters",
+    "datasets": "Datasets",
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "stats": {
+      "total_backtests": "Total Backtests",
+      "avg_return": "Avg Return",
+      "avg_sharpe": "Avg Sharpe",
+      "monte_carlo_runs": "Monte Carlo Runs"
+    },
+    "status": {
+      "completed": "Completed",
+      "running": "Running",
+      "failed": "Failed"
+    }
   }
 }

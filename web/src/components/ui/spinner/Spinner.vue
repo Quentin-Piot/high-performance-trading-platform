@@ -3,6 +3,10 @@ import type { HTMLAttributes } from "vue"
 import { Loader2Icon } from "lucide-vue-next"
 import { cn } from "@/lib/utils"
 
+defineOptions({
+  name: 'SpinnerComponent'
+})
+
 const props = defineProps<{
   class?: HTMLAttributes["class"]
 }>()

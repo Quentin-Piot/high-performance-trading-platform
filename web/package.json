@@ -14,9 +14,12 @@
     "bundle-analyzer": "pnpm exec vite-bundle-analyzer dist"
   },
   "dependencies": {
+    "@aws-amplify/auth": "^6.16.0",
+    "@aws-amplify/core": "^6.13.3",
     "@internationalized/date": "^3.10.0",
     "@tailwindcss/vite": "^4.1.13",
     "@vueuse/core": "^13.9.0",
+    "aws-amplify": "^6.15.7",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
