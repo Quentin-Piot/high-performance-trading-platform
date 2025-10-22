@@ -34,17 +34,19 @@ class CognitoService:
         self.user_pool_id = settings.cognito_user_pool_id
         self.client_id = settings.cognito_client_id
 
-        # Configure boto3 client for LocalStack in development
-        if settings.env == "development":
-            # In development with LocalStack, we'll use mock implementations
-            # since Cognito is not available in LocalStack Community
-            self.cognito_client = None
-            self.cognito_identity_client = None
-            logger.info("Running in development mode with LocalStack - using mock Cognito implementations")
-        elif self.user_pool_id and self.client_id:
-            # Production configuration
-            self.cognito_client = boto3.client('cognito-idp', region_name=self.region)
-            self.cognito_identity_client = boto3.client('cognito-identity', region_name=self.region)
+        # Configure boto3 client
+        if self.user_pool_id and self.client_id:
+            # Production configuration with AWS endpoint URL support
+            client_config = {'region_name': self.region}
+
+            # Use LocalStack endpoint if configured
+            if settings.aws_endpoint_url:
+                client_config['endpoint_url'] = settings.aws_endpoint_url
+                logger.info(f"Using AWS endpoint URL: {settings.aws_endpoint_url}")
+
+            self.cognito_client = boto3.client('cognito-idp', **client_config)
+            self.cognito_identity_client = boto3.client('cognito-identity', **client_config)
+            logger.info(f"Cognito client configured for region {self.region}")
         else:
             self.cognito_client = None
             self.cognito_identity_client = None
@@ -173,19 +175,18 @@ class CognitoService:
 
     def create_user(self, email: str, temporary_password: str) -> str | None:
         """Create a new user in Cognito (admin operation)."""
-        # In development with LocalStack, return mock user creation
-        if settings.env == "development":
-            logger.info(f"Mock user creation for LocalStack development: {email}")
-            return email
-
         if not self.cognito_client:
             logger.warning("Cognito client not configured")
             return None
 
         try:
+            # Generate a unique username since email aliases are configured
+            import uuid
+            username = str(uuid.uuid4())
+
             response = self.cognito_client.admin_create_user(
                 UserPoolId=self.user_pool_id,
-                Username=email,
+                Username=username,
                 UserAttributes=[
                     {'Name': 'email', 'Value': email},
                     {'Name': 'email_verified', 'Value': 'true'}
@@ -201,11 +202,6 @@ class CognitoService:
 
     def delete_user(self, username: str) -> bool:
         """Delete a user from Cognito (admin operation)."""
-        # In development with LocalStack, return mock success
-        if settings.env == "development":
-            logger.info(f"Mock user deletion for LocalStack development: {username}")
-            return True
-
         if not self.cognito_client:
             logger.warning("Cognito client not configured")
             return False
@@ -219,6 +215,25 @@ class CognitoService:
 
         except ClientError as e:
             logger.error(f"Failed to delete user: {e}")
+            return False
+
+    def set_user_password(self, username: str, password: str) -> bool:
+        """Set a permanent password for a user in Cognito (admin operation)."""
+        if not self.cognito_client:
+            logger.warning("Cognito client not configured")
+            return False
+
+        try:
+            self.cognito_client.admin_set_user_password(
+                UserPoolId=self.user_pool_id,
+                Username=username,
+                Password=password,
+                Permanent=True
+            )
+            return True
+
+        except ClientError as e:
+            logger.error(f"Failed to set user password: {e}")
             return False
 
     def create_federated_user(self, user_info: dict[str, Any]) -> str | None:
@@ -235,20 +250,27 @@ class CognitoService:
         try:
             # Try to find existing user by email
             try:
-                response = self.cognito_client.admin_get_user(
+                # Use list_users to find user by email attribute since email aliases are configured
+                response = self.cognito_client.list_users(
                     UserPoolId=self.user_pool_id,
-                    Username=user_info['email']
+                    Filter=f'email = "{user_info["email"]}"'
                 )
-                logger.info(f"Found existing federated user: {user_info['email']}")
-                return response['Username']
+
+                if response['Users']:
+                    logger.info(f"Found existing federated user: {user_info['email']}")
+                    return response['Users'][0]['Username']
+
             except ClientError as e:
-                if e.response['Error']['Code'] != 'UserNotFoundException':
-                    raise
+                logger.warning(f"Error searching for existing user: {e}")
+
+            # Generate a unique username since email aliases are configured
+            import uuid
+            username = str(uuid.uuid4())
 
             # Create new federated user
             response = self.cognito_client.admin_create_user(
                 UserPoolId=self.user_pool_id,
-                Username=user_info['email'],
+                Username=username,
                 UserAttributes=[
                     {'Name': 'email', 'Value': user_info['email']},
                     {'Name': 'email_verified', 'Value': 'true'},
