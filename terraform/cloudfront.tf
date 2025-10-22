@@ -45,25 +45,6 @@ resource "aws_cloudfront_distribution" "frontend" {
     error_caching_min_ttl = 0
   }
 
-  ordered_cache_behavior {
-    path_pattern           = "/api/*"
-    target_origin_id       = "API-Backend"
-    viewer_protocol_policy = "redirect-to-https"
-
-    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-    cached_methods  = ["GET", "HEAD"]
-
-    forwarded_values {
-      query_string = true
-      headers      = ["Authorization", "Content-Type", "Origin"]
-      cookies {
-        forward = "all"
-      }
-    }
-
-    compress = true
-  }
-  
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
@@ -82,7 +63,27 @@ resource "aws_cloudfront_distribution" "frontend" {
     max_ttl     = 86400
   }
 
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    target_origin_id       = "API-Backend"
+    viewer_protocol_policy = "redirect-to-https"
 
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Origin"]
+      cookies {
+        forward = "all"
+      }
+    }
+
+    compress = true
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+  }
 
 
   price_class = "PriceClass_100"

@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     )
     jwt_secret: str = "changeme-dev-secret"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 10080  # 7 days = 7 * 24 * 60 minutes
 
     # Database connection pooling settings
     db_pool_size: int = Field(default=10, description="Number of connections to maintain in the pool")

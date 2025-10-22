@@ -9,6 +9,42 @@
     "login": "Connexion",
     "register": "Inscription"
   },
+  "auth": {
+    "login": {
+      "title": "Connexion à votre compte",
+      "subtitle": "Accédez à votre plateforme de trading haute performance",
+      "welcome": "Bienvenue sur HPTP",
+      "description": "Connectez-vous pour accéder à vos backtests, stratégies et analyses de marché avancées.",
+      "features": {
+        "secure": "Sécurisé et fiable",
+        "fast": "Rapide et performant", 
+        "customizable": "Personnalisable",
+        "realtime": "Données en temps réel",
+        "advanced": "Analyses avancées",
+        "portfolio": "Gestion de portefeuille"
+      },
+      "backToHome": "Retour à l'accueil"
+    },
+    "register": {
+      "title": "Créez votre compte trading",
+      "subtitle": "Rejoignez la plateforme de trading haute performance",
+      "welcome": "Rejoignez HPTP",
+      "description": "Créez votre compte et découvrez une plateforme de trading moderne avec des outils d'analyse avancés.",
+      "features": {
+        "encrypted": "Données cryptées et protégées",
+        "support": "Support client réactif",
+        "free": "Gratuit pour commencer",
+        "backtesting": "Backtesting avancé",
+        "strategies": "Stratégies personnalisées",
+        "analytics": "Analyses détaillées"
+      },
+      "backToHome": "Retour à l'accueil"
+    },
+    "common": {
+      "language": "Langue",
+      "selectLanguage": "Sélectionner la langue"
+    }
+  },
   "landing": {
     "title": "Plateforme de Trading Haute Performance",
     "subtitle": "Démo technique d'une plateforme de trading moderne. Projet éducatif combinant Vue.js et FastAPI.",

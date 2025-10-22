@@ -23,7 +23,7 @@
       <!-- Animated background effect -->
       <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
       
-      <input ref="inputEl" type="file" accept=".csv" multiple class="hidden" @change="onFileChange" />
+      <input ref="inputEl" type="file" accept=".csv" class="hidden" @change="onFileChange" />
       
       <div class="relative z-10 flex flex-col items-center gap-3">
         <div class="rounded-full bg-secondary/50 p-3 group-hover:bg-trading-blue/10 transition-colors">
@@ -31,11 +31,11 @@
         </div>
         <div class="text-center">
           <p class="font-medium">{{ t('simulate.form.csv.drop_hint') }}</p>
-          <p class="text-xs text-muted-foreground mt-1">{{ t('simulate.form.csv.max_files') }}</p>
+          <p class="text-xs text-muted-foreground mt-1">Sélectionnez un fichier CSV</p>
           <div v-if="selectedFiles.length > 0" class="mt-3 space-y-2">
             <p class="text-xs text-trading-green font-medium flex items-center justify-center gap-2">
               <CheckCircle class="size-4" />
-              {{ selectedFiles.length }} {{ t('simulate.form.csv.files_selected') }}
+              Fichier sélectionné
             </p>
             <div class="max-h-32 overflow-y-auto space-y-1">
               <div
@@ -96,13 +96,10 @@ function addFiles(files: File[]) {
     return true
   })
   
-  const newFiles = [...props.selectedFiles, ...validFiles]
-  if (newFiles.length > 10) {
-    emit('update:error', 'Maximum 10 files allowed')
-    return
+  // Only allow one file at a time - replace existing files
+  if (validFiles.length > 0) {
+    emit('update:selectedFiles', [validFiles[0]])
   }
-  
-  emit('update:selectedFiles', newFiles)
 }
 
 function removeFile(index: number) {

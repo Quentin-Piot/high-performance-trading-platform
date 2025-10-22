@@ -1,13 +1,11 @@
 import { useAuthStore } from "@/stores/authStore";
 
-export interface AuthResponse {
-  access_token: string
-  token_type?: string
-  expires_in?: number
-  sub?: string
-  email_verified?: boolean
-}
-
+export type AuthResponse = { 
+  access_token: string; 
+  token_type: string;
+  sub?: string;
+  email_verified?: boolean;
+};
 export type BacktestResponse = {
   timestamps: string[];
   equity_curve: number[];

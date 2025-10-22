@@ -1,255 +1,318 @@
 <template>
-  <div class="container mx-auto p-6 space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold">{{ t('history.title') }}</h1>
-        <p class="text-muted-foreground mt-2">{{ t('history.description') }}</p>
-      </div>
-      <div class="flex items-center gap-4">
-        <!-- Strategy Filter -->
-        <Select v-model="selectedStrategy">
-          <SelectTrigger class="w-48">
-            <SelectValue :placeholder="t('history.filter_by_strategy')" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">{{ t('history.all_strategies') }}</SelectItem>
-            <SelectItem value="sma_crossover">SMA Crossover</SelectItem>
-            <SelectItem value="rsi">RSI</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <!-- Refresh Button -->
-        <Button @click="loadHistory" :disabled="loading" variant="outline">
-          <RefreshCw :class="{ 'animate-spin': loading }" class="w-4 h-4 mr-2" />
-          {{ t('common.refresh') }}
-        </Button>
-      </div>
-    </div>
+  <BaseLayout>
+    <!-- Header avec design moderne -->
+    <section class="animate-scale-in" style="animation-delay: 0.1s">
+      <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/20 mb-6">
+        <CardHeader class="pb-3 sm:pb-4 p-4 sm:p-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <CardTitle class="flex items-center gap-3 text-2xl sm:text-3xl">
+                <div class="rounded-xl bg-trading-cyan/10 p-3 text-trading-cyan">
+                  <BarChart3 class="size-6 sm:size-7" />
+                </div>
+                <span>{{ t('history.title') }}</span>
+              </CardTitle>
+              <p class="text-muted-foreground text-sm sm:text-base">{{ t('history.description') }}</p>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+              <!-- Strategy Filter -->
+              <Select v-model="selectedStrategy">
+                <SelectTrigger class="w-full sm:w-48 border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft">
+                  <SelectValue :placeholder="t('history.filter_by_strategy')" />
+                </SelectTrigger>
+                <SelectContent class="border-0 shadow-strong">
+                  <SelectItem value="all">{{ t('history.all_strategies') }}</SelectItem>
+                  <SelectItem
+                    v-for="strategy in BACKTEST_STRATEGIES"
+                    :key="strategy.id"
+                    :value="strategy.id"
+                  >
+                    {{ strategy.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <!-- Refresh Button -->
+              <Button 
+                @click="loadHistory" 
+                :disabled="loading" 
+                variant="ghost"
+                size="sm"
+                class="rounded-lg hover:bg-trading-green/10 hover:text-trading-green transition-smooth shadow-soft hover-scale h-10 w-10 p-0"
+              >
+                <RefreshCw :class="{ 'animate-spin': loading }" class="size-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    </section>
 
-    <!-- Stats Cards -->
-    <div v-if="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card>
-        <CardContent class="p-6">
-          <div class="flex items-center">
-            <BarChart3 class="h-8 w-8 text-blue-600" />
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.total_backtests') }}</p>
-              <p class="text-2xl font-bold">{{ stats.total_backtests }}</p>
+    <!-- Stats Cards avec design moderne -->
+    <section v-if="stats" class="animate-scale-in mb-6" style="animation-delay: 0.2s">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
+          <CardContent class="p-4 sm:p-6">
+            <div class="flex items-center">
+              <div class="rounded-xl bg-trading-blue/10 p-3 text-trading-blue">
+                <BarChart3 class="size-6 sm:size-7" />
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.total_backtests') }}</p>
+                <p class="text-2xl font-bold">{{ stats.total_backtests }}</p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardContent class="p-6">
-          <div class="flex items-center">
-            <TrendingUp class="h-8 w-8 text-green-600" />
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.avg_return') }}</p>
-              <p class="text-2xl font-bold">
-                {{ stats.avg_return ? `${stats.avg_return.toFixed(2)}%` : 'N/A' }}
-              </p>
+          </CardContent>
+        </Card>
+        
+        <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
+          <CardContent class="p-4 sm:p-6">
+            <div class="flex items-center">
+              <div class="rounded-xl bg-trading-green/10 p-3 text-trading-green">
+                <TrendingUp class="size-6 sm:size-7" />
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.avg_return') }}</p>
+                <p class="text-2xl font-bold">
+                  {{ stats.avg_return ? `${stats.avg_return.toFixed(2)}%` : 'N/A' }}
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardContent class="p-6">
-          <div class="flex items-center">
-            <Activity class="h-8 w-8 text-purple-600" />
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.avg_sharpe') }}</p>
-              <p class="text-2xl font-bold">
-                {{ stats.avg_sharpe ? stats.avg_sharpe.toFixed(3) : 'N/A' }}
-              </p>
+          </CardContent>
+        </Card>
+        
+        <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
+          <CardContent class="p-4 sm:p-6">
+            <div class="flex items-center">
+              <div class="rounded-xl bg-trading-purple/10 p-3 text-trading-purple">
+                <Activity class="size-6 sm:size-7" />
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.avg_sharpe') }}</p>
+                <p class="text-2xl font-bold">
+                  {{ stats.avg_sharpe ? stats.avg_sharpe.toFixed(3) : 'N/A' }}
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardContent class="p-6">
-          <div class="flex items-center">
-            <Zap class="h-8 w-8 text-orange-600" />
-            <div class="ml-4">
-              <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.monte_carlo_runs') }}</p>
-              <p class="text-2xl font-bold">{{ stats.total_monte_carlo_runs }}</p>
+          </CardContent>
+        </Card>
+        
+        <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
+          <CardContent class="p-4 sm:p-6">
+            <div class="flex items-center">
+              <div class="rounded-xl bg-trading-orange/10 p-3 text-trading-orange">
+                <Zap class="size-6 sm:size-7" />
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-muted-foreground">{{ t('history.stats.monte_carlo_runs') }}</p>
+                <p class="text-2xl font-bold">{{ stats.total_monte_carlo_runs }}</p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
 
-    <!-- History Table -->
-    <Card>
-      <CardHeader>
-        <CardTitle>{{ t('history.backtest_history') }}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div v-if="loading" class="flex items-center justify-center py-8">
-          <Loader2 class="w-8 h-8 animate-spin" />
-          <span class="ml-2">{{ t('common.loading') }}</span>
-        </div>
-        
-        <div v-else-if="error" class="text-center py-8">
-          <AlertCircle class="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p class="text-red-600">{{ error }}</p>
-          <Button @click="loadHistory" class="mt-4" variant="outline">
-            {{ t('common.retry') }}
-          </Button>
-        </div>
-        
-        <div v-else-if="!history.length" class="text-center py-8">
-          <BarChart3 class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p class="text-muted-foreground">{{ t('history.no_history') }}</p>
-          <Button @click="navigateToSimulate" class="mt-4">
-            {{ t('history.run_first_backtest') }}
-          </Button>
-        </div>
+    <!-- History Table avec design moderne -->
+    <section class="animate-scale-in" style="animation-delay: 0.3s">
+      <Card class="border-0 shadow-strong bg-gradient-to-br from-card via-card to-secondary/10 overflow-hidden">
+        <CardHeader class="pb-3 sm:pb-4 p-4 sm:p-6">
+          <CardTitle class="flex items-center gap-3 text-xl">
+            <div class="rounded-xl bg-trading-cyan/10 p-2 text-trading-cyan">
+              <BarChart3 class="size-5" />
+            </div>
+            {{ t('history.backtest_history') }}
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="p-4 sm:p-6 pt-0">
+          <div v-if="loading" class="flex items-center justify-center py-12">
+            <div class="flex flex-col items-center gap-3">
+              <Loader2 class="size-8 animate-spin text-trading-blue" />
+              <span class="text-sm text-muted-foreground">{{ t('common.loading') }}</span>
+            </div>
+          </div>
+          
+          <div v-else-if="error" class="text-center py-12">
+            <div class="rounded-xl bg-trading-red/5 text-trading-red p-4 shadow-soft animate-slide-up">
+              <div class="flex items-center justify-center gap-3 mb-4">
+                <div class="rounded-full bg-trading-red/10 p-2">
+                  <AlertCircle class="size-6" />
+                </div>
+                <span class="font-medium">{{ error }}</span>
+              </div>
+              <Button @click="loadHistory" variant="outline" size="sm" class="border-trading-red/20 hover:border-trading-red hover:bg-trading-red/5 hover:text-trading-red">
+                {{ t('common.retry') }}
+              </Button>
+            </div>
+          </div>
+          
+          <div v-else-if="!history.length" class="text-center py-12">
+            <div class="flex flex-col items-center gap-4">
+              <div class="rounded-xl bg-secondary/50 p-4">
+                <BarChart3 class="size-12 text-muted-foreground" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-muted-foreground">{{ t('history.no_history') }}</p>
+                <Button @click="navigateToSimulate" class="bg-trading-blue hover:bg-trading-blue/90 transition-smooth shadow-soft hover-scale">
+                  {{ t('history.run_first_backtest') }}
+                </Button>
+              </div>
+            </div>
+          </div>
         
         <div v-else class="space-y-4">
           <!-- History Items -->
-          <div v-for="item in history" :key="item.id" class="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <div class="flex items-center gap-4 mb-2">
-                  <Badge :variant="getStrategyVariant(item.strategy)">
+          <div v-for="item in history" :key="item.id" class="border-0 rounded-xl p-4 sm:p-6 bg-gradient-to-br from-secondary/30 via-secondary/20 to-secondary/10 hover:shadow-medium transition-all duration-300 hover-scale shadow-soft">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div class="flex-1 w-full">
+                <div class="flex flex-wrap items-center gap-2 mb-4">
+                  <Badge :variant="getStrategyVariant(item.strategy)" class="rounded-lg px-3 py-1 font-medium shadow-soft">
                     {{ getStrategyLabel(item.strategy) }}
                   </Badge>
-                  <Badge v-if="item.monte_carlo_runs > 1" variant="secondary">
+                  <Badge v-if="item.monte_carlo_runs > 1" variant="secondary" class="rounded-lg px-3 py-1 font-medium shadow-soft border-trading-purple/30 text-trading-purple">
                     Monte Carlo ({{ item.monte_carlo_runs }} runs)
                   </Badge>
-                  <Badge :variant="getStatusVariant(item.status)">
+                  <Badge :variant="getStatusVariant(item.status)" class="rounded-lg px-3 py-1 font-medium shadow-soft">
                     {{ getStatusLabel(item.status) }}
                   </Badge>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
-                  <div>
-                    <p class="text-muted-foreground">{{ t('history.date_range') }}</p>
-                    <p class="font-medium">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm mb-4">
+                  <div class="space-y-1">
+                    <p class="text-muted-foreground font-medium">{{ t('history.date_range') }}</p>
+                    <p class="font-semibold text-foreground">
                       {{ item.start_date || 'N/A' }} - {{ item.end_date || 'N/A' }}
                     </p>
                   </div>
                   
-                  <div v-if="item.total_return !== null">
-                    <p class="text-muted-foreground">{{ t('history.total_return') }}</p>
-                    <p class="font-medium" :class="getReturnColor(item.total_return)">
+                  <div v-if="item.total_return !== null" class="space-y-1">
+                    <p class="text-muted-foreground font-medium">{{ t('history.total_return') }}</p>
+                    <p class="font-bold text-lg" :class="getReturnColor(item.total_return)">
                       {{ item.total_return.toFixed(2) }}%
                     </p>
                   </div>
                   
-                  <div v-if="item.sharpe_ratio !== null">
-                    <p class="text-muted-foreground">{{ t('history.sharpe_ratio') }}</p>
-                    <p class="font-medium">{{ item.sharpe_ratio.toFixed(3) }}</p>
+                  <div v-if="item.sharpe_ratio !== null" class="space-y-1">
+                    <p class="text-muted-foreground font-medium">{{ t('history.sharpe_ratio') }}</p>
+                    <p class="font-bold text-lg text-trading-purple">{{ item.sharpe_ratio.toFixed(3) }}</p>
                   </div>
                   
-                  <div v-if="item.max_drawdown !== null">
-                    <p class="text-muted-foreground">{{ t('history.max_drawdown') }}</p>
-                    <p class="font-medium text-red-600">{{ item.max_drawdown.toFixed(2) }}%</p>
+                  <div v-if="item.max_drawdown !== null" class="space-y-1">
+                    <p class="text-muted-foreground font-medium">{{ t('history.max_drawdown') }}</p>
+                    <p class="font-bold text-lg text-trading-red">{{ item.max_drawdown.toFixed(2) }}%</p>
                   </div>
                   
-                  <div>
-                    <p class="text-muted-foreground">{{ t('history.created_at') }}</p>
-                    <p class="font-medium">{{ formatDate(item.created_at) }}</p>
+                  <div class="space-y-1">
+                    <p class="text-muted-foreground font-medium">{{ t('history.created_at') }}</p>
+                    <p class="font-semibold text-foreground">{{ formatDate(item.created_at) }}</p>
                   </div>
                 </div>
                 
                 <!-- Strategy Parameters -->
-                <div class="mt-3 text-xs text-muted-foreground">
-                  <span class="font-medium">{{ t('history.parameters') }}:</span>
-                  {{ formatStrategyParams(item.strategy_params) }}
+                <div class="mt-3 p-3 rounded-lg bg-secondary/30 text-xs">
+                  <span class="font-semibold text-trading-blue">{{ t('history.parameters') }}:</span>
+                  <span class="text-muted-foreground ml-2">{{ formatStrategyParams(item.strategy_params) }}</span>
                 </div>
                 
                 <!-- Datasets Used -->
-                <div v-if="item.datasets_used && item.datasets_used.length" class="mt-2 text-xs text-muted-foreground">
-                  <span class="font-medium">{{ t('history.datasets') }}:</span>
-                  {{ item.datasets_used.join(', ') }}
+                <div v-if="item.datasets_used && item.datasets_used.length" class="mt-2 p-3 rounded-lg bg-secondary/30 text-xs">
+                  <span class="font-semibold text-trading-cyan">{{ t('history.datasets') }}:</span>
+                  <span class="text-muted-foreground ml-2">{{ item.datasets_used.join(', ') }}</span>
                 </div>
               </div>
               
-              <div class="flex items-center gap-2 ml-4">
-                <Button @click="viewDetails(item)" variant="outline" size="sm">
-                  <Eye class="w-4 h-4 mr-1" />
+              <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                <Button @click="viewDetails(item)" variant="outline" size="sm" class="rounded-lg border-0 bg-trading-blue/10 hover:bg-trading-blue/20 text-trading-blue hover:text-trading-blue transition-smooth shadow-soft hover-scale">
+                  <Eye class="size-4 mr-2" />
                   {{ t('history.view_details') }}
                 </Button>
                 
-                <Button @click="rerunBacktest(item)" variant="outline" size="sm">
-                  <Play class="w-4 h-4 mr-1" />
+                <Button @click="rerunBacktest(item)" variant="outline" size="sm" class="rounded-lg border-0 bg-trading-green/10 hover:bg-trading-green/20 text-trading-green hover:text-trading-green transition-smooth shadow-soft hover-scale">
+                  <Play class="size-4 mr-2" />
                   {{ t('history.rerun') }}
                 </Button>
                 
-                <Button @click="deleteBacktest(item)" variant="destructive" size="sm">
-                  <Trash2 class="w-4 h-4" />
+                <Button @click="deleteBacktest(item)" variant="destructive" size="sm" class="rounded-lg border-0 bg-trading-red/10 hover:bg-trading-red/20 text-trading-red hover:text-trading-red transition-smooth shadow-soft hover-scale">
+                  <Trash2 class="size-4" />
                 </Button>
               </div>
             </div>
           </div>
           
           <!-- Pagination -->
-          <div v-if="pagination.total > pagination.per_page" class="flex items-center justify-between pt-4">
-            <p class="text-sm text-muted-foreground">
-              {{ t('history.showing') }} {{ (pagination.page - 1) * pagination.per_page + 1 }} - 
-              {{ Math.min(pagination.page * pagination.per_page, pagination.total) }} 
-              {{ t('history.of') }} {{ pagination.total }} {{ t('history.results') }}
-            </p>
-            
-            <div class="flex items-center gap-2">
-              <Button 
-                @click="loadHistory(pagination.page - 1)" 
-                :disabled="!pagination.has_prev"
-                variant="outline" 
-                size="sm"
-              >
-                <ChevronLeft class="w-4 h-4" />
-                {{ t('common.previous') }}
-              </Button>
-              
-              <span class="px-3 py-1 text-sm">{{ pagination.page }}</span>
-              
-              <Button 
-                @click="loadHistory(pagination.page + 1)" 
-                :disabled="!pagination.has_next"
-                variant="outline" 
-                size="sm"
-              >
-                {{ t('common.next') }}
-                <ChevronRight class="w-4 h-4" />
-              </Button>
-            </div>
+          <div v-if="pagination.total > pagination.per_page" class="pt-6">
+            <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10">
+              <CardContent class="p-4 sm:p-6">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p class="text-sm text-muted-foreground font-medium">
+                    {{ t('history.showing') }} {{ (pagination.page - 1) * pagination.per_page + 1 }} - 
+                    {{ Math.min(pagination.page * pagination.per_page, pagination.total) }} 
+                    {{ t('history.of') }} {{ pagination.total }} {{ t('history.results') }}
+                  </p>
+                  
+                  <div class="flex items-center gap-3">
+                    <Button 
+                      @click="loadHistory(pagination.page - 1)" 
+                      :disabled="!pagination.has_prev"
+                      variant="outline" 
+                      size="sm"
+                      class="rounded-lg border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft hover-scale"
+                    >
+                      <ChevronLeft class="size-4" />
+                      {{ t('common.previous') }}
+                    </Button>
+                    
+                    <span class="text-sm font-medium px-3 py-1 rounded-lg bg-trading-blue/10 text-trading-blue">{{ pagination.page }}</span>
+                    
+                    <Button 
+                      @click="loadHistory(pagination.page + 1)" 
+                      :disabled="!pagination.has_next"
+                      variant="outline" 
+                      size="sm"
+                      class="rounded-lg border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft hover-scale"
+                    >
+                      {{ t('common.next') }}
+                      <ChevronRight class="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  </div>
+        </CardContent>
+      </Card>
+    </section>
+  </BaseLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from '@/router'
 import { useI18n } from 'vue-i18n'
-import { 
-  Activity, 
-  AlertCircle, 
-  BarChart3, 
-  ChevronLeft, 
-  ChevronRight, 
-  Eye, 
-  Loader2, 
-  Play, 
-  RefreshCw, 
-  TrendingUp, 
-  Trash2, 
-  Zap 
+
+import { BACKTEST_STRATEGIES, type StrategyId } from '@/config/backtestStrategies'
+import {
+  BarChart3,
+  TrendingUp,
+  Activity,
+  Zap,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+  Eye,
+  Play,
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-vue-next'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import BaseLayout from '@/components/layouts/BaseLayout.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
 import { fetchJson } from '@/services/apiClient'
 
 const { t } = useI18n()
@@ -260,16 +323,16 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const history = ref<any[]>([])
 const stats = ref<any>(null)
-const selectedStrategy = ref('')
+const selectedStrategy = ref('all')
 const pagination = ref({
   page: 1,
-  per_page: 20,
+  per_page: 10,
   total: 0,
-  has_next: false,
-  has_prev: false
+  has_prev: false,
+  has_next: false
 })
 
-// Load history data
+// Functions
 const loadHistory = async (page = 1) => {
   loading.value = true
   error.value = null
@@ -280,121 +343,137 @@ const loadHistory = async (page = 1) => {
       per_page: pagination.value.per_page.toString()
     })
     
-    if (selectedStrategy.value) {
-      params.set('strategy', selectedStrategy.value)
+    if (selectedStrategy.value && selectedStrategy.value !== 'all') {
+      console.log('Adding strategy filter:', selectedStrategy.value)
+      params.append('strategy', selectedStrategy.value)
     }
     
-    const response = await fetchJson<any>(`/history?${params.toString()}`)
+    console.log('Loading history with params:', params.toString())
     
-    history.value = response.items
+    const response = await fetchJson<any>(`/history/?${params}`)
+    history.value = response.items || []
     pagination.value = {
-      page: response.page,
-      per_page: response.per_page,
-      total: response.total,
-      has_next: response.has_next,
-      has_prev: response.has_prev
+      page: response.page || pagination.value.page,
+      per_page: response.per_page || pagination.value.per_page,
+      total: response.total || pagination.value.total,
+      has_prev: response.has_prev || pagination.value.has_prev,
+      has_next: response.has_next || pagination.value.has_next
     }
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to load history'
+  } catch (err: any) {
+    error.value = err.message || t('history.error_loading')
   } finally {
     loading.value = false
   }
 }
 
-// Load user stats
 const loadStats = async () => {
   try {
     const response = await fetchJson<any>('/history/stats')
     stats.value = response
-  } catch (err) {
-    console.error('Failed to load stats:', err)
+  } catch (err: any) {
+    console.error('Error loading stats:', err)
   }
-}
-
-// Helper functions
-const getStrategyVariant = (strategy: string) => {
-  switch (strategy) {
-    case 'sma_crossover': return 'default'
-    case 'rsi': return 'secondary'
-    default: return 'outline'
-  }
-}
-
-const getStrategyLabel = (strategy: string) => {
-  switch (strategy) {
-    case 'sma_crossover': return 'SMA Crossover'
-    case 'rsi': return 'RSI'
-    default: return strategy
-  }
-}
-
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case 'completed': return 'default'
-    case 'running': return 'secondary'
-    case 'failed': return 'destructive'
-    default: return 'outline'
-  }
-}
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'completed': return t('history.status.completed')
-    case 'running': return t('history.status.running')
-    case 'failed': return t('history.status.failed')
-    default: return status
-  }
-}
-
-const getReturnColor = (returnValue: number) => {
-  return returnValue >= 0 ? 'text-green-600' : 'text-red-600'
 }
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
 
-const formatStrategyParams = (params: any) => {
-  const formatted = []
-  if (params.sma_short) formatted.push(`Short SMA: ${params.sma_short}`)
-  if (params.sma_long) formatted.push(`Long SMA: ${params.sma_long}`)
-  if (params.period) formatted.push(`Period: ${params.period}`)
-  if (params.overbought) formatted.push(`Overbought: ${params.overbought}`)
-  if (params.oversold) formatted.push(`Oversold: ${params.oversold}`)
-  return formatted.join(', ') || 'Default parameters'
+const getStrategyVariant = (strategyId: StrategyId) => {
+  // Utiliser des variants par défaut basés sur l'ID de stratégie
+  const variants: Record<StrategyId, 'default' | 'secondary' | 'outline'> = {
+    'sma_crossover': 'default',
+    'rsi': 'secondary'
+  };
+  return variants[strategyId] || 'default' as const;
 }
 
-// Actions
+const getStatusVariant = (status: string) => {
+  const variants = {
+    'completed': 'default' as const,
+    'running': 'secondary' as const,
+    'failed': 'destructive' as const
+  }
+  return variants[status as keyof typeof variants] || 'outline' as const
+}
+
+const getStrategyLabel = (strategyId: StrategyId) => {
+  const strategyConfig = BACKTEST_STRATEGIES[strategyId];
+  return strategyConfig?.name || strategyId;
+}
+
+const getStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    'completed': t('history.status.completed'),
+    'running': t('history.status.running'),
+    'failed': t('history.status.failed')
+  }
+  return labels[status] || status
+}
+
+const getReturnColor = (returnValue: number) => {
+  if (returnValue > 0) return 'text-trading-green'
+  if (returnValue < 0) return 'text-trading-red'
+  return 'text-muted-foreground'
+}
+
+const formatStrategyParams = (params: any) => {
+  if (!params) return 'N/A'
+  return Object.entries(params)
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(', ')
+}
+
 const viewDetails = (item: any) => {
-  // Navigate to a detailed view or show modal
   navigate(`/history/${item.id}`)
 }
 
-const rerunBacktest = async (item: any) => {
-  try {
-    // Navigate to simulate page with pre-filled parameters
-    const params = new URLSearchParams({
-      strategy: item.strategy,
-      start_date: item.start_date || '',
-      end_date: item.end_date || '',
-      ...item.strategy_params
-    })
-    
-    navigate(`/simulate?${params.toString()}`)
-  } catch (err) {
-    console.error('Failed to rerun backtest:', err)
+const rerunBacktest = (item: any) => {
+  const queryParams: Record<string, string | number | undefined> = {
+    strategy: item.strategy,
+    startDate: item.start_date,
+    endDate: item.end_date,
+    monteCarloRuns: item.monte_carlo_runs,
+    monteCarloMethod: item.monte_carlo_method,
+    sampleFraction: item.sample_fraction,
+    gaussianScale: item.gaussian_scale,
+    priceType: item.price_type,
+    datasets: item.datasets_used && item.datasets_used.length > 0 ? item.datasets_used.join(',') : undefined
+  };
+
+  // Add strategy specific parameters
+  const strategyConfig = BACKTEST_STRATEGIES[item.strategy];
+  if (strategyConfig && item.strategy_params) {
+    for (const p of strategyConfig.params) {
+      if (item.strategy_params[p.key] !== null && item.strategy_params[p.key] !== undefined) {
+        queryParams[p.key] = item.strategy_params[p.key];
+      }
+    }
   }
+
+  // Filter out null/undefined/empty string values
+  const filteredQueryParams = Object.fromEntries(
+    Object.entries(queryParams).filter(([, value]) => value !== null && value !== undefined && value !== '')
+  );
+
+  // Build query string
+  const queryString = new URLSearchParams(
+    Object.entries(filteredQueryParams).map(([key, value]) => [key, String(value)])
+  ).toString();
+
+  navigate(`/simulate?${queryString}`);
 }
 
-const deleteBacktest = async (item: any) => {
+const deleteBacktest = async (id: string) => {
   if (!confirm(t('history.confirm_delete'))) return
   
   try {
-    await fetchJson(`/history/${item.id}`, { method: 'DELETE' })
-    await loadHistory(pagination.value.page)
+    await fetchJson(`/history/${id}`, { method: 'DELETE' })
+    await loadHistory()
     await loadStats()
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to delete backtest'
+  } catch (err: any) {
+    error.value = err.message || t('history.error_deleting')
   }
 }
 
@@ -403,8 +482,10 @@ const navigateToSimulate = () => {
 }
 
 // Watchers
-watch(selectedStrategy, () => {
-  loadHistory(1)
+watch(selectedStrategy, (newValue, oldValue) => {
+  console.log('Strategy filter changed:', { from: oldValue, to: newValue })
+  pagination.value.page = 1
+  loadHistory()
 })
 
 // Lifecycle
