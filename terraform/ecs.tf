@@ -111,6 +111,11 @@ resource "aws_ecs_task_definition" "backend_task" {
         { name = "ENVIRONMENT", value = var.env },
         { name = "FRONTEND_URL", value = var.frontend_url },
 
+        # Google OAuth configuration
+        { name = "GOOGLE_CLIENT_ID", value = var.google_client_id },
+        { name = "GOOGLE_CLIENT_SECRET", value = var.google_client_secret },
+        { name = "GOOGLE_REDIRECT_URI", value = var.google_redirect_uri },
+
         # Worker configuration
         { name = "RUN_WORKER", value = "true" }
       ]

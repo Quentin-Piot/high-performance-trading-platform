@@ -34,10 +34,11 @@ jobs:
         working-directory: ./backend/api
         run: |
           REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
+          TIMESTAMP=$(date +%s)
           docker build -t "$REPO:latest" .
-          docker tag "$REPO:latest" "$REPO:$(date +%s)"
+          docker tag "$REPO:latest" "$REPO:$TIMESTAMP"
           docker push "$REPO:latest"
-          docker push "$REPO:$(date +%s)"
+          docker push "$REPO:$TIMESTAMP"
 
       - name: Install pnpm
         run: npm install -g pnpm
