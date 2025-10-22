@@ -1,11 +1,13 @@
 import { useAuthStore } from "@/stores/authStore";
 
-export type AuthResponse = {
-  access_token: string;
-  token_type: string;
-  sub?: string;
-  email_verified?: boolean;
-};
+export interface AuthResponse {
+  access_token: string
+  token_type?: string
+  expires_in?: number
+  sub?: string
+  email_verified?: boolean
+}
+
 export type BacktestResponse = {
   timestamps: string[];
   equity_curve: number[];
@@ -17,7 +19,7 @@ export type BacktestResponse = {
 // API base URL configuration using environment variable
 // Local: http://localhost:8000/api/v1 (via VITE_API_BASE_URL)
 // Production: /api/v1 (default fallback)
-export const BASE_URL =  "/api/v1";
+export const BASE_URL = "/api/v1";
 
 // Build WebSocket URL with same host and API prefix
 export function buildWsUrl(path: string): string {
