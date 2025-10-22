@@ -74,34 +74,34 @@ class CognitoGoogleIntegrationService:
             email = google_user_info["email"]
 
             try:
-                # Try to find existing user by email
-                response = self.cognito_idp.admin_get_user(
+                # Use list_users to find user by email attribute since email aliases are configured
+                response = self.cognito_idp.list_users(
                     UserPoolId=self.user_pool_id,
-                    Username=email
+                    Filter=f'email = "{email}"'
                 )
 
-                # User exists, update with Google info if needed
-                user_attributes = {attr['Name']: attr['Value'] for attr in response['UserAttributes']}
+                if response['Users']:
+                    # User exists, get full user details
+                    user = response['Users'][0]
+                    user_attributes = {attr['Name']: attr['Value'] for attr in user['Attributes']}
 
-                # Link Google identity if not already linked
-                if 'identities' not in user_attributes:
-                    await self._link_google_identity(email, google_user_info)
+                    # Link Google identity if not already linked
+                    if 'identities' not in user_attributes:
+                        await self._link_google_identity(user['Username'], google_user_info)
 
-                return CognitoUser(
-                    sub=user_attributes.get('sub', f"google_{google_user_info['sub']}"),
-                    email=email,
-                    name=user_attributes.get('name', google_user_info.get('name', '')),
-                    email_verified=user_attributes.get('email_verified', 'false').lower() == 'true',
-                    cognito_username=response['Username']
-                )
+                    return CognitoUser(
+                        sub=user_attributes.get('sub', f"google_{google_user_info['sub']}"),
+                        email=email,
+                        name=user_attributes.get('name', google_user_info.get('name', '')),
+                        email_verified=user_attributes.get('email_verified', 'false').lower() == 'true',
+                        cognito_username=user['Username']
+                    )
 
             except ClientError as e:
-                if e.response['Error']['Code'] == 'UserNotFoundException':
-                    # User doesn't exist, create new federated user
-                    return await self._create_federated_user(google_user_info)
-                else:
-                    logger.error(f"Error checking user existence: {e}")
-                    return None
+                logger.warning(f"Error searching for existing user: {e}")
+
+            # User doesn't exist, create new federated user
+            return await self._create_federated_user(google_user_info)
 
         except Exception as e:
             logger.error(f"Error creating federated user: {e}")
@@ -113,10 +113,14 @@ class CognitoGoogleIntegrationService:
             email = google_user_info["email"]
             name = google_user_info.get("name", "")
 
+            # Generate a unique username since email aliases are configured
+            import uuid
+            username = str(uuid.uuid4())
+
             # Create user in User Pool with Google identity
             self.cognito_idp.admin_create_user(
                 UserPoolId=self.user_pool_id,
-                Username=email,
+                Username=username,
                 UserAttributes=[
                     {'Name': 'email', 'Value': email},
                     {'Name': 'email_verified', 'Value': 'true'},
@@ -126,14 +130,14 @@ class CognitoGoogleIntegrationService:
             )
 
             # Link Google identity
-            await self._link_google_identity(email, google_user_info)
+            await self._link_google_identity(username, google_user_info)
 
             return CognitoUser(
                 sub=f"google_{google_user_info['sub']}",
                 email=email,
                 name=name,
                 email_verified=True,
-                cognito_username=email
+                cognito_username=username
             )
 
         except ClientError as e:
