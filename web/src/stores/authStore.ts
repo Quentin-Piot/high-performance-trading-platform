@@ -5,10 +5,10 @@ import { useErrorStore } from '@/stores/errorStore'
 type Credentials = { email: string; password: string }
 
 interface User {
-  sub: string
+  sub?: string
   email: string
   name?: string
-  email_verified: boolean
+  email_verified?: boolean
   provider: 'cognito' | 'google'
 }
 
