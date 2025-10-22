@@ -45,24 +45,6 @@ resource "aws_cloudfront_distribution" "frontend" {
     error_caching_min_ttl = 0
   }
 
-  default_cache_behavior {
-    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
-    cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "S3-${aws_s3_bucket.frontend_bucket.id}"
-    viewer_protocol_policy = "redirect-to-https"
-
-    forwarded_values {
-      query_string = true
-      cookies {
-        forward = "none"
-      }
-    }
-
-    min_ttl     = 0
-    default_ttl = 3600
-    max_ttl     = 86400
-  }
-
   ordered_cache_behavior {
     path_pattern           = "/api/*"
     target_origin_id       = "API-Backend"
@@ -81,6 +63,26 @@ resource "aws_cloudfront_distribution" "frontend" {
 
     compress = true
   }
+  
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-${aws_s3_bucket.frontend_bucket.id}"
+    viewer_protocol_policy = "redirect-to-https"
+
+    forwarded_values {
+      query_string = true
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 3600
+    max_ttl     = 86400
+  }
+
+
 
 
   price_class = "PriceClass_100"
