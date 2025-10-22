@@ -7,6 +7,10 @@ import { Toggle, useForwardPropsEmits } from "reka-ui"
 import { cn } from "@/lib/utils"
 import { toggleVariants } from "."
 
+defineOptions({
+  name: 'ToggleComponent'
+})
+
 const props = withDefaults(defineProps<ToggleProps & {
   class?: HTMLAttributes["class"]
   variant?: ToggleVariants["variant"]
@@ -15,6 +19,7 @@ const props = withDefaults(defineProps<ToggleProps & {
   variant: "default",
   size: "default",
   disabled: false,
+  class: "",
 })
 
 const emits = defineEmits<ToggleEmits>()

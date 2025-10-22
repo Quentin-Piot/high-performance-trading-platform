@@ -1,4 +1,4 @@
-<script lang="ts" setup>
+<script setup lang="ts">
 import type { DateValue } from "@internationalized/date"
 import type { CalendarRootEmits, CalendarRootProps } from "reka-ui"
 import type { HTMLAttributes, Ref } from "vue"
@@ -17,16 +17,22 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+defineOptions({
+  name: 'CalendarComponent'
+})
+
 const props = withDefaults(defineProps<CalendarRootProps & { class?: HTMLAttributes["class"] }>(), {
   modelValue: undefined,
   placeholder() {
     return today(getLocalTimeZone())
   },
+  class: "",
   weekdayFormat: "short",
 })
 const emits = defineEmits<CalendarRootEmits>()
 
 const delegatedProps = computed(() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { class: _, placeholder: __, ...delegated } = props
 
   return delegated

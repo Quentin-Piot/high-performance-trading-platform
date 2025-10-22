@@ -1,12 +1,27 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import AuthForm from '@/components/auth/AuthForm.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from '@/router'
 
 const auth = useAuthStore()
-auth.rehydrate()
 const { navigate } = useRouter()
-if (auth.isAuthenticated) navigate('/simulate')
+
+onMounted(async () => {
+  // Check for Google OAuth callback
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.has('auth') || urlParams.has('error')) {
+    const success = await auth.handleGoogleCallback()
+    if (success) {
+      navigate('/simulate')
+      return
+    }
+  }
+  
+  // Rehydrate auth state
+  auth.rehydrate()
+  if (auth.isAuthenticated) navigate('/simulate')
+})
 </script>
 
 <template>

@@ -6,6 +6,7 @@ import { useI18n } from "vue-i18n";
 import LoginView from "@/pages/LoginView.vue";
 import RegisterView from "@/pages/RegisterView.vue";
 import SimulateView from "@/pages/SimulateView.vue";
+import HistoryView from "@/pages/HistoryView.vue";
 import Dashboard from "@/pages/Dashboard.vue";
 import LandingView from "@/pages/LandingView.vue";
 import Sonner from "@/components/ui/sonner/Sonner.vue";
@@ -23,12 +24,16 @@ const View = computed(() => {
             return LandingView;
         case "/legacy":
             return Dashboard;
+        case "/dashboard":
+            return Dashboard;
         case "/login":
             return LoginView;
         case "/register":
             return RegisterView;
         case "/simulate":
             return SimulateView;
+        case "/history":
+            return HistoryView;
         default:
             return LandingView;
     }
@@ -38,7 +43,7 @@ const View = computed(() => {
 <template>
     <component :is="View" />
     <!-- Toaster global pour les notifications -->
-    <Sonner position="top-right" richColors closeButton :duration="4000" />
+    <Sonner position="top-right" rich-colors close-button :duration="4000" />
 </template>
 
 <style scoped>

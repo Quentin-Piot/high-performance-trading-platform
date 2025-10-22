@@ -4,9 +4,10 @@
     "subtitle": "Plateforme de Trading",
     "home": "Accueil",
     "simulate": "Simuler",
+    "history": "Historique",
     "legacy": "Ancien",
     "login": "Connexion",
-    "register": "S'inscrire"
+    "register": "Inscription"
   },
   "landing": {
     "title": "Plateforme de Trading Haute Performance",
@@ -296,6 +297,44 @@
     "cancel": "Annuler",
     "save": "Enregistrer",
     "delete": "Supprimer",
-    "edit": "Modifier"
+    "edit": "Modifier",
+    "loading": "Chargement...",
+    "refresh": "Actualiser",
+    "retry": "Réessayer",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
+  "history": {
+    "title": "Historique des Backtests",
+    "description": "Consultez et gérez vos précédents backtests",
+    "filter_by_strategy": "Filtrer par stratégie",
+    "all_strategies": "Toutes les stratégies",
+    "backtest_history": "Historique des Backtests",
+    "no_history": "Aucun historique de backtest trouvé",
+    "run_first_backtest": "Lancez votre premier backtest",
+    "view_details": "Voir les détails",
+    "rerun": "Relancer",
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce backtest ?",
+    "date_range": "Période",
+    "total_return": "Rendement Total",
+    "sharpe_ratio": "Ratio de Sharpe",
+    "max_drawdown": "Drawdown Max",
+    "created_at": "Créé le",
+    "parameters": "Paramètres",
+    "datasets": "Jeux de données",
+    "showing": "Affichage de",
+    "of": "sur",
+    "results": "résultats",
+    "stats": {
+      "total_backtests": "Total Backtests",
+      "avg_return": "Rendement Moyen",
+      "avg_sharpe": "Sharpe Moyen",
+      "monte_carlo_runs": "Runs Monte Carlo"
+    },
+    "status": {
+      "completed": "Terminé",
+      "running": "En cours",
+      "failed": "Échoué"
+    }
   }
 }

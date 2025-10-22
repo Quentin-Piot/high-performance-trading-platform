@@ -261,7 +261,7 @@ watch(
                     <h3 class="font-semibold text-sm">
                         {{ t("simulate.chart.multi_title") }}
                     </h3>
-                    <p class="text-xs text-muted-foreground" v-if="hasData">
+                    <p v-if="hasData" class="text-xs text-muted-foreground">
                         {{ visibleSeries.length }}
                         {{ t("simulate.chart.series_visible") }} /
                         {{ chartSeries.length }}
