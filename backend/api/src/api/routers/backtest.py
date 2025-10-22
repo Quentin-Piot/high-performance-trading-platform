@@ -6,7 +6,7 @@ from infrastructure.db import get_session
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.simple_auth import get_current_user_simple, SimpleUser
+from core.simple_auth import get_current_user_simple, get_current_user_simple_optional, SimpleUser
 from domain.schemas.backtest import (
     AggregatedMetrics,
     BacktestResponse,
@@ -207,8 +207,8 @@ async def backtest_post(
     # Monte Carlo parameters (removed from this endpoint)
     # CSV upload (optional, alternative to symbol)
     csv: list[UploadFile] = File(default=[]),
-    # Authentication and database dependencies
-    current_user: SimpleUser = Depends(get_current_user_simple),
+    # Authentication and database dependencies (optional for backtest, required only for history)
+    current_user: SimpleUser | None = Depends(get_current_user_simple_optional),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -354,71 +354,72 @@ async def backtest_post(
     )
 
     # Save backtest to history if user is authenticated
-    try:
-        # Get user from database
-        user_repo = UserRepository(session)
-        user = await user_repo.get_by_id(current_user.id)
+    if current_user:
+        try:
+            # Get user from database
+            user_repo = UserRepository(session)
+            user = await user_repo.get_by_id(current_user.id)
 
-        if user:
-            # Create history repository
-            history_repo = BacktestHistoryRepository(session)
+            if user:
+                # Create history repository
+                history_repo = BacktestHistoryRepository(session)
 
-            # Prepare datasets used list
-            datasets_used = []
-            if symbol:
-                datasets_used = [symbol.upper()]
-            elif csv:
-                datasets_used = [f.filename or f"file_{i+1}.csv" for i, f in enumerate(csv)]
+                # Prepare datasets used list
+                datasets_used = []
+                if symbol:
+                    datasets_used = [symbol.upper()]
+                elif csv:
+                    datasets_used = [f.filename or f"file_{i+1}.csv" for i, f in enumerate(csv)]
 
-            # Extract results for history
-            total_return = None
-            sharpe_ratio = None
-            max_drawdown = None
+                # Extract results for history
+                total_return = None
+                sharpe_ratio = None
+                max_drawdown = None
 
-            if hasattr(result, 'pnl'):
-                # Single backtest result
-                total_return = float(result.pnl)
-                sharpe_ratio = float(result.sharpe)
-                max_drawdown = float(result.drawdown)
-            elif hasattr(result, 'results') and result.results:
-                # Multiple backtest results - use first result or average
-                first_result = result.results[0]
-                total_return = float(first_result.pnl)
-                sharpe_ratio = float(first_result.sharpe)
-                max_drawdown = float(first_result.drawdown)
+                if hasattr(result, 'pnl'):
+                    # Single backtest result
+                    total_return = float(result.pnl)
+                    sharpe_ratio = float(result.sharpe)
+                    max_drawdown = float(result.drawdown)
+                elif hasattr(result, 'results') and result.results:
+                    # Multiple backtest results - use first result or average
+                    first_result = result.results[0]
+                    total_return = float(first_result.pnl)
+                    sharpe_ratio = float(first_result.sharpe)
+                    max_drawdown = float(first_result.drawdown)
 
-            # Create history entry
-            history_entry = await history_repo.create_history_entry(
-                user_id=user.id,
-                strategy=strategy,
-                strategy_params={
-                    "sma_short": sma_short,
-                    "sma_long": sma_long,
-                    "period": period,
-                    "overbought": overbought,
-                    "oversold": oversold,
-                },
-                start_date=start_date,
-                end_date=end_date,
-                initial_capital=10000.0,  # Default value
-                monte_carlo_runs=1,  # Regular backtest
-                datasets_used=datasets_used,
-                price_type=price_type,
-            )
-
-            # Update results if we have them
-            if total_return is not None:
-                await history_repo.update_results(
-                    history_id=history_entry.id,
-                    total_return=total_return,
-                    sharpe_ratio=sharpe_ratio,
-                    max_drawdown=max_drawdown,
-                    status="completed"
+                # Create history entry
+                history_entry = await history_repo.create_history_entry(
+                    user_id=user.id,
+                    strategy=strategy,
+                    strategy_params={
+                        "sma_short": sma_short,
+                        "sma_long": sma_long,
+                        "period": period,
+                        "overbought": overbought,
+                        "oversold": oversold,
+                    },
+                    start_date=start_date,
+                    end_date=end_date,
+                    initial_capital=10000.0,  # Default value
+                    monte_carlo_runs=1,  # Regular backtest
+                    datasets_used=datasets_used,
+                    price_type=price_type,
                 )
 
-    except Exception as e:
-        # Log error but don't fail the backtest
-        print(f"Warning: Failed to save backtest to history: {str(e)}")
+                # Update results if we have them
+                if total_return is not None:
+                    await history_repo.update_results(
+                        history_id=history_entry.id,
+                        total_return=total_return,
+                        sharpe_ratio=sharpe_ratio,
+                        max_drawdown=max_drawdown,
+                        status="completed"
+                    )
+
+        except Exception as e:
+            # Log error but don't fail the backtest
+            print(f"Warning: Failed to save backtest to history: {str(e)}")
 
     return result
 

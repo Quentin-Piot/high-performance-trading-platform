@@ -28,6 +28,7 @@ import {
     User,
     LogOut,
     Settings,
+    History,
 } from "lucide-vue-next";
 
 const { navigate } = useRouter();
@@ -42,8 +43,8 @@ const mobileMenuOpen = ref(false);
 
 // Computed properties for authentication state
 const isAuthenticated = computed(() => auth.isAuthenticated);
-const userName = computed(() => auth.userName || auth.userEmail || 'User');
-const userProvider = computed(() => auth.user?.provider || 'cognito');
+const userName = computed(() => auth.userName || auth.userEmail || "User");
+const userProvider = computed(() => auth.user?.provider || "cognito");
 
 watch(selectedLocale, (val) => {
     if (localeRef) localeRef.value = val;
@@ -72,7 +73,7 @@ async function handleLogout() {
 
 <template>
     <nav class="relative">
-        <!-- Liquid glass hero background - same as LandingView -->
+        <!-- Liquid glass hero background -->
         <div class="liquid-glass-hero">
             <div class="liquid-glass-bg"></div>
             <div class="liquid-glass-overlay"></div>
@@ -82,342 +83,426 @@ async function handleLogout() {
         </div>
 
         <!-- Navigation content -->
-        <div
-            class="relative flex items-center justify-between py-3 px-4 sm:py-4 sm:px-6 z-10"
-        >
-            <!-- Logo section avec effet hover - responsive -->
+        <div class="relative z-10 mx-auto max-w-7xl">
             <div
-                class="flex items-end gap-2 sm:gap-3 cursor-pointer group transition-all duration-300 hover-scale"
-                @click="goHome"
+                class="flex items-center justify-between py-4 px-4 sm:px-6 lg:px-8"
             >
-                <div class="relative">
-                    <!-- Logo avec gradient - même style que le hero title -->
-                    <div
-                        class="text-2xl sm:text-3xl font-bold gradient-text group-hover:scale-105 transition-all duration-500"
-                    >
-                        HPTP
+                <!-- Logo section -->
+                <div
+                    class="flex items-end gap-2 sm:gap-3 cursor-pointer group transition-all duration-300 hover-scale"
+                    @click="goHome"
+                >
+                    <div class="relative">
+                        <div
+                            class="text-2xl sm:text-3xl font-bold gradient-text group-hover:scale-105 transition-all duration-500"
+                        >
+                            HPTP
+                        </div>
+                        <div
+                            class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-12"
+                        ></div>
                     </div>
-                    <!-- Effet de brillance -->
-                    <div
-                        class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-12"
-                    ></div>
+                    <div class="hidden sm:flex flex-col">
+                        <span
+                            class="text-sm font-medium text-white/90 group-hover:text-blue-400 transition-colors"
+                        >
+                            {{ t("nav.title") }}
+                        </span>
+                        <span
+                            class="text-xs text-white/70 group-hover:text-white/80 transition-colors"
+                        >
+                            {{ t("nav.subtitle") }}
+                        </span>
+                    </div>
                 </div>
-                <div class="hidden sm:flex flex-col">
-                    <span
-                        class="text-sm font-medium text-white/90 group-hover:text-trading-blue transition-colors"
-                    >
-                        {{ t("nav.title") }}
-                    </span>
-                    <span
-                        class="text-xs text-white/70 group-hover:text-white/80 transition-colors"
-                    >
-                        {{ t("nav.subtitle") }}
-                    </span>
-                </div>
-            </div>
 
-            <!-- Desktop Navigation -->
-            <div class="hidden lg:flex items-center gap-2">
-                <!-- Home button -->
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="h-9 px-4 text-white/90 hover:bg-trading-blue/20 hover:text-trading-blue transition-all duration-300 hover-scale group"
-                    @click="go('/')"
-                >
-                    <Home
-                        class="size-4 mr-2 group-hover:rotate-12 transition-transform duration-300"
-                    />
-                    {{ t("nav.home") }}
-                </Button>
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center gap-3">
+                    <!-- Navigation Links -->
+                    <div class="flex items-center gap-2 mr-4">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="h-9 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
+                            @click="go('/')"
+                        >
+                            <Home class="size-4 mr-2" />
+                            <span class="font-medium">{{ t("nav.home") }}</span>
+                        </Button>
 
-                <!-- Simulation button -->
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="h-9 px-4 text-white/90 hover:bg-trading-purple/20 hover:text-trading-purple transition-all duration-300 hover-scale group"
-                    @click="go('/simulate')"
-                >
-                    <BarChart3
-                        class="size-4 mr-2 group-hover:scale-110 transition-transform duration-300"
-                    />
-                    {{ t("nav.simulate") }}
-                </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="h-9 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
+                            @click="go('/simulate')"
+                        >
+                            <BarChart3 class="size-4 mr-2" />
+                            <span class="font-medium">{{
+                                t("nav.simulate")
+                            }}</span>
+                        </Button>
 
-                <!-- Divider -->
-                <div class="w-px h-6 bg-white/20 mx-2"></div>
+                        <Button
+                            v-if="isAuthenticated"
+                            variant="ghost"
+                            size="sm"
+                            class="h-9 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
+                            @click="go('/history')"
+                        >
+                            <History class="size-4 mr-2" />
+                            <span class="font-medium">{{
+                                t("nav.history")
+                            }}</span>
+                        </Button>
+                    </div>
 
-                <!-- Authentication Section -->
-                <div v-if="isAuthenticated" class="flex items-center gap-2">
-                    <!-- User Popover -->
-                    <Popover>
-                        <PopoverTrigger as-child>
+                    <!-- Right side actions -->
+                    <div class="flex items-center gap-2">
+                        <!-- Language selector -->
+                        <Select v-model="selectedLocale">
+                            <SelectTrigger
+                                size="sm"
+                                class="h-9 w-32 border-white/20 bg-white/5 text-white/90 hover:bg-white/10 hover:border-white/30 transition-all duration-300"
+                            >
+                                <Globe class="size-4 mr-2 text-blue-400" />
+                                <SelectValue
+                                    :placeholder="
+                                        selectedLocale === 'fr'
+                                            ? 'Français'
+                                            : 'English'
+                                    "
+                                />
+                            </SelectTrigger>
+                            <SelectContent
+                                class="border-white/10 bg-[#1a1f2e]/98 backdrop-blur-xl"
+                            >
+                                <SelectGroup>
+                                    <SelectItem
+                                        value="en"
+                                        class="text-white/90 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                                    >
+                                        English
+                                    </SelectItem>
+                                    <SelectItem
+                                        value="fr"
+                                        class="text-white/90 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                                    >
+                                        Français
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+
+                        <!-- Divider -->
+                        <div class="w-px h-6 bg-white/20 mx-1"></div>
+
+                        <!-- Authentication Section -->
+                        <div v-if="isAuthenticated" class="flex items-center">
+                            <Popover>
+                                <PopoverTrigger as-child>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-9 px-3 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300 gap-2"
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold"
+                                            >
+                                                {{
+                                                    userName
+                                                        .charAt(0)
+                                                        .toUpperCase()
+                                                }}
+                                            </div>
+                                            <span
+                                                class="max-w-24 truncate font-medium"
+                                                >{{ userName }}</span
+                                            >
+                                        </div>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    class="w-64 border-white/10 bg-[#1a1f2e]/98 backdrop-blur-xl p-0"
+                                >
+                                    <div class="p-4 border-b border-white/10">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold"
+                                            >
+                                                {{
+                                                    userName
+                                                        .charAt(0)
+                                                        .toUpperCase()
+                                                }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div
+                                                    class="text-white/90 font-medium truncate"
+                                                >
+                                                    {{ userName }}
+                                                </div>
+                                                <div
+                                                    class="text-xs text-white/60 flex items-center gap-1"
+                                                >
+                                                    <div
+                                                        class="size-1.5 rounded-full"
+                                                        :class="{
+                                                            'bg-blue-400':
+                                                                userProvider ===
+                                                                'google',
+                                                            'bg-orange-400':
+                                                                userProvider ===
+                                                                'cognito',
+                                                        }"
+                                                    ></div>
+                                                    {{
+                                                        userProvider ===
+                                                        "google"
+                                                            ? "Google"
+                                                            : "Cognito"
+                                                    }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="w-full justify-start h-9 px-3 text-white/90 hover:bg-white/10 hover:text-white"
+                                        >
+                                            <Settings class="size-4 mr-3" />
+                                            Settings
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="w-full justify-start h-9 px-3 text-white/90 hover:bg-red-500/10 hover:text-red-400"
+                                            @click="handleLogout"
+                                        >
+                                            <LogOut class="size-4 mr-3" />
+                                            Logout
+                                        </Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <!-- Auth buttons for non-authenticated users -->
+                        <div v-else class="flex items-center gap-2">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                class="h-9 px-3 text-white/90 hover:bg-trading-cyan/20 hover:text-trading-cyan transition-all duration-300 hover-scale group"
+                                class="h-9 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
+                                @click="go('/login')"
                             >
-                                <User class="size-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                                <span class="max-w-32 truncate">{{ userName }}</span>
-                                <div class="ml-1 size-2 rounded-full" :class="{
-                                    'bg-blue-400': userProvider === 'google',
-                                    'bg-orange-400': userProvider === 'cognito'
-                                }"></div>
+                                <LogIn class="size-4 mr-2" />
+                                <span class="font-medium">{{
+                                    t("nav.login")
+                                }}</span>
                             </Button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-56 border-white/10 bg-card/95 backdrop-blur-sm p-0">
-                            <div class="p-3 border-b border-white/10">
-                                <div class="text-white/90 font-medium">
-                                    {{ userName }}
-                                </div>
-                                <div class="text-xs text-white/60">
-                                    {{ userProvider === 'google' ? 'Google Account' : 'Cognito Account' }}
-                                </div>
-                            </div>
-                            <div class="p-1">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="w-full justify-start h-8 px-2 hover:bg-trading-blue/10 hover:text-trading-blue"
-                                >
-                                    <Settings class="size-4 mr-2" />
-                                    Settings
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="w-full justify-start h-8 px-2 hover:bg-red-500/10 hover:text-red-400"
-                                    @click="handleLogout"
-                                >
-                                    <LogOut class="size-4 mr-2" />
-                                    Logout
-                                </Button>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
+
+                            <Button
+                                size="sm"
+                                class="h-9 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium shadow-lg shadow-blue-500/25 transition-all duration-300"
+                                @click="go('/register')"
+                            >
+                                <UserPlus class="size-4 mr-2" />
+                                {{ t("nav.register") }}
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Auth buttons for non-authenticated users -->
-                <div v-else class="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="h-9 px-4 border-trading-blue/20 hover:border-trading-blue hover:bg-trading-blue/5 hover:text-trading-blue transition-all duration-300 hover-scale group"
-                        @click="go('/login')"
-                    >
-                        <LogIn class="size-4 mr-2 group-hover:-rotate-12 transition-transform duration-300" />
-                        {{ t("nav.login") }}
-                    </Button>
-
-                    <Button
-                        size="sm"
-                        class="h-9 px-4 bg-trading-blue text-white rounded-lg border border-trading-blue hover:bg-trading-blue/80 hover:border-trading-blue/80 transition-all duration-300 hover-scale group"
-                        @click="go('/register')"
-                    >
-                        <UserPlus class="size-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                        {{ t("nav.register") }}
-                    </Button>
-                </div>
-
-                <!-- Language selector -->
-                <div class="relative ml-2">
+                <!-- Mobile/Tablet Navigation -->
+                <div class="flex lg:hidden items-center gap-3">
+                    <!-- Language selector mobile -->
                     <Select v-model="selectedLocale">
                         <SelectTrigger
                             size="sm"
-                            class="h-9 md:w-36 w-20 border-white/20 text-white/90 hover:border-trading-cyan hover:bg-trading-cyan/20 transition-all duration-300 hover-scale group justify-start"
+                            class="h-9 w-20 border-white/20 bg-white/5 text-white/90 hover:bg-white/10"
                         >
-                            <Globe
-                                class="size-4 mr-2 text-trading-cyan group-hover:rotate-180 transition-transform duration-500"
-                            />
-                            <SelectValue
-                                :placeholder="
-                                    selectedLocale === 'fr'
-                                        ? 'Français'
-                                        : 'English'
-                                "
-                            />
-                        </SelectTrigger>
-                        <SelectContent
-                            class="border-white/10 bg-card/95 backdrop-blur-sm w-36"
-                        >
-                            <SelectGroup>
-                                <SelectItem
-                                    value="en"
-                                    class="hover:bg-trading-blue/10 hover:text-trading-blue transition-colors cursor-pointer"
-                                >
-                                    English
-                                </SelectItem>
-                                <SelectItem
-                                    value="fr"
-                                    class="hover:bg-trading-purple/10 hover:text-trading-purple transition-colors cursor-pointer"
-                                >
-                                    Français
-                                </SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            <!-- Mobile/Tablet Navigation -->
-            <div class="flex lg:hidden items-center gap-2">
-                <!-- Language selector compact pour mobile -->
-                <div class="relative">
-                    <Select v-model="selectedLocale">
-                        <SelectTrigger
-                            size="sm"
-                            class="h-9 w-24 border-white/20 text-white/90 hover:border-trading-cyan hover:bg-trading-cyan/20 transition-all duration-300 hover-scale group justify-center"
-                        >
-                            <Globe
-                                class="size-4 mr-1 text-trading-cyan group-hover:rotate-180 transition-transform duration-500"
-                            />
-                            <span class="text-xs font-medium">
-                                {{ selectedLocale === "fr" ? "FR" : "EN" }}
+                            <Globe class="size-4 text-blue-400" />
+                            <span class="text-xs font-medium ml-1">
+                                {{ selectedLocale.toUpperCase() }}
                             </span>
                         </SelectTrigger>
                         <SelectContent
-                            class="border-white/10 bg-card/95 backdrop-blur-sm w-32"
+                            class="border-white/10 bg-[#1a1f2e]/98 backdrop-blur-xl"
                         >
                             <SelectGroup>
                                 <SelectItem
                                     value="en"
-                                    class="hover:bg-trading-blue/10 hover:text-trading-blue transition-colors cursor-pointer"
+                                    class="text-white/90 hover:bg-white/10 hover:text-white cursor-pointer"
                                 >
                                     English
                                 </SelectItem>
                                 <SelectItem
                                     value="fr"
-                                    class="hover:bg-trading-purple/10 hover:text-trading-purple transition-colors cursor-pointer"
+                                    class="text-white/90 hover:bg-white/10 hover:text-white cursor-pointer"
                                 >
                                     Français
                                 </SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                </div>
 
-                <!-- Menu hamburger -->
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="h-9 w-9 p-0 text-white/90 hover:bg-trading-blue/20 hover:text-trading-blue transition-all duration-300 hover-scale"
-                    @click="toggleMobileMenu"
-                >
-                    <Menu v-if="!mobileMenuOpen" class="size-5" />
-                    <X v-else class="size-5" />
-                </Button>
+                    <!-- Menu hamburger -->
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-9 w-9 p-0 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
+                        @click="toggleMobileMenu"
+                    >
+                        <Menu v-if="!mobileMenuOpen" class="size-5" />
+                        <X v-else class="size-5" />
+                    </Button>
+                </div>
             </div>
         </div>
 
-        <!-- Menu mobile overlay -->
-        <div
-            v-if="mobileMenuOpen"
-            class="lg:hidden absolute top-full left-0 right-0 mt-2 z-50 animate-slide-down"
-        >
+        <!-- Mobile menu overlay -->
+        <Transition name="mobile-menu">
             <div
-                class="bg-card/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-strong p-4 space-y-3"
+                v-if="mobileMenuOpen"
+                class="lg:hidden absolute top-full left-0 right-0 mt-2 px-4 z-50"
             >
-                <!-- Navigation mobile -->
-                <div class="space-y-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        class="w-full justify-start h-10 px-4 hover:bg-trading-blue/10 hover:text-trading-blue transition-all duration-300 group"
-                        @click="go('/')"
-                    >
-                        <Home
-                            class="size-4 mr-3 group-hover:rotate-12 transition-transform duration-300"
-                        />
-                        {{ t("nav.home") }}
-                    </Button>
+                <div
+                    class="bg-[#1a1f2e]/98 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+                >
+                    <!-- Navigation Links -->
+                    <div class="p-3 space-y-1">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="w-full justify-start h-11 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all"
+                            @click="go('/')"
+                        >
+                            <Home class="size-5 mr-3" />
+                            <span class="font-medium">{{ t("nav.home") }}</span>
+                        </Button>
 
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        class="w-full justify-start h-10 px-4 hover:bg-trading-purple/10 hover:text-trading-purple transition-all duration-300 group"
-                        @click="go('/simulate')"
-                    >
-                        <BarChart3
-                            class="size-4 mr-3 group-hover:scale-110 transition-transform duration-300"
-                        />
-                        {{ t("nav.simulate") }}
-                    </Button>
-                </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="w-full justify-start h-11 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all"
+                            @click="go('/simulate')"
+                        >
+                            <BarChart3 class="size-5 mr-3" />
+                            <span class="font-medium">{{
+                                t("nav.simulate")
+                            }}</span>
+                        </Button>
 
-                <!-- Divider -->
-                <div class="h-px bg-border/50 my-3"></div>
-
-                <!-- Auth section mobile -->
-                <div v-if="isAuthenticated" class="space-y-2">
-                    <!-- User info -->
-                    <div class="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/5">
-                        <User class="size-4 text-trading-cyan" />
-                        <div class="flex-1 min-w-0">
-                            <div class="text-sm font-medium text-white/90 truncate">{{ userName }}</div>
-                            <div class="text-xs text-white/60">
-                                {{ userProvider === 'google' ? 'Google Account' : 'Cognito Account' }}
-                            </div>
-                        </div>
-                        <div class="size-2 rounded-full" :class="{
-                            'bg-blue-400': userProvider === 'google',
-                            'bg-orange-400': userProvider === 'cognito'
-                        }"></div>
+                        <Button
+                            v-if="isAuthenticated"
+                            variant="ghost"
+                            size="sm"
+                            class="w-full justify-start h-11 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all"
+                            @click="go('/history')"
+                        >
+                            <History class="size-5 mr-3" />
+                            <span class="font-medium">{{
+                                t("nav.history")
+                            }}</span>
+                        </Button>
                     </div>
 
-                    <!-- Settings button -->
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        class="w-full justify-start h-10 px-4 hover:bg-trading-blue/10 hover:text-trading-blue transition-all duration-300 group"
-                    >
-                        <Settings class="size-4 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                        Settings
-                    </Button>
+                    <!-- Divider -->
+                    <div class="h-px bg-white/10"></div>
 
-                    <!-- Logout button -->
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        class="w-full justify-start h-10 px-4 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group"
-                        @click="handleLogout"
-                    >
-                        <LogOut class="size-4 mr-3 group-hover:-rotate-12 transition-transform duration-300" />
-                        Logout
-                    </Button>
-                </div>
+                    <!-- Auth Section -->
+                    <div v-if="isAuthenticated" class="p-3 space-y-2">
+                        <!-- User Info Card -->
+                        <div
+                            class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10"
+                        >
+                            <div
+                                class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold flex-shrink-0"
+                            >
+                                {{ userName.charAt(0).toUpperCase() }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div
+                                    class="text-sm font-medium text-white/90 truncate"
+                                >
+                                    {{ userName }}
+                                </div>
+                                <div
+                                    class="text-xs text-white/60 flex items-center gap-1.5"
+                                >
+                                    <div
+                                        class="size-1.5 rounded-full"
+                                        :class="{
+                                            'bg-blue-400':
+                                                userProvider === 'google',
+                                            'bg-orange-400':
+                                                userProvider === 'cognito',
+                                        }"
+                                    ></div>
+                                    {{
+                                        userProvider === "google"
+                                            ? "Google Account"
+                                            : "Cognito Account"
+                                    }}
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Auth buttons mobile for non-authenticated users -->
-                <div v-else class="space-y-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="w-full justify-start h-10 px-4 border-trading-blue/20 hover:border-trading-blue hover:bg-trading-blue/5 hover:text-trading-blue transition-all duration-300 group"
-                        @click="go('/login')"
-                    >
-                        <LogIn
-                            class="size-4 mr-3 group-hover:-rotate-12 transition-transform duration-300"
-                        />
-                        {{ t("nav.login") }}
-                    </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="w-full justify-start h-11 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all"
+                        >
+                            <Settings class="size-5 mr-3" />
+                            <span class="font-medium">Settings</span>
+                        </Button>
 
-                    <Button
-                        size="sm"
-                        class="w-full justify-start h-10 px-4 bg-trading-blue text-white rounded-lg border border-trading-blue hover:bg-trading-blue/80 hover:border-trading-blue/80 transition-all duration-300 group"
-                        @click="go('/register')"
-                    >
-                        <UserPlus
-                            class="size-4 mr-3 group-hover:scale-110 transition-transform duration-300"
-                        />
-                        {{ t("nav.register") }}
-                    </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="w-full justify-start h-11 px-4 text-white/90 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                            @click="handleLogout"
+                        >
+                            <LogOut class="size-5 mr-3" />
+                            <span class="font-medium">Logout</span>
+                        </Button>
+                    </div>
+
+                    <!-- Auth buttons for non-authenticated users -->
+                    <div v-else class="p-3 space-y-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="w-full justify-start h-11 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all"
+                            @click="go('/login')"
+                        >
+                            <LogIn class="size-5 mr-3" />
+                            <span class="font-medium">{{
+                                t("nav.login")
+                            }}</span>
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            class="w-full justify-start h-11 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium"
+                            @click="go('/register')"
+                        >
+                            <UserPlus class="size-5 mr-3" />
+                            <span class="font-medium">{{
+                                t("nav.register")
+                            }}</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </Transition>
     </nav>
 </template>
 
 <style scoped>
-/* Liquid glass hero styling - same as LandingView */
+/* Liquid glass hero styling */
 .liquid-glass-hero {
     position: absolute;
     inset: 0;
@@ -431,34 +516,6 @@ async function handleLogout() {
         inset 0 -1px 0 rgba(255, 255, 255, 0.12);
     border-radius: 1rem;
     overflow: hidden;
-}
-
-.liquid-glass-hero::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 600%;
-    height: 600%;
-    background: radial-gradient(
-        circle closest-corner at 50% 50%,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 5%,
-        transparent 15%
-    );
-    transform: translate(-50%, -50%) scale(0);
-    border-radius: 50%;
-    transition:
-        transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        opacity 0.8s ease;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.liquid-glass-hero:hover::before {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
 }
 
 .liquid-glass-bg {
@@ -516,7 +573,6 @@ async function handleLogout() {
     background-size: 300% 100%;
     border-radius: inherit;
     opacity: 0;
-    transition: none;
 }
 
 .liquid-glass-noise {
@@ -530,7 +586,7 @@ async function handleLogout() {
     pointer-events: none;
 }
 
-/* Gradient text styling - same as hero title */
+/* Gradient text styling */
 .gradient-text {
     background:
         radial-gradient(
@@ -566,91 +622,19 @@ async function handleLogout() {
     transform: scale(1.02);
 }
 
-/* Gradient text animation */
-@keyframes gradient-shift {
-    0%,
-    100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
+/* Mobile menu transition */
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.group:hover .bg-gradient-to-r {
-    background-size: 200% 200%;
-    animation: gradient-shift 2s ease infinite;
+.mobile-menu-enter-from {
+    opacity: 0;
+    transform: translateY(-8px);
 }
 
-/* Animation pour le menu mobile */
-@keyframes slide-down {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-slide-down {
-    animation: slide-down 0.2s ease-out;
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-    .liquid-glass-hero {
-        background: rgba(0, 0, 0, 0.28);
-        border-color: rgba(255, 255, 255, 0.14);
-        box-shadow:
-            0 10px 40px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.14),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-    }
-
-    .liquid-glass-hero::before {
-        background: radial-gradient(
-            circle closest-corner at 50% 50%,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.04) 5%,
-            transparent 15%
-        );
-    }
-
-    .liquid-glass-overlay {
-        background: radial-gradient(
-            circle at 30% 20%,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(255, 255, 255, 0.04) 40%,
-            transparent 70%
-        );
-    }
-
-    .liquid-glass-reflection {
-        background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.04) 45%,
-            transparent 100%
-        );
-    }
-
-    .gradient-text {
-        text-shadow:
-            0 1px 2px rgba(0, 0, 0, 0.12),
-            0 8px 20px rgba(255, 255, 255, 0.18);
-    }
-}
-
-/* Optimisations tactiles */
-@media (hover: none) and (pointer: coarse) {
-    .hover-scale:hover {
-        transform: none;
-    }
-
-    .hover-scale:active {
-        transform: scale(0.98);
-    }
+.mobile-menu-leave-to {
+    opacity: 0;
+    transform: translateY(-8px);
 }
 </style>

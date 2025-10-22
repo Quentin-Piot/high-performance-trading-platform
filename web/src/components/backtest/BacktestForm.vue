@@ -125,16 +125,101 @@ function initParams() {
 initParams()
 watch(strategy, () => initParams())
 
-// Load available date ranges on component mount
-onMounted(() => {
+// Load available date ranges on component mount and handle URL parameters
+onMounted(async () => {
   // Plus besoin de charger les plages de dates depuis le backend
   // Les données sont maintenant disponibles directement dans la configuration des datasets
+  
+  // Handle URL parameters for auto-run functionality
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.size > 0) {
+    console.log('Loading parameters from URL:', Object.fromEntries(urlParams.entries()))
+    
+    // Set strategy if provided
+    const urlStrategy = urlParams.get('strategy')
+    if (urlStrategy && urlStrategy in BACKTEST_STRATEGIES) {
+      strategy.value = urlStrategy as StrategyId
+    }
+    
+    // Set datasets FIRST before dates to avoid validation issues
+    const urlDatasets = urlParams.get('datasets')
+    if (urlDatasets) {
+      // Convert filename to dataset ID if needed (e.g., "AMZN.csv" -> "amzn")
+      const datasetIds = urlDatasets.split(',').filter(Boolean).map(dataset => {
+        // If it's a filename (contains .csv), convert to ID
+        if (dataset.includes('.csv')) {
+          const filename = dataset
+          const foundDataset = AVAILABLE_DATASETS.find(d => d.filename === filename)
+          return foundDataset ? foundDataset.id : dataset.toLowerCase().replace('.csv', '')
+        }
+        return dataset
+      })
+      selectedDatasets.value = datasetIds
+    }
+    
+    // Set dates AFTER datasets are set
+    const urlStartDate = urlParams.get('startDate')
+    const urlEndDate = urlParams.get('endDate')
+    if (urlStartDate) startDate.value = urlStartDate
+    if (urlEndDate) endDate.value = urlEndDate
+    
+    // Set Monte Carlo parameters if provided
+    const urlMonteCarloRuns = urlParams.get('monteCarloRuns')
+    if (urlMonteCarloRuns) monteCarloRuns.value = parseInt(urlMonteCarloRuns, 10) || 1
+    
+    const urlMonteCarloMethod = urlParams.get('monteCarloMethod')
+    if (urlMonteCarloMethod && (urlMonteCarloMethod === 'bootstrap' || urlMonteCarloMethod === 'gaussian')) {
+      monteCarloMethod.value = urlMonteCarloMethod
+    }
+    
+    const urlSampleFraction = urlParams.get('sampleFraction')
+    if (urlSampleFraction) sampleFraction.value = parseFloat(urlSampleFraction) || 0.8
+    
+    const urlGaussianScale = urlParams.get('gaussianScale')
+    if (urlGaussianScale) gaussianScale.value = parseFloat(urlGaussianScale) || 0.1
+    
+    // Set price type if provided
+    const urlPriceType = urlParams.get('priceType')
+    if (urlPriceType && (urlPriceType === 'close' || urlPriceType === 'adj_close')) {
+      priceType.value = urlPriceType
+    }
+    
+    // Set strategy-specific parameters
+    const currentStrategy = BACKTEST_STRATEGIES[strategy.value]
+    if (currentStrategy) {
+      for (const param of currentStrategy.params) {
+        const urlValue = urlParams.get(param.key)
+        if (urlValue !== null) {
+          const numValue = parseFloat(urlValue)
+          if (!isNaN(numValue)) {
+            params[param.key] = numValue
+          }
+        }
+      }
+    }
+    
+    // Auto-run the backtest after a short delay to ensure all parameters are set
+    setTimeout(async () => {
+      if (canSubmit.value) {
+        console.log('Auto-running backtest with URL parameters')
+        await onSubmit()
+      } else {
+        console.warn('Cannot auto-run backtest: validation failed', {
+          canSubmit: canSubmit.value,
+          validParams: validParams.value,
+          hasData: selectedFiles.value.length > 0 || selectedDatasets.value.length > 0,
+          dateValidationError: dateValidationError.value
+        })
+      }
+    }, 500)
+  }
 })
 
 // Watch for date changes to validate them
 watch([startDate, endDate, selectedDatasets], () => {
   dateValidationError.value = null
   
+  // Skip validation if no datasets selected
   if (selectedDatasets.value.length === 0) {
     return
   }
@@ -144,12 +229,15 @@ watch([startDate, endDate, selectedDatasets], () => {
     return
   }
   
-  // Valider avec le nouveau service frontend
-  const validation = validateDateRange(startDate.value, endDate.value, selectedDatasets.value)
-  
-  if (!validation.valid) {
-    dateValidationError.value = validation.errorMessage || 'Plage de dates invalide'
-  }
+  // Add a small delay to avoid validation during URL parameter loading
+  setTimeout(() => {
+    // Valider avec le nouveau service frontend
+    const validation = validateDateRange(startDate.value, endDate.value, selectedDatasets.value)
+    
+    if (!validation.valid) {
+      dateValidationError.value = validation.errorMessage || 'Plage de dates invalide'
+    }
+  }, 100)
 })
 
 // Watch for dataset selection changes to auto-adjust dates
@@ -257,15 +345,16 @@ function onReset() {
 
 <template>
   <div class="space-y-4">
-    <!-- File Upload Section -->
-    <FileUploadSection
-      v-model:selected-files="selectedFiles"
-      v-model:error="error"
-    />
-
     <!-- Dataset Selection Section -->
     <DatasetSelectionSection
       v-model:selected-datasets="selectedDatasets"
+    />
+
+    <!-- File Upload Section -->
+    <FileUploadSection
+      v-if="selectedDatasets.length === 0"
+      v-model:selected-files="selectedFiles"
+      v-model:error="error"
     />
 
     <!-- Price Type Selection Section -->

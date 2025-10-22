@@ -7,7 +7,7 @@ import MetricsCard from "@/components/common/MetricsCard.vue";
 import DistributionMetricsCard from "@/components/common/DistributionMetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { useBacktestStore } from "@/stores/backtestStore";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -188,6 +188,17 @@ function downloadCsv() {
     a.click();
     URL.revokeObjectURL(url);
 }
+
+// Auto-run backtest if URL parameters are present
+onMounted(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.size > 0) {
+        // Trigger backtest with URL parameters
+        // The BacktestForm component will handle reading the parameters
+        // and automatically running the backtest
+        console.log('URL parameters detected, BacktestForm will auto-run');
+    }
+});
 </script>
 
 <template>

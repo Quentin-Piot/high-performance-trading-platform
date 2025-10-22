@@ -20,6 +20,50 @@ interface AuthState {
   googleAuthUrl: string | null
 }
 
+// Utility functions for secure localStorage operations
+const STORAGE_KEYS = {
+  TOKEN: 'hptp_auth_token',
+  USER: 'hptp_user_data',
+  USER_EMAIL: 'hptp_user_email'
+} as const
+
+const secureStorage = {
+  setItem: (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value)
+    } catch (error) {
+      console.warn('Failed to save to localStorage:', error)
+    }
+  },
+  
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key)
+    } catch (error) {
+      console.warn('Failed to read from localStorage:', error)
+      return null
+    }
+  },
+  
+  removeItem: (key: string) => {
+    try {
+      localStorage.removeItem(key)
+    } catch (error) {
+      console.warn('Failed to remove from localStorage:', error)
+    }
+  },
+  
+  clear: () => {
+    try {
+      Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key)
+      })
+    } catch (error) {
+      console.warn('Failed to clear localStorage:', error)
+    }
+  }
+}
+
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     token: null,
@@ -35,6 +79,43 @@ export const useAuthStore = defineStore('auth', {
     userName: (s) => s.user?.name || s.user?.email?.split('@')[0] || 'User',
   },
   actions: {
+    // Persist user data to localStorage
+    persistUserData() {
+      if (this.token) {
+        secureStorage.setItem(STORAGE_KEYS.TOKEN, this.token)
+      }
+      if (this.user) {
+        secureStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(this.user))
+      }
+      if (this.userEmail) {
+        secureStorage.setItem(STORAGE_KEYS.USER_EMAIL, this.userEmail)
+      }
+    },
+
+    // Load user data from localStorage
+    loadPersistedData() {
+      const token = secureStorage.getItem(STORAGE_KEYS.TOKEN)
+      const userData = secureStorage.getItem(STORAGE_KEYS.USER)
+      const userEmail = secureStorage.getItem(STORAGE_KEYS.USER_EMAIL)
+
+      if (token) {
+        this.token = token
+      }
+
+      if (userData) {
+        try {
+          this.user = JSON.parse(userData)
+        } catch (error) {
+          console.warn('Failed to parse user data from localStorage:', error)
+          secureStorage.removeItem(STORAGE_KEYS.USER)
+        }
+      }
+
+      if (userEmail) {
+        this.userEmail = userEmail
+      }
+    },
+
     async register({ email, password }: Credentials) {
       this.isLoading = true
       try {
@@ -48,7 +129,7 @@ export const useAuthStore = defineStore('auth', {
           email_verified: resp.email_verified || false,
           provider: 'cognito'
         }
-        try { localStorage.setItem('token', this.token) } catch { void 0 }
+        this.persistUserData()
       } catch (e: unknown) {
         useErrorStore().log('error.auth_register_failed', e instanceof Error ? e.message : String(e), { email })
         throw e
@@ -70,7 +151,7 @@ export const useAuthStore = defineStore('auth', {
           email_verified: resp.email_verified || false,
           provider: 'cognito'
         }
-        try { localStorage.setItem('token', this.token) } catch { void 0 }
+        this.persistUserData()
       } catch (e: unknown) {
         useErrorStore().log('error.auth_login_failed', e instanceof Error ? e.message : String(e), { email })
         throw e
@@ -87,7 +168,7 @@ export const useAuthStore = defineStore('auth', {
         const googleAuthUrl = `${baseUrl}/auth/google/login?redirect_url=${encodeURIComponent(window.location.origin + redirectUrl)}`
         
         // Store the intended redirect URL
-        try { localStorage.setItem('google_redirect_url', redirectUrl) } catch { void 0 }
+        secureStorage.setItem('google_redirect_url', redirectUrl)
         
         // Redirect to Google OAuth
         window.location.href = googleAuthUrl
@@ -122,7 +203,7 @@ export const useAuthStore = defineStore('auth', {
         this.userEmail = email
         this.token = 'google_authenticated' // Temporary token, should be replaced with real JWT
         
-        try { localStorage.setItem('token', this.token) } catch { void 0 }
+        this.persistUserData()
         
         // Clean up URL parameters
         const cleanUrl = window.location.pathname
@@ -152,21 +233,17 @@ export const useAuthStore = defineStore('auth', {
       this.userEmail = undefined
       this.user = null
       this.googleAuthUrl = null
-      try { 
-        localStorage.removeItem('token')
-        localStorage.removeItem('google_redirect_url')
-      } catch { void 0 }
+      secureStorage.clear()
     },
 
     rehydrate() {
-      try {
-        const t = localStorage.getItem('token')
-        if (t) {
-          this.token = t
-          // Try to restore user info from token or make API call
-          // For now, just set token
-        }
-      } catch { void 0 }
+      this.loadPersistedData()
+      
+      // Validate token if it exists (you might want to add token validation logic here)
+      if (this.token && !this.user) {
+        // If we have a token but no user data, clear everything
+        this.logout()
+      }
     },
   },
 })

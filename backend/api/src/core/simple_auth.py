@@ -19,6 +19,8 @@ settings = get_settings()
 
 # Security scheme for Bearer token
 security = HTTPBearer()
+# Optional security scheme (doesn't raise exception if no token)
+optional_security = HTTPBearer(auto_error=False)
 
 
 class SimpleUser(BaseModel):
@@ -113,3 +115,50 @@ async def get_current_user_simple(
         email=user.email,
         sub=str(user.id)
     )
+
+
+async def get_current_user_simple_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
+    auth_service: SimpleAuthService = Depends(get_simple_auth_service),
+    db: AsyncSession = Depends(get_session)
+) -> SimpleUser | None:
+    """
+    Optional dependency to get the current user if authenticated.
+    
+    Args:
+        credentials: Optional Bearer token from Authorization header
+        auth_service: Simple auth service instance
+        db: Database session
+        
+    Returns:
+        Optional[SimpleUser]: User information if authenticated, None otherwise
+    """
+    if not credentials or not credentials.credentials:
+        return None
+
+    payload = auth_service.verify_token(credentials.credentials)
+    if not payload:
+        # Log warning but don't raise exception for graceful degradation
+        logger.warning("Invalid token provided, continuing without authentication")
+        return None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        logger.warning("Invalid token payload, continuing without authentication")
+        return None
+
+    # Get user from database
+    try:
+        user = await get_user_by_id(db, int(user_id))
+        if not user:
+            logger.warning("User not found in database, continuing without authentication")
+            return None
+
+        return SimpleUser(
+            id=user.id,
+            email=user.email,
+            sub=str(user.id)
+        )
+    except Exception as e:
+        logger.warning(f"Error retrieving user from database: {e}, continuing without authentication")
+        return None

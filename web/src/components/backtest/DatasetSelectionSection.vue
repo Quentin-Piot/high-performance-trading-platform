@@ -9,13 +9,13 @@
     <div class="space-y-3">
       <p class="text-xs text-muted-foreground">{{ t('simulate.form.labels.datasets_description') }}</p>
       <MultiLineToggleGroup 
-        :model-value="selectedDatasets" 
-        type="multiple" 
+        :model-value="selectedDatasets[0] || ''" 
+        type="single" 
         variant="outline" 
         size="sm"
         :items-per-row="3"
         class="w-full"
-        @update:model-value="(value) => onDatasetsChange(value as string[])"
+        @update:model-value="(value: any) => onDatasetsChange(value ? [String(value)] : [])"
       >
         <ToggleGroupItem 
           v-for="dataset in AVAILABLE_DATASETS" 
@@ -35,7 +35,7 @@
       <div v-if="selectedDatasets.length > 0" class="mt-2">
         <p class="text-xs text-trading-green font-medium flex items-center gap-2">
           <CheckCircle class="size-4" />
-          {{ selectedDatasets.length }} dataset{{ selectedDatasets.length > 1 ? 's' : '' }} selected
+          {{ selectedDatasets.length }} dataset selected
         </p>
       </div>
     </div>
