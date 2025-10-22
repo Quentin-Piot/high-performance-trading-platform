@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', {
         this.isLoading = false
       }
     },
-
+    
     async login({ email, password }: Credentials) {
       this.isLoading = true
       try {
@@ -85,10 +85,10 @@ export const useAuthStore = defineStore('auth', {
         // Redirect to backend Google OAuth endpoint
         const baseUrl = '/api/v1'
         const googleAuthUrl = `${baseUrl}/auth/google/login?redirect_url=${encodeURIComponent(window.location.origin + redirectUrl)}`
-
+        
         // Store the intended redirect URL
         try { localStorage.setItem('google_redirect_url', redirectUrl) } catch { void 0 }
-
+        
         // Redirect to Google OAuth
         window.location.href = googleAuthUrl
       } catch (e: unknown) {
@@ -121,13 +121,13 @@ export const useAuthStore = defineStore('auth', {
         }
         this.userEmail = email
         this.token = 'google_authenticated' // Temporary token, should be replaced with real JWT
-
+        
         try { localStorage.setItem('token', this.token) } catch { void 0 }
-
+        
         // Clean up URL parameters
         const cleanUrl = window.location.pathname
         window.history.replaceState({}, document.title, cleanUrl)
-
+        
         return true
       }
 
@@ -136,7 +136,7 @@ export const useAuthStore = defineStore('auth', {
 
     async fetchUserInfo() {
       if (!this.token) return null
-
+      
       try {
         // This would call the backend to get current user info
         // For now, return the stored user
@@ -152,7 +152,7 @@ export const useAuthStore = defineStore('auth', {
       this.userEmail = undefined
       this.user = null
       this.googleAuthUrl = null
-      try {
+      try { 
         localStorage.removeItem('token')
         localStorage.removeItem('google_redirect_url')
       } catch { void 0 }

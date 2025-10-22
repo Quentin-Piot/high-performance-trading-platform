@@ -43,3 +43,9 @@ variable "frontend_url" {
   description = "Frontend URL for OAuth redirects (e.g., https://hptp.quentinpiot.com)"
   type        = string
 }
+
+# Google OAuth redirect URI
+variable "google_redirect_uri" {
+  description = "Google OAuth redirect URI for backend authentication (e.g., https://hptp.quentinpiot.com/api/v1/auth/google/callback)"
+  type        = string
+}

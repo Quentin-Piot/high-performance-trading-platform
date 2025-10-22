@@ -60,3 +60,4 @@ frontend_url = ""  # ex: "https://your-domain.com" or "https://d123456789.cloudf
 # Leave empty to disable Google OAuth integration
 google_client_id     = ""
 google_client_secret = ""
+google_redirect_uri  = "https://votre-domaine.com/api/v1/auth/google/callback"
