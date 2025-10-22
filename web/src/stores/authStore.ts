@@ -45,7 +45,7 @@ export const useAuthStore = defineStore('auth', {
         this.user = {
           sub: resp.sub || '',
           email,
-          email_verified: false,
+          email_verified: resp.email_verified || false,
           provider: 'cognito'
         }
         try { localStorage.setItem('token', this.token) } catch { void 0 }
