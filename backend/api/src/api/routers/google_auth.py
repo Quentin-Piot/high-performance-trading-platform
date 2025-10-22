@@ -29,11 +29,11 @@ async def google_login(
 ):
     """
     Initiate Google OAuth login flow.
-    
+
     Args:
         redirect_url: URL to redirect user after successful authentication
         google_service: Google OAuth service
-        
+
     Returns:
         Redirect to Google OAuth authorization URL
     """
@@ -61,7 +61,7 @@ async def google_callback(
 ):
     """
     Handle Google OAuth callback and integrate with Cognito.
-    
+
     Args:
         code: Authorization code from Google
         state: State parameter containing redirect URL
@@ -69,7 +69,7 @@ async def google_callback(
         google_service: Google OAuth service
         cognito_google_service: Cognito Google integration service
         db: Database session
-        
+
     Returns:
         Redirect to frontend with authentication result
     """
@@ -115,7 +115,7 @@ async def google_callback(
                     redirect_url = state
                 else:
                     redirect_url = f"{google_service.settings.frontend_url}{state}"
-            
+
         query_params = f"auth=success&provider=google&email={user_info['email']}&user_id={db_user.id}"
 
         if federated_creds:
@@ -134,10 +134,10 @@ async def get_google_user_info(
 ):
     """
     Get current user information (requires authentication).
-    
+
     Args:
         current_user: Current authenticated user
-        
+
     Returns:
         User information
     """
@@ -163,11 +163,11 @@ async def link_google_account(
 ):
     """
     Link Google account to existing Cognito user.
-    
+
     Args:
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Success message
     """
@@ -195,11 +195,11 @@ async def unlink_google_account(
 ):
     """
     Unlink Google account from current user.
-    
+
     Args:
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Success message
     """

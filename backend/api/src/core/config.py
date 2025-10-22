@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     google_client_id: str = Field(default="", description="Google OAuth Client ID")
     google_client_secret: str = Field(default="", description="Google OAuth Client Secret")
     google_redirect_uri: str = Field(default="", description="Google OAuth Redirect URI")
-    
+
     # Frontend URL settings
     frontend_url: str = Field(default="http://localhost:5173", description="Frontend URL for redirects")
 

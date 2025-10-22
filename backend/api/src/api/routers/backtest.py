@@ -2,11 +2,13 @@ import os
 from io import BytesIO
 
 import pandas as pd
-from infrastructure.db import get_session
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.simple_auth import get_current_user_simple, get_current_user_simple_optional, SimpleUser
+from core.simple_auth import (
+    SimpleUser,
+    get_current_user_simple_optional,
+)
 from domain.schemas.backtest import (
     AggregatedMetrics,
     BacktestResponse,
@@ -14,6 +16,7 @@ from domain.schemas.backtest import (
     SingleBacktestResponse,
     SingleBacktestResult,
 )
+from infrastructure.db import get_session
 from infrastructure.repositories.backtest_history_repository import (
     BacktestHistoryRepository,
 )
@@ -83,7 +86,6 @@ async def backtest_get(
 
     # Load and filter dataset
     # Use relative path that works in both dev and prod
-    import os
     current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Go up to src/
     datasets_path = os.path.join(current_dir, "datasets")
     csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])

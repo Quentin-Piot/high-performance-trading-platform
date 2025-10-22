@@ -24,8 +24,8 @@ class CognitoGoogleIntegrationService:
         # Check if we're in development mode with LocalStack AND using mock OAuth
         # Use mock when in development with LocalStack AND Cognito is not properly configured
         self.is_development = (
-            self.settings.env == "development" and 
-            hasattr(self.settings, 'aws_endpoint_url') and 
+            self.settings.env == "development" and
+            hasattr(self.settings, 'aws_endpoint_url') and
             self.settings.aws_endpoint_url == "http://localhost:4566" and
             # Use mock if Cognito is not properly configured (even if Google OAuth credentials are set)
             (not self.settings.cognito_user_pool_id or not self.settings.cognito_client_id)
@@ -47,10 +47,10 @@ class CognitoGoogleIntegrationService:
     async def create_federated_user(self, google_user_info: dict[str, Any]) -> CognitoUser | None:
         """
         Create or link a federated user in Cognito using Google identity.
-        
+
         Args:
             google_user_info: User information from Google OAuth
-            
+
         Returns:
             CognitoUser object if successful, None otherwise
         """
@@ -114,7 +114,7 @@ class CognitoGoogleIntegrationService:
             name = google_user_info.get("name", "")
 
             # Create user in User Pool with Google identity
-            response = self.cognito_idp.admin_create_user(
+            self.cognito_idp.admin_create_user(
                 UserPoolId=self.user_pool_id,
                 Username=email,
                 UserAttributes=[
@@ -166,10 +166,10 @@ class CognitoGoogleIntegrationService:
     async def get_federated_credentials(self, id_token: str) -> dict[str, str] | None:
         """
         Get temporary AWS credentials for federated user.
-        
+
         Args:
             id_token: Google ID token
-            
+
         Returns:
             Dict with AWS credentials or None if failed
         """
