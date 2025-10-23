@@ -32,6 +32,9 @@ function goHome() {
 }
 
 onMounted(async () => {
+    // Rehydrate auth state first
+    auth.rehydrate();
+    
     // Check for Google OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("auth") || urlParams.has("error")) {
@@ -42,8 +45,7 @@ onMounted(async () => {
         }
     }
 
-    // Rehydrate auth state
-    auth.rehydrate();
+    // Check if already authenticated after rehydration
     if (auth.isAuthenticated) navigate("/simulate");
 });
 </script>

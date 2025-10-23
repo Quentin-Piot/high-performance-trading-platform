@@ -160,7 +160,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async loginWithGoogle(redirectUrl: string = '/dashboard') {
+    async loginWithGoogle(redirectUrl: string = '/simulate') {
       this.isLoading = true
       try {
         // Redirect to backend Google OAuth endpoint
@@ -184,6 +184,9 @@ export const useAuthStore = defineStore('auth', {
       const authStatus = urlParams.get('auth')
       const provider = urlParams.get('provider')
       const email = urlParams.get('email')
+      const userId = urlParams.get('user_id')
+      const token = urlParams.get('token')
+      const identityId = urlParams.get('identity_id')
       const error = urlParams.get('error')
       const message = urlParams.get('message')
 
@@ -192,16 +195,16 @@ export const useAuthStore = defineStore('auth', {
         return false
       }
 
-      if (authStatus === 'success' && provider === 'google' && email) {
-        // Set user as authenticated with Google
+      if (authStatus === 'success' && provider === 'google' && email && token) {
+        // Set user as authenticated with Google using the real JWT token
         this.user = {
-          sub: `google_${email}`, // Temporary sub, should be updated with real data
+          sub: identityId || `google_${userId}`,
           email,
           email_verified: true,
           provider: 'google'
         }
         this.userEmail = email
-        this.token = 'google_authenticated' // Temporary token, should be replaced with real JWT
+        this.token = token // Use the real JWT token from backend
         
         this.persistUserData()
         
