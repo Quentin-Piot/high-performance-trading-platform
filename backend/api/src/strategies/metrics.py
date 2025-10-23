@@ -12,6 +12,7 @@ def sharpe_ratio(returns: pd.Series, annualization: int = 252) -> float:
         return 0.0  # Return 0 instead of NaN for JSON compatibility
     return float((mean / std) * (annualization**0.5))
 
+
 def max_drawdown(equity: pd.Series) -> float:
     # equity: cumulative portfolio value
     roll_max = equity.cummax()
@@ -19,10 +20,12 @@ def max_drawdown(equity: pd.Series) -> float:
     # Return the minimum drawdown (negative value)
     return float(drawdown.min())
 
+
 def total_return(equity: pd.Series) -> float:
     if equity.empty:
         return 0.0
     return float(equity.iloc[-1] / equity.iloc[0] - 1.0)
+
 
 def trade_summary_from_positions(
     positions: pd.Series, price: pd.Series
@@ -48,9 +51,9 @@ def trade_summary_from_positions(
         if i_x < len(exits):
             exit_candidate = exits[i_x]
             # Convert to comparable format if needed
-            if hasattr(exit_candidate, 'item'):
+            if hasattr(exit_candidate, "item"):
                 exit_candidate = exit_candidate.item()
-            if hasattr(entry_date, 'item'):
+            if hasattr(entry_date, "item"):
                 entry_date_scalar = entry_date.item()
             else:
                 entry_date_scalar = entry_date

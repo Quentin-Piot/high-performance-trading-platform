@@ -21,12 +21,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
+            "end_date": "2017-01-31T00:00:00",  # Updated to valid date range
             "num_runs": 5,  # Small number for fast testing
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -69,12 +69,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "msft",
             "start_date": "2017-02-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-02-28T00:00:00",    # Updated to valid date range
+            "end_date": "2017-02-28T00:00:00",  # Updated to valid date range
             "num_runs": 3,
             "initial_capital": 15000.0,
             "strategy": "sma_crossover",
             "sma_short": 5,
-            "sma_long": 15
+            "sma_long": 15,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -107,12 +107,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "invalid_symbol",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
+            "end_date": "2017-01-31T00:00:00",  # Updated to valid date range
             "num_runs": 5,
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -130,7 +130,7 @@ class TestSynchronousMonteCarlo:
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -143,12 +143,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "aapl",
             "start_date": "2017-01-31T00:00:00",  # Updated to valid date range
-            "end_date": "2017-01-01T00:00:00",    # Before start date
+            "end_date": "2017-01-01T00:00:00",  # Before start date
             "num_runs": 5,
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -160,12 +160,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
+            "end_date": "2017-01-31T00:00:00",  # Updated to valid date range
             "num_runs": 0,  # Invalid
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -177,12 +177,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
+            "end_date": "2017-01-31T00:00:00",  # Updated to valid date range
             "num_runs": 5,
             "initial_capital": -1000.0,  # Invalid
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -194,12 +194,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "googl",
             "start_date": "2017-03-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-03-29T00:00:00",    # Updated to valid date range (end of available data)
+            "end_date": "2017-03-29T00:00:00",  # Updated to valid date range (end of available data)
             "num_runs": 3,
             "initial_capital": 15000.0,
             "strategy": "sma_crossover",
             "sma_short": 8,
-            "sma_long": 25
+            "sma_long": 25,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -218,7 +218,7 @@ class TestSynchronousMonteCarlo:
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -267,7 +267,7 @@ class TestSynchronousMonteCarlo:
                 "initial_capital": 10000.0,
                 "strategy": "sma_crossover",
                 "sma_short": 10,
-                "sma_long": 30
+                "sma_long": 30,
             }
 
             response = client.post("/api/v1/monte-carlo/run", params=params)
@@ -283,12 +283,12 @@ class TestSynchronousMonteCarlo:
         params = {
             "symbol": "aapl",
             "start_date": "2017-01-01T00:00:00",  # Updated to valid date range
-            "end_date": "2017-01-31T00:00:00",    # Updated to valid date range
+            "end_date": "2017-01-31T00:00:00",  # Updated to valid date range
             "num_runs": 5,
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         start_time = time.time()
@@ -311,7 +311,7 @@ class TestSynchronousMonteCarlo:
             "initial_capital": 10000.0,
             "strategy": "sma_crossover",
             "sma_short": 10,
-            "sma_long": 30
+            "sma_long": 30,
         }
 
         # Run twice with same parameters
@@ -326,13 +326,18 @@ class TestSynchronousMonteCarlo:
 
         # Results should be consistent (though not necessarily identical due to randomness)
         assert data1["results"][0]["runs"] == data2["results"][0]["runs"]
-        assert data1["results"][0]["successful_runs"] == data2["results"][0]["successful_runs"]
+        assert (
+            data1["results"][0]["successful_runs"]
+            == data2["results"][0]["successful_runs"]
+        )
 
 
 class TestLegacyEndpointsDeprecated:
     """Test that legacy endpoints are properly deprecated."""
 
-    @pytest.mark.skip(reason="Legacy endpoints not implemented - these tests are for future deprecation handling")
+    @pytest.mark.skip(
+        reason="Legacy endpoints not implemented - these tests are for future deprecation handling"
+    )
     def test_legacy_jobs_endpoint_deprecated(self):
         """Test that jobs endpoint is marked as deprecated."""
         request_data = {
@@ -340,7 +345,7 @@ class TestLegacyEndpointsDeprecated:
             "start_date": "2023-01-01T00:00:00",
             "end_date": "2023-01-15T00:00:00",
             "num_runs": 2,
-            "initial_capital": 10000.0
+            "initial_capital": 10000.0,
         }
 
         response = client.post("/monte-carlo/jobs", json=request_data)
@@ -356,7 +361,9 @@ class TestLegacyEndpointsDeprecated:
         # For now, we'll skip it as it requires more complex setup
         pass
 
-    @pytest.mark.skip(reason="Legacy endpoints not implemented - these tests are for future deprecation handling")
+    @pytest.mark.skip(
+        reason="Legacy endpoints not implemented - these tests are for future deprecation handling"
+    )
     def test_legacy_bulk_endpoint_deprecated(self):
         """Test that bulk endpoint is marked as deprecated."""
         request_data = {
@@ -366,7 +373,7 @@ class TestLegacyEndpointsDeprecated:
                     "start_date": "2023-01-01T00:00:00",
                     "end_date": "2023-01-15T00:00:00",
                     "num_runs": 2,
-                    "initial_capital": 10000.0
+                    "initial_capital": 10000.0,
                 }
             ]
         }

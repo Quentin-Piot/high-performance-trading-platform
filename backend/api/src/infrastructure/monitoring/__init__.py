@@ -1,6 +1,7 @@
 """
 Monitoring infrastructure implementations.
 """
+
 from .metrics import (
     HealthChecker,
     MetricsCollector,
@@ -14,5 +15,5 @@ __all__ = [
     "MetricsCollector",
     "HealthChecker",
     "PerformanceTracker",
-    "monitoring_service"
+    "monitoring_service",
 ]

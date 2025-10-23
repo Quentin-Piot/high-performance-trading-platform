@@ -1,20 +1,21 @@
 import os
 import sys
 
-sys.path.append('src')
+from core.cognito import CognitoService
+from core.config import get_settings
+
+sys.path.append("src")
 
 # Set environment variables directly
-os.environ['COGNITO_CLIENT_ID'] = 'hcl2tpol6rk94cu1u0cg9o4f4'
-os.environ['COGNITO_USER_POOL_ID'] = 'eu-west-3_pb05WIUdA'
-os.environ['COGNITO_REGION'] = 'eu-west-3'
+os.environ["COGNITO_CLIENT_ID"] = "hcl2tpol6rk94cu1u0cg9o4f4"
+os.environ["COGNITO_USER_POOL_ID"] = "eu-west-3_pb05WIUdA"
+os.environ["COGNITO_REGION"] = "eu-west-3"
 
 print("Environment variables set directly:")
 print(f"  COGNITO_CLIENT_ID: '{os.getenv('COGNITO_CLIENT_ID')}'")
 print(f"  COGNITO_USER_POOL_ID: '{os.getenv('COGNITO_USER_POOL_ID')}'")
 print(f"  COGNITO_REGION: '{os.getenv('COGNITO_REGION')}'")
 
-from core.cognito import CognitoService
-from core.config import get_settings
 
 # Test the settings loading
 settings = get_settings()
@@ -39,4 +40,5 @@ try:
 except Exception as e:
     print(f"Error creating user: {e}")
     import traceback
+
     traceback.print_exc()

@@ -14,21 +14,24 @@ Variables d'environnement requises:
     AWS_ACCESS_KEY_ID: Clé d'accès AWS (ou utiliser IAM roles)
     AWS_SECRET_ACCESS_KEY: Clé secrète AWS (ou utiliser IAM roles)
 """
+
 import logging
 import os
 
 try:
     import boto3
     from watchtower import CloudWatchLogsHandler
+
     CLOUDWATCH_AVAILABLE = True
 except ImportError:
     CLOUDWATCH_AVAILABLE = False
+
 
 def setup_cloudwatch_logging(
     log_group: str | None = None,
     log_stream: str | None = None,
     region: str | None = None,
-    level: int = logging.INFO
+    level: int = logging.INFO,
 ) -> CloudWatchLogsHandler | None:
     """
     Configure CloudWatch logging handler.
@@ -64,7 +67,7 @@ def setup_cloudwatch_logging(
         session = boto3.Session(
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-            region_name=region
+            region_name=region,
         )
 
         # Configurer le handler CloudWatch
@@ -83,25 +86,22 @@ def setup_cloudwatch_logging(
 
         # Format JSON pour CloudWatch (compatible avec notre JSONFormatter)
         from core.logging import JSONFormatter
+
         handler.setFormatter(JSONFormatter())
 
         logging.getLogger("cloudwatch").info(
             "CloudWatch logging configured",
-            extra={
-                "log_group": log_group,
-                "log_stream": log_stream,
-                "region": region
-            }
+            extra={"log_group": log_group, "log_stream": log_stream, "region": region},
         )
 
         return handler
 
     except Exception as e:
         logging.getLogger("cloudwatch").error(
-            "Failed to configure CloudWatch logging",
-            extra={"error": str(e)}
+            "Failed to configure CloudWatch logging", extra={"error": str(e)}
         )
         return None
+
 
 def add_cloudwatch_to_logger(logger_name: str = None) -> bool:
     """
@@ -122,6 +122,7 @@ def add_cloudwatch_to_logger(logger_name: str = None) -> bool:
 
     return True
 
+
 def setup_enhanced_logging_with_cloudwatch():
     """
     Configuration complète du logging avec CloudWatch optionnel.
@@ -130,6 +131,7 @@ def setup_enhanced_logging_with_cloudwatch():
     """
     # Configuration locale existante
     from core.logging import setup_logging
+
     setup_logging()
 
     # Ajout de CloudWatch si configuré
@@ -142,11 +144,16 @@ def setup_enhanced_logging_with_cloudwatch():
 
             # Filtres pour CloudWatch
             from core.logging import RequestIdFilter, SecretsFilter
+
             cloudwatch_handler.addFilter(RequestIdFilter())
             cloudwatch_handler.addFilter(SecretsFilter())
 
             logging.getLogger("app").info("Enhanced logging with CloudWatch enabled")
         else:
-            logging.getLogger("app").warning("CloudWatch logging requested but failed to configure")
+            logging.getLogger("app").warning(
+                "CloudWatch logging requested but failed to configure"
+            )
     else:
-        logging.getLogger("app").info("CloudWatch logging disabled (set ENABLE_CLOUDWATCH_LOGGING=true to enable)")
+        logging.getLogger("app").info(
+            "CloudWatch logging disabled (set ENABLE_CLOUDWATCH_LOGGING=true to enable)"
+        )

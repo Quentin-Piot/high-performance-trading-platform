@@ -1,6 +1,7 @@
 """
 Tests for Google OAuth integration with Cognito.
 """
+
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -29,7 +30,7 @@ def mock_google_user_info():
         "given_name": "Test",
         "family_name": "User",
         "picture": "https://example.com/photo.jpg",
-        "locale": "en"
+        "locale": "en",
     }
 
 
@@ -40,7 +41,7 @@ def mock_google_token_data(mock_google_user_info):
         "access_token": "google-access-token",
         "id_token": "google-id-token",
         "refresh_token": "google-refresh-token",
-        "user_info": mock_google_user_info
+        "user_info": mock_google_user_info,
     }
 
 
@@ -52,7 +53,7 @@ def mock_cognito_user():
         email="test@example.com",
         name="Test User",
         email_verified=True,
-        cognito_username="test@example.com"
+        cognito_username="test@example.com",
     )
 
 
@@ -72,20 +73,24 @@ class TestGoogleOAuthRoutes:
 
     def test_google_login_redirect(self, client):
         """Test Google login initiates OAuth flow."""
-        with patch('api.routers.google_auth.get_google_oauth_service') as mock_service:
+        with patch("api.routers.google_auth.get_google_oauth_service") as mock_service:
             mock_oauth_service = Mock()
-            mock_oauth_service.get_authorization_url.return_value = "https://accounts.google.com/oauth/authorize?..."
+            mock_oauth_service.get_authorization_url.return_value = (
+                "https://accounts.google.com/oauth/authorize?..."
+            )
             mock_service.return_value = mock_oauth_service
 
             response = client.get("/auth/google/login?redirect_url=/dashboard")
 
             assert response.status_code == 307  # Redirect
             assert "accounts.google.com" in response.headers["location"]
-            mock_oauth_service.get_authorization_url.assert_called_once_with(state="/dashboard")
+            mock_oauth_service.get_authorization_url.assert_called_once_with(
+                state="/dashboard"
+            )
 
-    @patch('api.routers.google_auth.UserRepository')
-    @patch('api.routers.google_auth.get_cognito_google_service')
-    @patch('api.routers.google_auth.get_google_oauth_service')
+    @patch("api.routers.google_auth.UserRepository")
+    @patch("api.routers.google_auth.get_cognito_google_service")
+    @patch("api.routers.google_auth.get_google_oauth_service")
     def test_google_callback_success(
         self,
         mock_google_service,
@@ -94,23 +99,29 @@ class TestGoogleOAuthRoutes:
         client,
         mock_google_token_data,
         mock_cognito_user,
-        mock_db_user
+        mock_db_user,
     ):
         """Test successful Google OAuth callback."""
         # Mock Google OAuth service
         mock_oauth_service = Mock()
-        mock_oauth_service.exchange_code_for_tokens = AsyncMock(return_value=mock_google_token_data)
+        mock_oauth_service.exchange_code_for_tokens = AsyncMock(
+            return_value=mock_google_token_data
+        )
         mock_google_service.return_value = mock_oauth_service
 
         # Mock Cognito Google integration service
         mock_integration_service = Mock()
-        mock_integration_service.create_federated_user = AsyncMock(return_value=mock_cognito_user)
-        mock_integration_service.get_federated_credentials = AsyncMock(return_value={
-            "identity_id": "test-identity-id",
-            "access_key_id": "test-access-key",
-            "secret_key": "test-secret-key",
-            "session_token": "test-session-token"
-        })
+        mock_integration_service.create_federated_user = AsyncMock(
+            return_value=mock_cognito_user
+        )
+        mock_integration_service.get_federated_credentials = AsyncMock(
+            return_value={
+                "identity_id": "test-identity-id",
+                "access_key_id": "test-access-key",
+                "secret_key": "test-secret-key",
+                "session_token": "test-session-token",
+            }
+        )
         mock_cognito_google_service.return_value = mock_integration_service
 
         # Mock user repository
@@ -131,11 +142,15 @@ class TestGoogleOAuthRoutes:
         # Verify service calls
         mock_oauth_service.exchange_code_for_tokens.assert_called_once_with("test-code")
         mock_integration_service.create_federated_user.assert_called_once()
-        mock_user_repo.get_or_create_from_cognito.assert_called_once_with(mock_cognito_user)
+        mock_user_repo.get_or_create_from_cognito.assert_called_once_with(
+            mock_cognito_user
+        )
 
     def test_google_callback_error_parameter(self, client):
         """Test Google OAuth callback with error parameter."""
-        response = client.get("/auth/google/callback?error=access_denied&state=/dashboard")
+        response = client.get(
+            "/auth/google/callback?error=access_denied&state=/dashboard"
+        )
 
         assert response.status_code == 307  # Redirect
         location = response.headers["location"]
@@ -150,21 +165,23 @@ class TestGoogleOAuthRoutes:
         location = response.headers["location"]
         assert "error=missing_code" in location
 
-    @patch('api.routers.google_auth.UserRepository')
-    @patch('api.routers.google_auth.get_cognito_google_service')
-    @patch('api.routers.google_auth.get_google_oauth_service')
+    @patch("api.routers.google_auth.UserRepository")
+    @patch("api.routers.google_auth.get_cognito_google_service")
+    @patch("api.routers.google_auth.get_google_oauth_service")
     def test_google_callback_federated_user_error(
         self,
         mock_google_service,
         mock_cognito_google_service,
         mock_user_repo_class,
         client,
-        mock_google_token_data
+        mock_google_token_data,
     ):
         """Test Google OAuth callback when federated user creation fails."""
         # Mock Google OAuth service
         mock_oauth_service = Mock()
-        mock_oauth_service.exchange_code_for_tokens = AsyncMock(return_value=mock_google_token_data)
+        mock_oauth_service.exchange_code_for_tokens = AsyncMock(
+            return_value=mock_google_token_data
+        )
         mock_google_service.return_value = mock_oauth_service
 
         # Mock Cognito Google integration service to return None (failure)
@@ -185,16 +202,20 @@ class TestCognitoGoogleIntegrationService:
     @pytest.fixture
     def service(self):
         """Create service instance for testing."""
-        with patch('services.cognito_google_integration.get_settings') as mock_settings:
+        with patch("services.cognito_google_integration.get_settings") as mock_settings:
             mock_settings.return_value.cognito_region = "us-east-1"
             mock_settings.return_value.cognito_user_pool_id = "test-pool-id"
-            mock_settings.return_value.cognito_identity_pool_id = "test-identity-pool-id"
+            mock_settings.return_value.cognito_identity_pool_id = (
+                "test-identity-pool-id"
+            )
 
-            with patch('services.cognito_google_integration.boto3.client'):
+            with patch("services.cognito_google_integration.boto3.client"):
                 return CognitoGoogleIntegrationService()
 
-    @patch('services.cognito_google_integration.boto3.client')
-    def test_create_federated_user_new_user(self, mock_boto_client, mock_google_user_info):
+    @patch("services.cognito_google_integration.boto3.client")
+    def test_create_federated_user_new_user(
+        self, mock_boto_client, mock_google_user_info
+    ):
         """Test creating a new federated user."""
         # Mock Cognito IDP client
         mock_idp_client = Mock()
@@ -210,6 +231,7 @@ class TestCognitoGoogleIntegrationService:
 
         # Test the method
         import asyncio
+
         result = asyncio.run(service.create_federated_user(mock_google_user_info))
 
         assert result is not None
@@ -221,8 +243,10 @@ class TestCognitoGoogleIntegrationService:
         mock_idp_client.admin_create_user.assert_called_once()
         mock_idp_client.admin_update_user_attributes.assert_called_once()
 
-    @patch('services.cognito_google_integration.boto3.client')
-    def test_create_federated_user_existing_user(self, mock_boto_client, mock_google_user_info):
+    @patch("services.cognito_google_integration.boto3.client")
+    def test_create_federated_user_existing_user(
+        self, mock_boto_client, mock_google_user_info
+    ):
         """Test linking Google identity to existing user."""
         # Mock Cognito IDP client
         mock_idp_client = Mock()
@@ -232,8 +256,8 @@ class TestCognitoGoogleIntegrationService:
                 {"Name": "sub", "Value": "existing-sub-123"},
                 {"Name": "email", "Value": "test@example.com"},
                 {"Name": "name", "Value": "Test User"},
-                {"Name": "email_verified", "Value": "true"}
-            ]
+                {"Name": "email_verified", "Value": "true"},
+            ],
         }
         mock_idp_client.admin_update_user_attributes.return_value = {}
 
@@ -243,6 +267,7 @@ class TestCognitoGoogleIntegrationService:
 
         # Test the method
         import asyncio
+
         result = asyncio.run(service.create_federated_user(mock_google_user_info))
 
         assert result is not None
@@ -254,7 +279,7 @@ class TestCognitoGoogleIntegrationService:
         mock_idp_client.admin_get_user.assert_called_once()
         mock_idp_client.admin_update_user_attributes.assert_called_once()
 
-    @patch('services.cognito_google_integration.boto3.client')
+    @patch("services.cognito_google_integration.boto3.client")
     def test_get_federated_credentials(self, mock_boto_client):
         """Test getting federated credentials."""
         # Mock Cognito Identity client
@@ -265,7 +290,7 @@ class TestCognitoGoogleIntegrationService:
                 "AccessKeyId": "test-access-key",
                 "SecretKey": "test-secret-key",
                 "SessionToken": "test-session-token",
-                "Expiration": "2024-01-01T00:00:00Z"
+                "Expiration": "2024-01-01T00:00:00Z",
             }
         }
 
@@ -275,6 +300,7 @@ class TestCognitoGoogleIntegrationService:
 
         # Test the method
         import asyncio
+
         result = asyncio.run(service.get_federated_credentials("google-id-token"))
 
         assert result is not None
@@ -294,10 +320,12 @@ class TestGoogleOAuthService:
     @pytest.fixture
     def service(self):
         """Create service instance for testing."""
-        with patch('services.google_oauth.get_settings') as mock_settings:
+        with patch("services.google_oauth.get_settings") as mock_settings:
             mock_settings.return_value.google_client_id = "test-client-id"
             mock_settings.return_value.google_client_secret = "test-client-secret"
-            mock_settings.return_value.google_redirect_uri = "http://localhost:8000/auth/google/callback"
+            mock_settings.return_value.google_redirect_uri = (
+                "http://localhost:8000/auth/google/callback"
+            )
             return GoogleOAuthService()
 
     def test_get_authorization_url(self, service):
@@ -309,9 +337,11 @@ class TestGoogleOAuthService:
         assert "state=/dashboard" in url
         assert "scope=openid+email+profile" in url
 
-    @patch('services.google_oauth.httpx.AsyncClient')
-    @patch('services.google_oauth.id_token.verify_oauth2_token')
-    def test_exchange_code_for_tokens(self, mock_verify_token, mock_http_client, service):
+    @patch("services.google_oauth.httpx.AsyncClient")
+    @patch("services.google_oauth.id_token.verify_oauth2_token")
+    def test_exchange_code_for_tokens(
+        self, mock_verify_token, mock_http_client, service
+    ):
         """Test exchanging authorization code for tokens."""
         # Mock HTTP response
         mock_response = Mock()
@@ -319,7 +349,7 @@ class TestGoogleOAuthService:
         mock_response.json.return_value = {
             "access_token": "google-access-token",
             "id_token": "google-id-token",
-            "refresh_token": "google-refresh-token"
+            "refresh_token": "google-refresh-token",
         }
 
         mock_client_instance = Mock()
@@ -331,7 +361,7 @@ class TestGoogleOAuthService:
         mock_verify_token.return_value = {
             "sub": "google-user-123",
             "email": "test@example.com",
-            "email_verified": True
+            "email_verified": True,
         }
 
         # Mock user info response
@@ -339,11 +369,12 @@ class TestGoogleOAuthService:
             "name": "Test User",
             "given_name": "Test",
             "family_name": "User",
-            "picture": "https://example.com/photo.jpg"
+            "picture": "https://example.com/photo.jpg",
         }
 
         # Test the method
         import asyncio
+
         result = asyncio.run(service.exchange_code_for_tokens("test-code"))
 
         assert result is not None

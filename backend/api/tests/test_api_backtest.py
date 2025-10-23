@@ -20,7 +20,12 @@ def test_backtest_ok_200():
     resp = client.post("/api/v1/backtest?sma_short=2&sma_long=3", files=files)
     assert resp.status_code == 200
     body = resp.json()
-    assert "equity_curve" in body and "pnl" in body and "drawdown" in body and "sharpe" in body
+    assert (
+        "equity_curve" in body
+        and "pnl" in body
+        and "drawdown" in body
+        and "sharpe" in body
+    )
     assert len(body["equity_curve"]) == 6
 
 

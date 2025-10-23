@@ -20,6 +20,7 @@ class BacktestParams:
     ]  # Ex: {"short_window": 20, "long_window": 50} pour MovingAverage
     symbol: str  # Ex: "AAPL"
 
+
 @dataclass
 class BacktestResult:
     """

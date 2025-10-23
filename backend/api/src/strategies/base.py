@@ -12,6 +12,7 @@ class StrategyParams(BaseModel):
     Base Pydantic model for strategy parameters.
     All strategies should extend this.
     """
+
     model_config = {"arbitrary_types_allowed": True}
 
     # common params present in all strategies
@@ -22,6 +23,7 @@ class StrategyParams(BaseModel):
     start_date: datetime | None = None
     end_date: datetime | None = None
     timeframe: str = "1d"  # informative
+
 
 class Strategy(ABC):
     """

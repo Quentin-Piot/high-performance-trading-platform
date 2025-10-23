@@ -4,6 +4,7 @@ Database utilities for connection management, retry logic, and performance monit
 This module provides utilities to handle database connection timeouts, implement
 retry logic, and monitor database performance for the trading platform.
 """
+
 import asyncio
 import logging
 import time
@@ -21,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 # Database operation retry configuration
 DEFAULT_MAX_RETRIES = 3
@@ -33,17 +34,24 @@ DEFAULT_MAX_DELAY = 30.0
 SLOW_QUERY_THRESHOLD = 1.0  # seconds
 VERY_SLOW_QUERY_THRESHOLD = 5.0  # seconds
 
+
 class DatabaseError(Exception):
     """Custom database error for better error handling"""
+
     pass
+
 
 class DatabaseTimeoutError(DatabaseError):
     """Raised when database operations timeout"""
+
     pass
+
 
 class DatabaseConnectionError(DatabaseError):
     """Raised when database connection fails"""
+
     pass
+
 
 def is_retryable_error(error: Exception) -> bool:
     """
@@ -60,7 +68,7 @@ def is_retryable_error(error: Exception) -> bool:
         TimeoutError,
         OperationalError,
         ConnectionError,
-        OSError
+        OSError,
     )
 
     # Check for specific error messages that indicate retryable conditions
@@ -72,20 +80,20 @@ def is_retryable_error(error: Exception) -> bool:
         "connection lost",
         "server closed the connection",
         "connection broken",
-        "connection pool exhausted"
+        "connection pool exhausted",
     ]
 
-    return (
-        isinstance(error, retryable_errors) or
-        any(msg in error_message for msg in retryable_messages)
+    return isinstance(error, retryable_errors) or any(
+        msg in error_message for msg in retryable_messages
     )
+
 
 def db_retry(
     max_retries: int = DEFAULT_MAX_RETRIES,
     delay: float = DEFAULT_RETRY_DELAY,
     backoff: float = DEFAULT_BACKOFF_MULTIPLIER,
     max_delay: float = DEFAULT_MAX_DELAY,
-    exceptions: tuple = None
+    exceptions: tuple = None,
 ):
     """
     Decorator for database operations with retry logic.
@@ -123,10 +131,12 @@ def db_retry(
                                 "attempt": attempt + 1,
                                 "max_retries": max_retries,
                                 "error": str(e),
-                                "error_type": type(e).__name__
-                            }
+                                "error_type": type(e).__name__,
+                            },
                         )
-                        raise DatabaseError(f"Operation failed after {max_retries} retries: {str(e)}") from e
+                        raise DatabaseError(
+                            f"Operation failed after {max_retries} retries: {str(e)}"
+                        ) from e
 
                     if not (isinstance(e, exceptions) or is_retryable_error(e)):
                         logger.error(
@@ -134,8 +144,8 @@ def db_retry(
                             extra={
                                 "function": func.__name__,
                                 "error": str(e),
-                                "error_type": type(e).__name__
-                            }
+                                "error_type": type(e).__name__,
+                            },
                         )
                         raise
 
@@ -147,8 +157,8 @@ def db_retry(
                             "max_retries": max_retries,
                             "delay": current_delay,
                             "error": str(e),
-                            "error_type": type(e).__name__
-                        }
+                            "error_type": type(e).__name__,
+                        },
                     )
 
                     await asyncio.sleep(current_delay)
@@ -158,7 +168,9 @@ def db_retry(
             raise last_exception
 
         return wrapper
+
     return decorator
+
 
 @asynccontextmanager
 async def db_operation_monitor(operation_name: str, session: AsyncSession):
@@ -178,7 +190,7 @@ async def db_operation_monitor(operation_name: str, session: AsyncSession):
         "start_time": start_time,
         "duration": 0.0,
         "success": False,
-        "error": None
+        "error": None,
     }
 
     try:
@@ -197,8 +209,8 @@ async def db_operation_monitor(operation_name: str, session: AsyncSession):
                 "operation": operation_name,
                 "error": str(e),
                 "error_type": type(e).__name__,
-                "duration": time.time() - start_time
-            }
+                "duration": time.time() - start_time,
+            },
         )
         raise
 
@@ -208,26 +220,18 @@ async def db_operation_monitor(operation_name: str, session: AsyncSession):
 
         # Log performance metrics
         if metrics["duration"] > VERY_SLOW_QUERY_THRESHOLD:
-            logger.warning(
-                "Very slow database operation detected",
-                extra=metrics
-            )
+            logger.warning("Very slow database operation detected", extra=metrics)
         elif metrics["duration"] > SLOW_QUERY_THRESHOLD:
-            logger.info(
-                "Slow database operation detected",
-                extra=metrics
-            )
+            logger.info("Slow database operation detected", extra=metrics)
         else:
-            logger.debug(
-                "Database operation completed",
-                extra=metrics
-            )
+            logger.debug("Database operation completed", extra=metrics)
+
 
 async def execute_with_timeout(
     session: AsyncSession,
     operation: Callable[[], Awaitable[T]],
     timeout: float = 30.0,
-    operation_name: str = "database_operation"
+    operation_name: str = "database_operation",
 ) -> T:
     """
     Execute a database operation with timeout.
@@ -250,10 +254,7 @@ async def execute_with_timeout(
     except asyncio.TimeoutError:
         logger.error(
             "Database operation timed out",
-            extra={
-                "operation": operation_name,
-                "timeout": timeout
-            }
+            extra={"operation": operation_name, "timeout": timeout},
         )
         # Try to rollback the session if possible
         try:
@@ -263,21 +264,24 @@ async def execute_with_timeout(
                 "Failed to rollback session after timeout",
                 extra={
                     "operation": operation_name,
-                    "rollback_error": str(rollback_error)
-                }
+                    "rollback_error": str(rollback_error),
+                },
             )
 
-        raise DatabaseTimeoutError(f"Operation '{operation_name}' timed out after {timeout} seconds") from None
+        raise DatabaseTimeoutError(
+            f"Operation '{operation_name}' timed out after {timeout} seconds"
+        ) from None
     except Exception as e:
         logger.error(
             "Database operation failed",
             extra={
                 "operation": operation_name,
                 "error": str(e),
-                "error_type": type(e).__name__
-            }
+                "error_type": type(e).__name__,
+            },
         )
         raise DatabaseError(f"Operation '{operation_name}' failed: {str(e)}") from e
+
 
 class BatchOperationManager:
     """Manager for batch database operations to reduce round trips"""
@@ -289,10 +293,7 @@ class BatchOperationManager:
 
     def add_operation(self, operation_type: str, **kwargs):
         """Add an operation to the batch"""
-        self.pending_operations.append({
-            "type": operation_type,
-            "data": kwargs
-        })
+        self.pending_operations.append({"type": operation_type, "data": kwargs})
 
     async def execute_batch(self) -> dict[str, int]:
         """
@@ -319,7 +320,7 @@ class BatchOperationManager:
             results[op_type] = len(operations)
 
             for i in range(0, len(operations), self.batch_size):
-                batch = operations[i:i + self.batch_size]
+                batch = operations[i : i + self.batch_size]
                 await self._execute_batch_by_type(op_type, batch)
 
         # Clear pending operations
@@ -327,7 +328,9 @@ class BatchOperationManager:
 
         return results
 
-    async def _execute_batch_by_type(self, operation_type: str, batch: list[dict[str, Any]]):
+    async def _execute_batch_by_type(
+        self, operation_type: str, batch: list[dict[str, Any]]
+    ):
         """Execute a batch of operations of the same type"""
         try:
             if operation_type == "job_status_update":
@@ -343,8 +346,8 @@ class BatchOperationManager:
                 extra={
                     "operation_type": operation_type,
                     "batch_size": len(batch),
-                    "error": str(e)
-                }
+                    "error": str(e),
+                },
             )
             raise
 
@@ -365,7 +368,7 @@ class BatchOperationManager:
                     error=job_data.get("error"),
                     progress=job_data.get("progress"),
                     artifact_url=job_data.get("artifact_url"),
-                    completed_at=job_data.get("completed_at")
+                    completed_at=job_data.get("completed_at"),
                 )
             )
 
@@ -384,11 +387,12 @@ class BatchOperationManager:
                 .values(
                     progress=job_data["progress"],
                     updated_at=job_data.get("updated_at"),
-                    payload=job_data.get("payload")
+                    payload=job_data.get("payload"),
                 )
             )
 
         await self.session.commit()
+
 
 async def check_connection_health(session: AsyncSession) -> bool:
     """
@@ -406,9 +410,6 @@ async def check_connection_health(session: AsyncSession) -> bool:
     except Exception as e:
         logger.warning(
             "Database connection health check failed",
-            extra={
-                "error": str(e),
-                "error_type": type(e).__name__
-            }
+            extra={"error": str(e), "error_type": type(e).__name__},
         )
         return False

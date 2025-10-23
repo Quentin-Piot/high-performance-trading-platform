@@ -20,6 +20,7 @@ class RSIParams(StrategyParams):
     rsi_high: int = Field(70, ge=1, le=100)
     annualization: int = Field(252, gt=0)
 
+
 class RSIReversionStrategy(Strategy):
     ParamsModel = RSIParams
     name = "rsi-reversion"

@@ -18,11 +18,12 @@ class MovingAverageParams(StrategyParams):
     long_window: int = Field(50, gt=0)
     annualization: int = Field(252, gt=0)
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_windows(self):
         if self.short_window >= self.long_window:
             raise ValueError("short_window must be less than long_window")
         return self
+
 
 class MovingAverageStrategy(Strategy):
     ParamsModel = MovingAverageParams

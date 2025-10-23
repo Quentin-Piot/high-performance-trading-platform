@@ -4,6 +4,7 @@ Monitoring and metrics implementation for the queue system.
 This module provides monitoring capabilities including metrics collection,
 health checks, and performance tracking for the Monte Carlo job processing system.
 """
+
 import asyncio
 import logging
 import threading
@@ -23,36 +24,47 @@ class MonitoringInterface(ABC):
     """Interface for monitoring services"""
 
     @abstractmethod
-    async def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
+    async def record_metric(
+        self, name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a metric value"""
         pass
 
     @abstractmethod
-    async def increment_counter(self, name: str, tags: dict[str, str] | None = None) -> None:
+    async def increment_counter(
+        self, name: str, tags: dict[str, str] | None = None
+    ) -> None:
         """Increment a counter metric"""
         pass
 
     @abstractmethod
-    async def record_timing(self, name: str, duration_ms: float, tags: dict[str, str] | None = None) -> None:
+    async def record_timing(
+        self, name: str, duration_ms: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a timing metric"""
         pass
+
 
 @dataclass
 class MetricPoint:
     """Individual metric data point"""
+
     name: str
     value: float
     timestamp: datetime
     tags: dict[str, str] = field(default_factory=dict)
 
+
 @dataclass
 class HealthCheck:
     """Health check result"""
+
     name: str
     status: str  # "healthy", "unhealthy", "warning"
     message: str
     timestamp: datetime
     details: dict[str, Any] = field(default_factory=dict)
+
 
 class MetricsCollector:
     """Collects and stores metrics in memory"""
@@ -65,25 +77,28 @@ class MetricsCollector:
             max_points_per_metric: Maximum number of points to keep per metric
         """
         self.max_points_per_metric = max_points_per_metric
-        self._metrics: dict[str, deque] = defaultdict(lambda: deque(maxlen=max_points_per_metric))
+        self._metrics: dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=max_points_per_metric)
+        )
         self._counters: dict[str, float] = defaultdict(float)
         self._lock = threading.RLock()
 
         logger.info("Initialized metrics collector")
 
-    def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
+    def record_metric(
+        self, name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a metric value"""
         with self._lock:
             metric_key = self._create_metric_key(name, tags or {})
             point = MetricPoint(
-                name=name,
-                value=value,
-                timestamp=datetime.now(UTC),
-                tags=tags or {}
+                name=name, value=value, timestamp=datetime.now(UTC), tags=tags or {}
             )
             self._metrics[metric_key].append(point)
 
-    def increment_counter(self, name: str, tags: dict[str, str] | None = None, value: float = 1.0) -> None:
+    def increment_counter(
+        self, name: str, tags: dict[str, str] | None = None, value: float = 1.0
+    ) -> None:
         """Increment a counter metric"""
         with self._lock:
             counter_key = self._create_metric_key(name, tags or {})
@@ -92,11 +107,15 @@ class MetricsCollector:
             # Also record as a metric point
             self.record_metric(name, self._counters[counter_key], tags)
 
-    def record_timing(self, name: str, duration_ms: float, tags: dict[str, str] | None = None) -> None:
+    def record_timing(
+        self, name: str, duration_ms: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a timing metric"""
         self.record_metric(f"{name}.duration_ms", duration_ms, tags)
 
-    def get_metric_points(self, name: str, tags: dict[str, str] | None = None) -> list[MetricPoint]:
+    def get_metric_points(
+        self, name: str, tags: dict[str, str] | None = None
+    ) -> list[MetricPoint]:
         """Get metric points for a specific metric"""
         with self._lock:
             metric_key = self._create_metric_key(name, tags or {})
@@ -126,6 +145,7 @@ class MetricsCollector:
 
         tag_str = ",".join(f"{k}={v}" for k, v in sorted(tags.items()))
         return f"{name}[{tag_str}]"
+
 
 class HealthChecker:
     """Performs health checks on system components"""
@@ -157,7 +177,7 @@ class HealthChecker:
                 name=name,
                 status="unhealthy",
                 message=f"Health check '{name}' not found",
-                timestamp=datetime.now(UTC)
+                timestamp=datetime.now(UTC),
             )
 
         try:
@@ -177,7 +197,9 @@ class HealthChecker:
                 elif len(result) == 3:
                     status, message, details = result
                 else:
-                    raise ValueError("Health check must return (status, message) or (status, message, details)")
+                    raise ValueError(
+                        "Health check must return (status, message) or (status, message, details)"
+                    )
             else:
                 status = "healthy" if result else "unhealthy"
                 message = f"Health check {name} returned {result}"
@@ -188,7 +210,7 @@ class HealthChecker:
                 status=status,
                 message=message,
                 timestamp=datetime.now(UTC),
-                details=details
+                details=details,
             )
 
             with self._lock:
@@ -202,7 +224,7 @@ class HealthChecker:
                 status="unhealthy",
                 message=f"Health check failed: {str(e)}",
                 timestamp=datetime.now(UTC),
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
 
             with self._lock:
@@ -230,6 +252,7 @@ class HealthChecker:
         with self._lock:
             return self._last_results.copy()
 
+
 class PerformanceTracker:
     """Tracks performance metrics and statistics"""
 
@@ -247,7 +270,9 @@ class PerformanceTracker:
         logger.info("Initialized performance tracker")
 
     @asynccontextmanager
-    async def track_timing(self, operation_name: str, tags: dict[str, str] | None = None):
+    async def track_timing(
+        self, operation_name: str, tags: dict[str, str] | None = None
+    ):
         """Context manager for tracking operation timing"""
         start_time = time.time()
         try:
@@ -256,13 +281,20 @@ class PerformanceTracker:
             duration_ms = (time.time() - start_time) * 1000
             self.record_timing(operation_name, duration_ms, tags)
 
-    def record_timing(self, operation_name: str, duration_ms: float, tags: dict[str, str] | None = None) -> None:
+    def record_timing(
+        self,
+        operation_name: str,
+        duration_ms: float,
+        tags: dict[str, str] | None = None,
+    ) -> None:
         """Record timing for an operation"""
         with self._lock:
             key = self._create_key(operation_name, tags or {})
             self._timings[key].append(duration_ms)
 
-    def get_statistics(self, operation_name: str, tags: dict[str, str] | None = None) -> dict[str, float]:
+    def get_statistics(
+        self, operation_name: str, tags: dict[str, str] | None = None
+    ) -> dict[str, float]:
         """Get statistics for an operation"""
         with self._lock:
             key = self._create_key(operation_name, tags or {})
@@ -276,7 +308,7 @@ class PerformanceTracker:
                     "max_ms": 0.0,
                     "p50_ms": 0.0,
                     "p95_ms": 0.0,
-                    "p99_ms": 0.0
+                    "p99_ms": 0.0,
                 }
 
             timings.sort()
@@ -289,7 +321,7 @@ class PerformanceTracker:
                 "max_ms": timings[-1],
                 "p50_ms": timings[int(count * 0.5)],
                 "p95_ms": timings[int(count * 0.95)],
-                "p99_ms": timings[int(count * 0.99)]
+                "p99_ms": timings[int(count * 0.99)],
             }
 
     def _create_key(self, operation_name: str, tags: dict[str, str]) -> str:
@@ -299,6 +331,7 @@ class PerformanceTracker:
 
         tag_str = ",".join(f"{k}={v}" for k, v in sorted(tags.items()))
         return f"{operation_name}[{tag_str}]"
+
 
 class MonitoringService(MonitoringInterface):
     """Main monitoring service that coordinates all monitoring components"""
@@ -314,15 +347,21 @@ class MonitoringService(MonitoringInterface):
 
         logger.info("Initialized monitoring service")
 
-    async def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
+    async def record_metric(
+        self, name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a metric value"""
         self.metrics_collector.record_metric(name, value, tags)
 
-    async def increment_counter(self, name: str, tags: dict[str, str] | None = None) -> None:
+    async def increment_counter(
+        self, name: str, tags: dict[str, str] | None = None
+    ) -> None:
         """Increment a counter metric"""
         self.metrics_collector.increment_counter(name, tags)
 
-    async def record_timing(self, name: str, duration_ms: float, tags: dict[str, str] | None = None) -> None:
+    async def record_timing(
+        self, name: str, duration_ms: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a timing metric"""
         self.metrics_collector.record_timing(name, duration_ms, tags)
         self.performance_tracker.record_timing(name, duration_ms, tags)
@@ -353,7 +392,7 @@ class MonitoringService(MonitoringInterface):
                     "status": check.status,
                     "message": check.message,
                     "timestamp": check.timestamp.isoformat(),
-                    "details": check.details
+                    "details": check.details,
                 }
                 for name, check in health_results.items()
             },
@@ -361,8 +400,8 @@ class MonitoringService(MonitoringInterface):
                 "total_checks": len(health_results),
                 "healthy_checks": len(health_results) - unhealthy_count - warning_count,
                 "warning_checks": warning_count,
-                "unhealthy_checks": unhealthy_count
-            }
+                "unhealthy_checks": unhealthy_count,
+            },
         }
 
     def get_metrics_summary(self) -> dict[str, Any]:
@@ -372,7 +411,7 @@ class MonitoringService(MonitoringInterface):
         summary = {
             "total_metrics": len(all_metrics),
             "timestamp": datetime.now(UTC).isoformat(),
-            "metrics": {}
+            "metrics": {},
         }
 
         for metric_key, points in all_metrics.items():
@@ -384,7 +423,7 @@ class MonitoringService(MonitoringInterface):
                     "avg_value": sum(values) / len(values),
                     "min_value": min(values),
                     "max_value": max(values),
-                    "latest_timestamp": points[-1].timestamp.isoformat()
+                    "latest_timestamp": points[-1].timestamp.isoformat(),
                 }
 
         return summary
@@ -392,17 +431,16 @@ class MonitoringService(MonitoringInterface):
     def get_performance_summary(self) -> dict[str, Any]:
         """Get performance statistics summary"""
         # This would collect performance stats from the performance tracker
-        return {
-            "timestamp": datetime.now(UTC).isoformat(),
-            "operations": {}
-        }
+        return {"timestamp": datetime.now(UTC).isoformat(), "operations": {}}
 
     def register_health_check(self, name: str, check_func: Callable) -> None:
         """Register a custom health check"""
         self.health_checker.register_health_check(name, check_func)
 
     @asynccontextmanager
-    async def track_operation(self, operation_name: str, tags: dict[str, str] | None = None):
+    async def track_operation(
+        self, operation_name: str, tags: dict[str, str] | None = None
+    ):
         """Context manager for tracking operation performance"""
         async with self.performance_tracker.track_timing(operation_name, tags):
             yield
@@ -414,13 +452,26 @@ class MonitoringService(MonitoringInterface):
             """Check memory usage"""
             try:
                 import psutil
+
                 memory = psutil.virtual_memory()
                 if memory.percent > 90:
-                    return "unhealthy", f"High memory usage: {memory.percent:.1f}%", {"memory_percent": memory.percent}
+                    return (
+                        "unhealthy",
+                        f"High memory usage: {memory.percent:.1f}%",
+                        {"memory_percent": memory.percent},
+                    )
                 elif memory.percent > 80:
-                    return "warning", f"Elevated memory usage: {memory.percent:.1f}%", {"memory_percent": memory.percent}
+                    return (
+                        "warning",
+                        f"Elevated memory usage: {memory.percent:.1f}%",
+                        {"memory_percent": memory.percent},
+                    )
                 else:
-                    return "healthy", f"Memory usage: {memory.percent:.1f}%", {"memory_percent": memory.percent}
+                    return (
+                        "healthy",
+                        f"Memory usage: {memory.percent:.1f}%",
+                        {"memory_percent": memory.percent},
+                    )
             except ImportError:
                 return "warning", "psutil not available for memory monitoring", {}
             except Exception as e:
@@ -430,14 +481,27 @@ class MonitoringService(MonitoringInterface):
             """Check disk usage"""
             try:
                 import psutil
-                disk = psutil.disk_usage('/')
+
+                disk = psutil.disk_usage("/")
                 percent = (disk.used / disk.total) * 100
                 if percent > 90:
-                    return "unhealthy", f"High disk usage: {percent:.1f}%", {"disk_percent": percent}
+                    return (
+                        "unhealthy",
+                        f"High disk usage: {percent:.1f}%",
+                        {"disk_percent": percent},
+                    )
                 elif percent > 80:
-                    return "warning", f"Elevated disk usage: {percent:.1f}%", {"disk_percent": percent}
+                    return (
+                        "warning",
+                        f"Elevated disk usage: {percent:.1f}%",
+                        {"disk_percent": percent},
+                    )
                 else:
-                    return "healthy", f"Disk usage: {percent:.1f}%", {"disk_percent": percent}
+                    return (
+                        "healthy",
+                        f"Disk usage: {percent:.1f}%",
+                        {"disk_percent": percent},
+                    )
             except ImportError:
                 return "warning", "psutil not available for disk monitoring", {}
             except Exception as e:
@@ -445,6 +509,7 @@ class MonitoringService(MonitoringInterface):
 
         self.health_checker.register_health_check("memory", memory_check)
         self.health_checker.register_health_check("disk", disk_check)
+
 
 # Global monitoring service instance
 monitoring_service = MonitoringService()

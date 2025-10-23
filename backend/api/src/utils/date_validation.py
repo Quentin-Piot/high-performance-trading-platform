@@ -165,7 +165,7 @@ def validate_date_range_for_symbol(
     start_date: datetime,
     end_date: datetime,
     # Use relative path that works in both dev and prod
-    datasets_path: str = None
+    datasets_path: str = None,
 ) -> dict[str, any]:
     """
     Validate if the requested date range is available for a given symbol.
@@ -202,10 +202,10 @@ def validate_date_range_for_symbol(
 
     if symbol.lower() not in symbol_to_file:
         return {
-            'valid': False,
-            'error_message': f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
-            'available_range': None,
-            'suggested_range': None
+            "valid": False,
+            "error_message": f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
+            "available_range": None,
+            "suggested_range": None,
         }
 
     csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol.lower()])
@@ -214,13 +214,13 @@ def validate_date_range_for_symbol(
         min_date, max_date = get_csv_date_range(csv_file_path)
     except (FileNotFoundError, ValueError) as e:
         return {
-            'valid': False,
-            'error_message': f"Error reading data for {symbol}: {str(e)}",
-            'available_range': None,
-            'suggested_range': None
+            "valid": False,
+            "error_message": f"Error reading data for {symbol}: {str(e)}",
+            "available_range": None,
+            "suggested_range": None,
         }
 
-    available_range = {'min_date': min_date, 'max_date': max_date}
+    available_range = {"min_date": min_date, "max_date": max_date}
 
     # Check if requested range is within available data
     if start_date < min_date or end_date > max_date:
@@ -240,26 +240,26 @@ def validate_date_range_for_symbol(
                 suggested_end = max_date
 
         return {
-            'valid': False,
-            'error_message': f"Requested date range ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}) is outside available data range ({min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')})",
-            'available_range': available_range,
-            'suggested_range': {
-                'start_date': suggested_start,
-                'end_date': suggested_end
-            }
+            "valid": False,
+            "error_message": f"Requested date range ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}) is outside available data range ({min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')})",
+            "available_range": available_range,
+            "suggested_range": {
+                "start_date": suggested_start,
+                "end_date": suggested_end,
+            },
         }
 
     return {
-        'valid': True,
-        'error_message': None,
-        'available_range': available_range,
-        'suggested_range': None
+        "valid": True,
+        "error_message": None,
+        "available_range": available_range,
+        "suggested_range": None,
     }
 
 
 def get_all_symbols_date_ranges(
     # Use relative path that works in both dev and prod
-    datasets_path: str = None
+    datasets_path: str = None,
 ) -> dict[str, dict[str, datetime]]:
     """
     Get date ranges for all available symbols.
@@ -290,7 +290,7 @@ def get_all_symbols_date_ranges(
         csv_file_path = os.path.join(datasets_path, filename)
         try:
             min_date, max_date = get_csv_date_range(csv_file_path)
-            result[symbol] = {'min_date': min_date, 'max_date': max_date}
+            result[symbol] = {"min_date": min_date, "max_date": max_date}
         except (FileNotFoundError, ValueError):
             # Skip symbols with missing or invalid data
             continue

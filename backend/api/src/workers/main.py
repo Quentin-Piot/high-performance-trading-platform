@@ -1,4 +1,5 @@
 """Main entry point for running workers."""
+
 import logging
 import sys
 
@@ -22,7 +23,9 @@ def main():
     try:
         # Initialize simple worker
         worker = get_simple_worker()
-        logger.info(f"Simple Monte Carlo worker initialized with {worker.max_concurrent_jobs} max concurrent jobs")
+        logger.info(
+            f"Simple Monte Carlo worker initialized with {worker.max_concurrent_jobs} max concurrent jobs"
+        )
 
         # Start cleanup task
         start_cleanup_task()
@@ -32,6 +35,7 @@ def main():
 
         # Keep the main thread alive
         import time
+
         while True:
             time.sleep(1)
 
@@ -41,6 +45,7 @@ def main():
     except Exception as e:
         logger.error(f"Worker failed: {str(e)}", exc_info=True)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

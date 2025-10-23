@@ -11,7 +11,7 @@ def _make_csv(prices, filename="prices.csv"):
     """Helper to create CSV content"""
     lines = ["date,close"]
     for i, price in enumerate(prices):
-        lines.append(f"2023-01-{i+1:02d},{price}")
+        lines.append(f"2023-01-{i + 1:02d},{price}")
     return "\n".join(lines)
 
 
@@ -20,7 +20,9 @@ def test_backtest_single_csv_backward_compatibility():
     csv_content = _make_csv([100, 101, 102, 103, 104])
     files = {"csv": ("prices.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
 
-    resp = client.post("/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files)
+    resp = client.post(
+        "/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files
+    )
     assert resp.status_code == 200
 
     body = resp.json()
@@ -45,7 +47,9 @@ def test_backtest_multiple_csv_files():
         ("csv", ("file3.csv", io.BytesIO(csv3.encode("utf-8")), "text/csv")),
     ]
 
-    resp = client.post("/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files)
+    resp = client.post(
+        "/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files
+    )
     assert resp.status_code == 200
 
     body = resp.json()
@@ -61,7 +65,7 @@ def test_backtest_multiple_csv_files():
         assert "pnl" in result
         assert "drawdown" in result
         assert "sharpe" in result
-        assert result["filename"] == f"file{i+1}.csv"
+        assert result["filename"] == f"file{i + 1}.csv"
 
 
 def test_backtest_multiple_csv_with_aggregated_metrics():
@@ -74,7 +78,10 @@ def test_backtest_multiple_csv_with_aggregated_metrics():
         ("csv", ("file2.csv", io.BytesIO(csv2.encode("utf-8")), "text/csv")),
     ]
 
-    resp = client.post("/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3&include_aggregated=true", files=files)
+    resp = client.post(
+        "/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3&include_aggregated=true",
+        files=files,
+    )
     assert resp.status_code == 200
 
     body = resp.json()
@@ -96,7 +103,10 @@ def test_backtest_single_csv_with_aggregated_flag():
     csv_content = _make_csv([100, 101, 102, 103, 104])
     files = {"csv": ("prices.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
 
-    resp = client.post("/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3&include_aggregated=true", files=files)
+    resp = client.post(
+        "/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3&include_aggregated=true",
+        files=files,
+    )
     assert resp.status_code == 200
 
     body = resp.json()
@@ -111,9 +121,16 @@ def test_backtest_too_many_files():
     files = []
     for i in range(11):  # 11 files, should exceed limit
         csv_content = _make_csv([100, 101, 102, 103])
-        files.append(("csv", (f"file{i}.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")))
+        files.append(
+            (
+                "csv",
+                (f"file{i}.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv"),
+            )
+        )
 
-    resp = client.post("/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files)
+    resp = client.post(
+        "/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files
+    )
     assert resp.status_code == 400
     body = resp.json()
     assert "Maximum of 10 CSV files allowed" in body["detail"]
@@ -122,8 +139,56 @@ def test_backtest_too_many_files():
 def test_backtest_rsi_multiple_files():
     """Test RSI strategy with multiple files"""
     # Use more data points for RSI calculation (RSI needs more data to avoid NaN)
-    csv1 = _make_csv([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120])
-    csv2 = _make_csv([200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220])
+    csv1 = _make_csv(
+        [
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116,
+            117,
+            118,
+            119,
+            120,
+        ]
+    )
+    csv2 = _make_csv(
+        [
+            200,
+            201,
+            202,
+            203,
+            204,
+            205,
+            206,
+            207,
+            208,
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            217,
+            218,
+            219,
+            220,
+        ]
+    )
 
     files = [
         ("csv", ("rsi1.csv", io.BytesIO(csv1.encode("utf-8")), "text/csv")),
@@ -131,7 +196,9 @@ def test_backtest_rsi_multiple_files():
     ]
 
     # Use period=14 (standard RSI period) instead of 5 to get better results
-    resp = client.post("/api/v1/backtest?strategy=rsi&period=14&overbought=70&oversold=30", files=files)
+    resp = client.post(
+        "/api/v1/backtest?strategy=rsi&period=14&overbought=70&oversold=30", files=files
+    )
 
     # Debug: print response details if it fails
     if resp.status_code != 200:
@@ -159,7 +226,9 @@ def test_backtest_invalid_csv_in_batch():
         ("csv", ("invalid.csv", io.BytesIO(invalid_csv.encode("utf-8")), "text/csv")),
     ]
 
-    resp = client.post("/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files)
+    resp = client.post(
+        "/api/v1/backtest?strategy=sma_crossover&sma_short=2&sma_long=3", files=files
+    )
     assert resp.status_code == 400
     body = resp.json()
     assert "Error processing file" in body["detail"]

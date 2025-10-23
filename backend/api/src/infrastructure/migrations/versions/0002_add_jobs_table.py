@@ -15,6 +15,7 @@ down_revision = "0001_initial"
 branch_labels = None
 depends_on = None
 
+
 def upgrade() -> None:
     """
     Idempotent upgrade: create the jobs table only if it does not exist,
@@ -31,16 +32,30 @@ def upgrade() -> None:
             "jobs",
             sa.Column("id", sa.String(36), primary_key=True),
             sa.Column("payload", sa.JSON(), nullable=False),
-            sa.Column("status", sa.String(20), nullable=False, server_default="pending"),
+            sa.Column(
+                "status", sa.String(20), nullable=False, server_default="pending"
+            ),
             sa.Column("progress", sa.Float(), nullable=False, server_default="0.0"),
-            sa.Column("priority", sa.String(20), nullable=False, server_default="normal"),
+            sa.Column(
+                "priority", sa.String(20), nullable=False, server_default="normal"
+            ),
             sa.Column("worker_id", sa.String(100), nullable=True),
             sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"),
             sa.Column("error", sa.Text(), nullable=True),
             sa.Column("artifact_url", sa.String(500), nullable=True),
             sa.Column("dedup_key", sa.String(255), nullable=True),
-            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
-            sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
+            sa.Column(
+                "updated_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
         )
 
         # Create indexes for performance
@@ -60,9 +75,12 @@ def upgrade() -> None:
         if "ix_jobs_worker_id" not in existing_indexes:
             op.create_index("ix_jobs_worker_id", "jobs", ["worker_id"])
 
-        existing_uniques = {uc.get("name") for uc in inspector.get_unique_constraints("jobs")}
+        existing_uniques = {
+            uc.get("name") for uc in inspector.get_unique_constraints("jobs")
+        }
         if "uq_job_dedup_key" not in existing_uniques:
             op.create_unique_constraint("uq_job_dedup_key", "jobs", ["dedup_key"])
+
 
 def downgrade() -> None:
     op.drop_constraint("uq_job_dedup_key", "jobs", type_="unique")

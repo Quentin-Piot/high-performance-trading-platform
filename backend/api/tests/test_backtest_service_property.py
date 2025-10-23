@@ -18,7 +18,9 @@ def _csv_from_prices(prices):
     return "\n".join(lines) + "\n"
 
 
-valid_float = st.floats(min_value=0.001, max_value=1e6, allow_nan=False, allow_infinity=False)
+valid_float = st.floats(
+    min_value=0.001, max_value=1e6, allow_nan=False, allow_infinity=False
+)
 
 
 @settings(max_examples=60, deadline=None)
@@ -33,7 +35,9 @@ def test_backtest_outputs_are_well_formed(prices, sma_short, sma_gap):
     csv = _csv_from_prices(prices)
     buffer = io.BytesIO(csv.encode("utf-8"))
 
-    equity, pnl, dd, sharpe = sma_crossover_backtest(buffer, sma_short=sma_short, sma_long=sma_long)
+    equity, pnl, dd, sharpe = sma_crossover_backtest(
+        buffer, sma_short=sma_short, sma_long=sma_long
+    )
 
     # Longueur cohérente
     assert len(equity) == len(prices)

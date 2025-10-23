@@ -16,20 +16,23 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+
 async def get_db():
     async for session in get_session():
         yield session
 
+
 def generate_temporary_password(length: int = 12) -> str:
     """Generate a secure temporary password for Cognito user creation."""
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
 
 @router.post("/register", response_model=Token)
 async def register(
     payload: UserCreate,
     db: AsyncSession = Depends(get_db),
-    cognito_service: CognitoService = Depends(get_cognito_service)
+    cognito_service: CognitoService = Depends(get_cognito_service),
 ):
     """Register a new user using Cognito authentication."""
     # Check if user already exists in local database
@@ -45,7 +48,7 @@ async def register(
         if not cognito_username:
             raise HTTPException(
                 status_code=500,
-                detail="Erreur lors de la création du compte utilisateur"
+                detail="Erreur lors de la création du compte utilisateur",
             )
 
         # Set the user's permanent password in Cognito
@@ -55,17 +58,18 @@ async def register(
             cognito_service.delete_user(cognito_username)
             raise HTTPException(
                 status_code=500,
-                detail="Erreur lors de la configuration du mot de passe"
+                detail="Erreur lors de la configuration du mot de passe",
             )
 
         # Create a CognitoUser object for local database sync
         from core.cognito import CognitoUser
+
         cognito_user = CognitoUser(
             sub=cognito_username,  # In Cognito, username can serve as sub for email-based users
             email=payload.email,
-            name=payload.email.split('@')[0],  # Use email prefix as default name
+            name=payload.email.split("@")[0],  # Use email prefix as default name
             email_verified=True,
-            cognito_username=cognito_username
+            cognito_username=cognito_username,
         )
 
         # Sync user with local database
@@ -83,9 +87,9 @@ async def register(
     except Exception as e:
         logger.error(f"Registration failed for {payload.email}: {str(e)}")
         raise HTTPException(
-            status_code=500,
-            detail="Erreur interne lors de l'inscription"
+            status_code=500, detail="Erreur interne lors de l'inscription"
         ) from e
+
 
 @router.post("/login", response_model=Token)
 async def login(payload: UserCreate, db: AsyncSession = Depends(get_db)):

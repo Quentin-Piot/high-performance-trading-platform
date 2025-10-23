@@ -14,6 +14,7 @@ class PriceSeriesSource(Protocol):
     ) -> pd.Series:  # returns Series indexed by datetime if available
         ...
 
+
 class StrategyInterface(ABC):
     """
     Interface pour toutes les stratégies de backtest.

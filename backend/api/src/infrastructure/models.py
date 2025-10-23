@@ -26,16 +26,25 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=True)  # Made nullable for Cognito users
-    cognito_sub: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=True)  # Cognito user ID
+    hashed_password: Mapped[str] = mapped_column(
+        String(255), nullable=True
+    )  # Made nullable for Cognito users
+    cognito_sub: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
+    )  # Cognito user ID
     name: Mapped[str] = mapped_column(String(255), nullable=True)  # User's display name
-    auth_method: Mapped[str] = mapped_column(String(50), nullable=False, default="email")  # "email", "google", "mixed"
+    auth_method: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="email"
+    )  # "email", "google", "mixed"
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
 
     strategies: Mapped[list["Strategy"]] = relationship(back_populates="owner")
-    backtest_histories: Mapped[list["BacktestHistory"]] = relationship(back_populates="user")
+    backtest_histories: Mapped[list["BacktestHistory"]] = relationship(
+        back_populates="user"
+    )
+
 
 # -----------------------------------------
 # Strategy
@@ -52,6 +61,7 @@ class Strategy(Base):
 
     owner: Mapped[User] = relationship(back_populates="strategies")
     backtests: Mapped[list["Backtest"]] = relationship(back_populates="strategy")
+
 
 # -----------------------------------------
 # Backtest
@@ -74,18 +84,21 @@ class Backtest(Base):
 
     strategy: Mapped[Strategy] = relationship(back_populates="backtests")
 
+
 # -----------------------------------------
 # Job (Monte Carlo Queue System)
 # -----------------------------------------
 class Job(Base):
     __tablename__ = "jobs"
-    __table_args__ = (
-        UniqueConstraint('dedup_key', name='uq_job_dedup_key'),
-    )
+    __table_args__ = (UniqueConstraint("dedup_key", name="uq_job_dedup_key"),)
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="pending", index=True
+    )
     progress: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     priority: Mapped[str] = mapped_column(String(20), nullable=False, default="normal")
     worker_id: Mapped[str] = mapped_column(String(100), nullable=True)
@@ -113,14 +126,18 @@ class BacktestHistory(Base):
     __tablename__ = "backtest_history"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
 
     # Backtest parameters
     strategy: Mapped[str] = mapped_column(String(100), nullable=False)
     strategy_params: Mapped[dict] = mapped_column(JSON, nullable=False)
     start_date: Mapped[str] = mapped_column(String(50), nullable=True)
     end_date: Mapped[str] = mapped_column(String(50), nullable=True)
-    initial_capital: Mapped[float] = mapped_column(Float, nullable=False, default=10000.0)
+    initial_capital: Mapped[float] = mapped_column(
+        Float, nullable=False, default=10000.0
+    )
 
     # Monte Carlo parameters
     monte_carlo_runs: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -144,7 +161,9 @@ class BacktestHistory(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="completed")
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
     completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     # Relationships

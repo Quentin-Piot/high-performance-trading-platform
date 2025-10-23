@@ -14,8 +14,11 @@ from dotenv import load_dotenv
 def _to_psycopg_dsn(dsn: str) -> str:
     """Convert SQLAlchemy DSN to psycopg-compatible DSN."""
     if dsn.startswith("postgresql+"):
-        return dsn.replace("postgresql+psycopg", "postgresql").replace("postgresql+asyncpg", "postgresql")
+        return dsn.replace("postgresql+psycopg", "postgresql").replace(
+            "postgresql+asyncpg", "postgresql"
+        )
     return dsn
+
 
 def _table_exists(dsn: str, table_name: str, schema: str = "public") -> bool:
     try:
@@ -35,6 +38,7 @@ def _table_exists(dsn: str, table_name: str, schema: str = "public") -> bool:
                 return bool(row and row[0])
     except Exception:
         return False
+
 
 def _alembic_version(dsn: str) -> str | None:
     try:
@@ -57,6 +61,7 @@ def _alembic_version(dsn: str) -> str | None:
                 return row[0] if row else None
     except Exception:
         return None
+
 
 def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
     """Detect and repair a corrupted 'jobs' table by dropping it.
@@ -89,14 +94,25 @@ def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
                 )
                 cols = {r[0] for r in cur.fetchall()}
                 expected_core = {
-                    "id","payload","status","progress","priority",
-                    "worker_id","attempts","error","artifact_url",
-                    "dedup_key","created_at","updated_at"
+                    "id",
+                    "payload",
+                    "status",
+                    "progress",
+                    "priority",
+                    "worker_id",
+                    "attempts",
+                    "error",
+                    "artifact_url",
+                    "dedup_key",
+                    "created_at",
+                    "updated_at",
                 }
 
                 # If core columns are missing, table likely corrupted
                 if not expected_core.issubset(cols):
-                    print("Detected corrupted 'jobs' table (missing core columns); dropping for clean migration...")
+                    print(
+                        "Detected corrupted 'jobs' table (missing core columns); dropping for clean migration..."
+                    )
                     cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                     return True
 
@@ -110,12 +126,16 @@ def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
                     )
                     attcount = int(cur.fetchone()[0])
                     if attcount < len(expected_core):
-                        print("Detected inconsistent pg_attribute for 'jobs'; dropping table to recover...")
+                        print(
+                            "Detected inconsistent pg_attribute for 'jobs'; dropping table to recover..."
+                        )
                         cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                         return True
                 except Exception:
                     # If querying pg_attribute itself errors, err on the side of repair
-                    print("pg_attribute query failed for 'jobs'; dropping table to recover...")
+                    print(
+                        "pg_attribute query failed for 'jobs'; dropping table to recover..."
+                    )
                     cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                     return True
 
@@ -123,6 +143,7 @@ def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
     except Exception as e:
         print(f"Failed to inspect/repair jobs table: {e}", file=sys.stderr)
         return False
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -203,13 +224,19 @@ def reset_database(dsn: str) -> bool:
                         (dbname,),
                     )
                 except Exception as e:
-                    print(f"Failed to terminate sessions for '{dbname}': {e}", file=sys.stderr)
+                    print(
+                        f"Failed to terminate sessions for '{dbname}': {e}",
+                        file=sys.stderr,
+                    )
 
                 try:
                     cur.execute(f'DROP DATABASE "{dbname}"')
                     print(f"Database '{dbname}' dropped.")
                 except Exception as e:
-                    print(f"DROP DATABASE failed: {e}. Falling back to clearing schema.", file=sys.stderr)
+                    print(
+                        f"DROP DATABASE failed: {e}. Falling back to clearing schema.",
+                        file=sys.stderr,
+                    )
                     # Fallback: clear the public schema inside target DB
                     try:
                         with psycopg.connect(target_dsn) as tconn:
@@ -241,21 +268,28 @@ def run_alembic_migrations(dsn: str) -> None:
     jobs_exists = _table_exists(dsn, "jobs")
 
     if dropped:
-        print("Corrupted 'jobs' table was dropped; resetting Alembic to 0001_initial before upgrade...")
+        print(
+            "Corrupted 'jobs' table was dropped; resetting Alembic to 0001_initial before upgrade..."
+        )
         subprocess.run(["alembic", "stamp", "0001_initial"], check=True)
         # Refresh current_rev after stamping
         current_rev = "0001_initial"
         jobs_exists = False
 
     if jobs_exists and (current_rev is None or current_rev == "0001_initial"):
-        print("Detected existing 'jobs' table with outdated Alembic version; stamping to 0002_add_jobs_table...")
+        print(
+            "Detected existing 'jobs' table with outdated Alembic version; stamping to 0002_add_jobs_table..."
+        )
         subprocess.run(["alembic", "stamp", "0002_add_jobs_table"], check=True)
 
     print("Running Alembic migrations to head...")
     try:
         subprocess.run(["alembic", "upgrade", "head"], check=True)
     except Exception as e:
-        print(f"Alembic upgrade failed: {e}. Attempting full database reset...", file=sys.stderr)
+        print(
+            f"Alembic upgrade failed: {e}. Attempting full database reset...",
+            file=sys.stderr,
+        )
         if reset_database(dsn):
             # After full reset, run migrations fresh
             subprocess.run(["alembic", "upgrade", "head"], check=True)
@@ -267,13 +301,23 @@ def start_uvicorn_process() -> subprocess.Popen:
     host = os.getenv("HOST", "0.0.0.0")
     port = os.getenv("PORT", "8000")
     print(f"Starting API on {host}:{port}...")
-    return subprocess.Popen([
-        "uvicorn", "api.main:app", "--host", host, "--port", str(port), "--app-dir", "src"
-    ])
+    return subprocess.Popen(
+        [
+            "uvicorn",
+            "api.main:app",
+            "--host",
+            host,
+            "--port",
+            str(port),
+            "--app-dir",
+            "src",
+        ]
+    )
 
 
 def start_worker_in_thread() -> threading.Thread:
     """Start the Monte Carlo worker in a background thread (DISABLED for sync mode)."""
+
     def worker_main():
         # Worker is disabled since we're using synchronous Monte Carlo execution
         print("Monte Carlo worker is disabled - using synchronous execution mode")
@@ -285,7 +329,9 @@ def start_worker_in_thread() -> threading.Thread:
 
             # Initialize the simple worker
             worker = get_simple_worker()
-            print(f"Simple Monte Carlo worker initialized with {worker.max_concurrent_jobs} max concurrent jobs")
+            print(
+                f"Simple Monte Carlo worker initialized with {worker.max_concurrent_jobs} max concurrent jobs"
+            )
 
             # Start cleanup task
             start_cleanup_task()
@@ -297,14 +343,21 @@ def start_worker_in_thread() -> threading.Thread:
         return
 
     # Return a dummy thread that doesn't actually start a worker
-    thread = threading.Thread(target=worker_main, name="MonteCarloWorkerThread-Disabled", daemon=True)
+    thread = threading.Thread(
+        target=worker_main, name="MonteCarloWorkerThread-Disabled", daemon=True
+    )
     thread.start()
-    print("Monte Carlo worker disabled - using synchronous execution mode with simple async worker.")
+    print(
+        "Monte Carlo worker disabled - using synchronous execution mode with simple async worker."
+    )
     return thread
 
 
 def main() -> None:
-    url = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/trading_db")
+    url = os.getenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://postgres:postgres@localhost:5432/trading_db",
+    )
     dsn = _normalize_dsn(url)
     # Ensure Alembic uses psycopg v3 driver and not asyncpg.
     os.environ["DATABASE_URL"] = dsn
@@ -314,7 +367,10 @@ def main() -> None:
     if reset_requested:
         ok = reset_database(dsn)
         if not ok:
-            print("Requested DB reset failed; continuing startup, migrations may still fail.", file=sys.stderr)
+            print(
+                "Requested DB reset failed; continuing startup, migrations may still fail.",
+                file=sys.stderr,
+            )
     run_alembic_migrations(dsn)
     run_worker = os.getenv("RUN_WORKER", "false").lower() in ("1", "true", "yes")
 
