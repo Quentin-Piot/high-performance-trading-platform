@@ -1,7 +1,5 @@
 """Security utilities for the trading platform API.
-
 This module provides IAM policy management, credential management, and security utilities."""
-
 from .credential_manager import AWSCredentials, CredentialManager, CredentialSource
 from .iam_policies import (
     IAMPolicy,

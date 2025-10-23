@@ -1,7 +1,6 @@
 """
 Repository for backtest history management.
 """
-
 from datetime import datetime
 from typing import Any
 
@@ -13,10 +12,8 @@ from infrastructure.models import BacktestHistory
 
 class BacktestHistoryRepository:
     """Repository for backtest history operations."""
-
     def __init__(self, session: AsyncSession):
         self.session = session
-
     async def create_history_entry(
         self,
         user_id: int,
@@ -48,12 +45,10 @@ class BacktestHistoryRepository:
             price_type=price_type,
             status="running",
         )
-
         self.session.add(history)
         await self.session.commit()
         await self.session.refresh(history)
         return history
-
     async def update_results(
         self,
         history_id: int,
@@ -71,10 +66,8 @@ class BacktestHistoryRepository:
             select(BacktestHistory).where(BacktestHistory.id == history_id)
         )
         history = result.scalar_one_or_none()
-
         if not history:
             return None
-
         if total_return is not None:
             history.total_return = total_return
         if sharpe_ratio is not None:
@@ -87,18 +80,14 @@ class BacktestHistoryRepository:
             history.total_trades = total_trades
         if execution_time_seconds is not None:
             history.execution_time_seconds = execution_time_seconds
-
         history.status = status
         if error_message:
             history.error_message = error_message
-
         if status == "completed":
             history.completed_at = datetime.utcnow()
-
         await self.session.commit()
         await self.session.refresh(history)
         return history
-
     async def get_user_history(
         self,
         user_id: int,
@@ -108,32 +97,24 @@ class BacktestHistoryRepository:
     ) -> list[BacktestHistory]:
         """Get user's backtest history with optional filtering."""
         query = select(BacktestHistory).where(BacktestHistory.user_id == user_id)
-
         if strategy_filter:
             query = query.where(BacktestHistory.strategy == strategy_filter)
-
         query = (
             query.order_by(desc(BacktestHistory.created_at)).limit(limit).offset(offset)
         )
-
         result = await self.session.execute(query)
         return list(result.scalars().all())
-
     async def get_by_id(
         self, history_id: int, user_id: int | None = None
     ) -> BacktestHistory | None:
         """Get backtest history by ID, optionally filtered by user."""
         query = select(BacktestHistory).where(BacktestHistory.id == history_id)
-
         if user_id is not None:
             query = query.where(BacktestHistory.user_id == user_id)
-
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
-
     async def get_user_stats(self, user_id: int) -> dict[str, Any]:
         """Get user's backtest statistics."""
-        # Get all completed backtests for the user
         result = await self.session.execute(
             select(BacktestHistory).where(
                 and_(
@@ -143,7 +124,6 @@ class BacktestHistoryRepository:
             )
         )
         histories = list(result.scalars().all())
-
         if not histories:
             return {
                 "total_backtests": 0,
@@ -154,13 +134,10 @@ class BacktestHistoryRepository:
                 "avg_sharpe": None,
                 "total_monte_carlo_runs": 0,
             }
-
-        # Calculate statistics
         returns = [h.total_return for h in histories if h.total_return is not None]
         sharpes = [h.sharpe_ratio for h in histories if h.sharpe_ratio is not None]
         strategies = list(set(h.strategy for h in histories))
         total_mc_runs = sum(h.monte_carlo_runs for h in histories)
-
         return {
             "total_backtests": len(histories),
             "strategies_used": strategies,
@@ -170,7 +147,6 @@ class BacktestHistoryRepository:
             "avg_sharpe": sum(sharpes) / len(sharpes) if sharpes else None,
             "total_monte_carlo_runs": total_mc_runs,
         }
-
     async def delete_history(self, history_id: int, user_id: int) -> bool:
         """Delete a backtest history entry (user can only delete their own)."""
         result = await self.session.execute(
@@ -181,10 +157,8 @@ class BacktestHistoryRepository:
             )
         )
         history = result.scalar_one_or_none()
-
         if not history:
             return False
-
         await self.session.delete(history)
         await self.session.commit()
         return True

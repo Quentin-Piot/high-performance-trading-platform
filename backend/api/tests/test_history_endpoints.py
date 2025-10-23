@@ -2,18 +2,12 @@
 Tests for backtest history endpoints.
 """
 
-from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
-
-import pytest
-from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock, Mock
 
 from api.main import app
 from api.routers.history import get_history_repo, get_user_repo
-from core.cognito import CognitoUser
 from core.simple_auth import SimpleUser, get_current_user_simple
 from infrastructure.db import get_session
-from infrastructure.models import BacktestHistory, User
 
 
 class TestHistoryEndpoints:
@@ -29,11 +23,11 @@ class TestHistoryEndpoints:
         # Mock authentication using dependency override
         mock_simple_user = SimpleUser(id=1, email="test@example.com", sub="1")
         app.dependency_overrides[get_current_user_simple] = lambda: mock_simple_user
-        
+
         # Mock database session
         mock_session = AsyncMock()
         app.dependency_overrides[get_session] = lambda: mock_session
-        
+
         # Mock user repository
         mock_user_repo = Mock()
         mock_user_repo.get_by_id = AsyncMock(return_value=mock_user)
@@ -45,10 +39,10 @@ class TestHistoryEndpoints:
             return_value=[mock_history_entry]
         )
         app.dependency_overrides[get_history_repo] = lambda: mock_history_repo
-        
+
         try:
             response = client.get("/api/v1/history/")
-            
+
             # Debug: print response details if test fails
             if response.status_code != 200:
                 print(f"Response status: {response.status_code}")
@@ -79,11 +73,11 @@ class TestHistoryEndpoints:
         # Mock authentication using dependency override
         mock_simple_user = SimpleUser(id=1, email="test@example.com", sub="1")
         app.dependency_overrides[get_current_user_simple] = lambda: mock_simple_user
-        
+
         # Mock database session
         mock_session = AsyncMock()
         app.dependency_overrides[get_session] = lambda: mock_session
-        
+
         # Mock user repository
         mock_user_repo = Mock()
         mock_user_repo.get_by_id = AsyncMock(return_value=mock_user)
@@ -102,7 +96,7 @@ class TestHistoryEndpoints:
         mock_history_repo = Mock()
         mock_history_repo.get_user_stats = AsyncMock(return_value=mock_stats)
         app.dependency_overrides[get_history_repo] = lambda: mock_history_repo
-        
+
         try:
             response = client.get("/api/v1/history/stats")
 
@@ -129,11 +123,11 @@ class TestHistoryEndpoints:
         # Mock authentication using dependency override
         mock_simple_user = SimpleUser(id=1, email="test@example.com", sub="1")
         app.dependency_overrides[get_current_user_simple] = lambda: mock_simple_user
-        
+
         # Mock database session
         mock_session = AsyncMock()
         app.dependency_overrides[get_session] = lambda: mock_session
-        
+
         # Mock user repository
         mock_user_repo = Mock()
         mock_user_repo.get_by_id = AsyncMock(return_value=mock_user)
@@ -143,7 +137,7 @@ class TestHistoryEndpoints:
         mock_history_repo = Mock()
         mock_history_repo.get_by_id = AsyncMock(return_value=mock_history_entry)
         app.dependency_overrides[get_history_repo] = lambda: mock_history_repo
-        
+
         try:
             response = client.get("/api/v1/history/1")
 
@@ -168,11 +162,11 @@ class TestHistoryEndpoints:
         # Mock authentication using dependency override
         mock_simple_user = SimpleUser(id=1, email="test@example.com", sub="1")
         app.dependency_overrides[get_current_user_simple] = lambda: mock_simple_user
-        
+
         # Mock database session
         mock_session = AsyncMock()
         app.dependency_overrides[get_session] = lambda: mock_session
-        
+
         # Mock user repository
         mock_user_repo = Mock()
         mock_user_repo.get_by_id = AsyncMock(return_value=mock_user)
@@ -182,7 +176,7 @@ class TestHistoryEndpoints:
         mock_history_repo = Mock()
         mock_history_repo.get_by_id = AsyncMock(return_value=None)
         app.dependency_overrides[get_history_repo] = lambda: mock_history_repo
-        
+
         try:
             response = client.get("/api/v1/history/999")
 
@@ -201,11 +195,11 @@ class TestHistoryEndpoints:
         # Mock authentication using dependency override
         mock_simple_user = SimpleUser(id=1, email="test@example.com", sub="1")
         app.dependency_overrides[get_current_user_simple] = lambda: mock_simple_user
-        
+
         # Mock database session
         mock_session = AsyncMock()
         app.dependency_overrides[get_session] = lambda: mock_session
-        
+
         # Mock user repository
         mock_user_repo = Mock()
         mock_user_repo.get_by_id = AsyncMock(return_value=mock_user)
@@ -215,7 +209,7 @@ class TestHistoryEndpoints:
         mock_history_repo = Mock()
         mock_history_repo.delete_history = AsyncMock(return_value=True)
         app.dependency_overrides[get_history_repo] = lambda: mock_history_repo
-        
+
         try:
             response = client.delete("/api/v1/history/1")
 
@@ -237,11 +231,11 @@ class TestHistoryEndpoints:
         # Mock authentication using dependency override
         mock_simple_user = SimpleUser(id=1, email="test@example.com", sub="1")
         app.dependency_overrides[get_current_user_simple] = lambda: mock_simple_user
-        
+
         # Mock database session
         mock_session = AsyncMock()
         app.dependency_overrides[get_session] = lambda: mock_session
-        
+
         # Mock user repository
         mock_user_repo = Mock()
         mock_user_repo.get_by_id = AsyncMock(return_value=mock_user)
@@ -251,7 +245,7 @@ class TestHistoryEndpoints:
         mock_history_repo = Mock()
         mock_history_repo.delete_history = AsyncMock(return_value=False)
         app.dependency_overrides[get_history_repo] = lambda: mock_history_repo
-        
+
         try:
             response = client.delete("/api/v1/history/999")
 

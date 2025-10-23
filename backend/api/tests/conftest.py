@@ -180,7 +180,7 @@ def mock_database_dependencies():
         mock_history_repo_instance.create_monte_carlo_result = AsyncMock(
             return_value=Mock(id=1)
         )
-        
+
         mock_history_repo.return_value = mock_history_repo_instance
 
         yield
