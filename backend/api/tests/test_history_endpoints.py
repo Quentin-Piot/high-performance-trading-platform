@@ -1,6 +1,7 @@
 """
 Tests for backtest history endpoints.
 """
+
 from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -26,7 +27,7 @@ def mock_cognito_user():
         email="test@example.com",
         name="Test User",
         email_verified=True,
-        cognito_username="test@example.com"
+        cognito_username="test@example.com",
     )
 
 
@@ -79,9 +80,9 @@ def mock_jwt_token():
 class TestHistoryEndpoints:
     """Test cases for history endpoints."""
 
-    @patch('api.routers.history.get_history_repo')
-    @patch('api.routers.history.get_user_repo')
-    @patch('core.auth_dependencies.get_cognito_service')
+    @patch("api.routers.history.get_history_repo")
+    @patch("api.routers.history.get_user_repo")
+    @patch("core.auth_dependencies.get_cognito_service")
     def test_get_user_history_success(
         self,
         mock_get_cognito_service,
@@ -91,7 +92,7 @@ class TestHistoryEndpoints:
         mock_cognito_user,
         mock_user,
         mock_history_entry,
-        mock_jwt_token
+        mock_jwt_token,
     ):
         """Test successful retrieval of user history."""
         # Mock authentication
@@ -106,12 +107,13 @@ class TestHistoryEndpoints:
 
         # Mock history repository
         mock_history_repo = Mock()
-        mock_history_repo.get_user_history = AsyncMock(return_value=[mock_history_entry])
+        mock_history_repo.get_user_history = AsyncMock(
+            return_value=[mock_history_entry]
+        )
         mock_get_history_repo.return_value = mock_history_repo
 
         response = client.get(
-            "/api/v1/history/",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            "/api/v1/history/", headers={"Authorization": f"Bearer {mock_jwt_token}"}
         )
 
         assert response.status_code == 200
@@ -124,12 +126,14 @@ class TestHistoryEndpoints:
         assert "has_prev" in data
 
         # Verify repository calls
-        mock_user_repo.get_or_create_from_cognito.assert_called_once_with(mock_cognito_user)
+        mock_user_repo.get_or_create_from_cognito.assert_called_once_with(
+            mock_cognito_user
+        )
         mock_history_repo.get_user_history.assert_called_once()
 
-    @patch('api.routers.history.get_history_repo')
-    @patch('api.routers.history.get_user_repo')
-    @patch('core.auth_dependencies.get_cognito_service')
+    @patch("api.routers.history.get_history_repo")
+    @patch("api.routers.history.get_user_repo")
+    @patch("core.auth_dependencies.get_cognito_service")
     def test_get_user_stats_success(
         self,
         mock_get_cognito_service,
@@ -138,7 +142,7 @@ class TestHistoryEndpoints:
         client,
         mock_cognito_user,
         mock_user,
-        mock_jwt_token
+        mock_jwt_token,
     ):
         """Test successful retrieval of user statistics."""
         # Mock authentication
@@ -159,7 +163,7 @@ class TestHistoryEndpoints:
             "best_return": 25.0,
             "worst_return": -5.0,
             "avg_sharpe": 1.1,
-            "total_monte_carlo_runs": 50
+            "total_monte_carlo_runs": 50,
         }
         mock_history_repo = Mock()
         mock_history_repo.get_user_stats = AsyncMock(return_value=mock_stats)
@@ -167,7 +171,7 @@ class TestHistoryEndpoints:
 
         response = client.get(
             "/api/v1/history/stats",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            headers={"Authorization": f"Bearer {mock_jwt_token}"},
         )
 
         assert response.status_code == 200
@@ -179,9 +183,9 @@ class TestHistoryEndpoints:
         # Verify repository calls
         mock_history_repo.get_user_stats.assert_called_once_with(mock_user.id)
 
-    @patch('api.routers.history.get_history_repo')
-    @patch('api.routers.history.get_user_repo')
-    @patch('core.auth_dependencies.get_cognito_service')
+    @patch("api.routers.history.get_history_repo")
+    @patch("api.routers.history.get_user_repo")
+    @patch("core.auth_dependencies.get_cognito_service")
     def test_get_history_detail_success(
         self,
         mock_get_cognito_service,
@@ -191,7 +195,7 @@ class TestHistoryEndpoints:
         mock_cognito_user,
         mock_user,
         mock_history_entry,
-        mock_jwt_token
+        mock_jwt_token,
     ):
         """Test successful retrieval of history detail."""
         # Mock authentication
@@ -210,8 +214,7 @@ class TestHistoryEndpoints:
         mock_get_history_repo.return_value = mock_history_repo
 
         response = client.get(
-            "/api/v1/history/1",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            "/api/v1/history/1", headers={"Authorization": f"Bearer {mock_jwt_token}"}
         )
 
         assert response.status_code == 200
@@ -223,9 +226,9 @@ class TestHistoryEndpoints:
         # Verify repository calls
         mock_history_repo.get_by_id.assert_called_once_with(1, user_id=mock_user.id)
 
-    @patch('api.routers.history.get_history_repo')
-    @patch('api.routers.history.get_user_repo')
-    @patch('core.auth_dependencies.get_cognito_service')
+    @patch("api.routers.history.get_history_repo")
+    @patch("api.routers.history.get_user_repo")
+    @patch("core.auth_dependencies.get_cognito_service")
     def test_get_history_detail_not_found(
         self,
         mock_get_cognito_service,
@@ -234,7 +237,7 @@ class TestHistoryEndpoints:
         client,
         mock_cognito_user,
         mock_user,
-        mock_jwt_token
+        mock_jwt_token,
     ):
         """Test history detail not found."""
         # Mock authentication
@@ -253,16 +256,15 @@ class TestHistoryEndpoints:
         mock_get_history_repo.return_value = mock_history_repo
 
         response = client.get(
-            "/api/v1/history/999",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            "/api/v1/history/999", headers={"Authorization": f"Bearer {mock_jwt_token}"}
         )
 
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
 
-    @patch('api.routers.history.get_history_repo')
-    @patch('api.routers.history.get_user_repo')
-    @patch('core.auth_dependencies.get_cognito_service')
+    @patch("api.routers.history.get_history_repo")
+    @patch("api.routers.history.get_user_repo")
+    @patch("core.auth_dependencies.get_cognito_service")
     def test_delete_history_success(
         self,
         mock_get_cognito_service,
@@ -271,7 +273,7 @@ class TestHistoryEndpoints:
         client,
         mock_cognito_user,
         mock_user,
-        mock_jwt_token
+        mock_jwt_token,
     ):
         """Test successful deletion of history entry."""
         # Mock authentication
@@ -290,8 +292,7 @@ class TestHistoryEndpoints:
         mock_get_history_repo.return_value = mock_history_repo
 
         response = client.delete(
-            "/api/v1/history/1",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            "/api/v1/history/1", headers={"Authorization": f"Bearer {mock_jwt_token}"}
         )
 
         assert response.status_code == 200
@@ -300,9 +301,9 @@ class TestHistoryEndpoints:
         # Verify repository calls
         mock_history_repo.delete_history.assert_called_once_with(1, mock_user.id)
 
-    @patch('api.routers.history.get_history_repo')
-    @patch('api.routers.history.get_user_repo')
-    @patch('core.auth_dependencies.get_cognito_service')
+    @patch("api.routers.history.get_history_repo")
+    @patch("api.routers.history.get_user_repo")
+    @patch("core.auth_dependencies.get_cognito_service")
     def test_delete_history_not_found(
         self,
         mock_get_cognito_service,
@@ -311,7 +312,7 @@ class TestHistoryEndpoints:
         client,
         mock_cognito_user,
         mock_user,
-        mock_jwt_token
+        mock_jwt_token,
     ):
         """Test deletion of non-existent history entry."""
         # Mock authentication
@@ -330,8 +331,7 @@ class TestHistoryEndpoints:
         mock_get_history_repo.return_value = mock_history_repo
 
         response = client.delete(
-            "/api/v1/history/999",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            "/api/v1/history/999", headers={"Authorization": f"Bearer {mock_jwt_token}"}
         )
 
         assert response.status_code == 404
@@ -352,8 +352,10 @@ class TestHistoryEndpoints:
         response = client.delete("/api/v1/history/1")
         assert response.status_code == 403
 
-    @patch('core.auth_dependencies.get_cognito_service')
-    def test_invalid_token_access(self, mock_get_cognito_service, client, mock_jwt_token):
+    @patch("core.auth_dependencies.get_cognito_service")
+    def test_invalid_token_access(
+        self, mock_get_cognito_service, client, mock_jwt_token
+    ):
         """Test access with invalid token."""
         # Mock authentication failure
         mock_service = Mock()
@@ -361,15 +363,16 @@ class TestHistoryEndpoints:
         mock_get_cognito_service.return_value = mock_service
 
         response = client.get(
-            "/api/v1/history/",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            "/api/v1/history/", headers={"Authorization": f"Bearer {mock_jwt_token}"}
         )
 
         assert response.status_code == 401
         assert "Invalid authentication token" in response.json()["detail"]
 
-    @patch('core.auth_dependencies.get_cognito_service')
-    def test_unverified_email_access(self, mock_get_cognito_service, client, mock_jwt_token):
+    @patch("core.auth_dependencies.get_cognito_service")
+    def test_unverified_email_access(
+        self, mock_get_cognito_service, client, mock_jwt_token
+    ):
         """Test access with unverified email."""
         # Mock user with unverified email
         unverified_user = CognitoUser(
@@ -377,7 +380,7 @@ class TestHistoryEndpoints:
             email="test@example.com",
             name="Test User",
             email_verified=False,  # Not verified
-            cognito_username="test@example.com"
+            cognito_username="test@example.com",
         )
 
         mock_service = Mock()
@@ -385,8 +388,7 @@ class TestHistoryEndpoints:
         mock_get_cognito_service.return_value = mock_service
 
         response = client.get(
-            "/api/v1/history/",
-            headers={"Authorization": f"Bearer {mock_jwt_token}"}
+            "/api/v1/history/", headers={"Authorization": f"Bearer {mock_jwt_token}"}
         )
 
         assert response.status_code == 403

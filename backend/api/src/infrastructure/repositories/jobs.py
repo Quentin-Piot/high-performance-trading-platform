@@ -4,6 +4,7 @@ Repository for job database operations.
 This module provides database operations for job persistence, deduplication,
 and status tracking in the Monte Carlo queue system.
 """
+
 import base64
 import logging
 from datetime import datetime, timedelta
@@ -23,6 +24,7 @@ from infrastructure.repositories.db_utils import (
 
 logger = logging.getLogger(__name__)
 
+
 class JobRepository:
     """Repository for job database operations"""
 
@@ -30,7 +32,9 @@ class JobRepository:
         self.session = session
         self._batch_manager = BatchOperationManager(session)
 
-    async def batch_update_job_statuses(self, updates: list[dict[str, Any]]) -> dict[str, int]:
+    async def batch_update_job_statuses(
+        self, updates: list[dict[str, Any]]
+    ) -> dict[str, int]:
         """
         Batch update multiple job statuses to reduce database round trips.
 
@@ -49,21 +53,23 @@ class JobRepository:
 
             results = await self._batch_manager.execute_batch()
 
-            logger.info("Batch job status update completed", extra={
-                "total_updates": len(updates),
-                "results": results
-            })
+            logger.info(
+                "Batch job status update completed",
+                extra={"total_updates": len(updates), "results": results},
+            )
 
             return results
 
         except Exception as e:
-            logger.error("Batch job status update failed", extra={
-                "update_count": len(updates),
-                "error": str(e)
-            })
+            logger.error(
+                "Batch job status update failed",
+                extra={"update_count": len(updates), "error": str(e)},
+            )
             raise DatabaseError(f"Batch update failed: {str(e)}") from e
 
-    async def batch_update_job_progress(self, updates: list[dict[str, Any]]) -> dict[str, int]:
+    async def batch_update_job_progress(
+        self, updates: list[dict[str, Any]]
+    ) -> dict[str, int]:
         """
         Batch update multiple job progress values to reduce database round trips.
 
@@ -80,24 +86,26 @@ class JobRepository:
             for update_data in updates:
                 # Ensure progress is clamped between 0 and 1
                 if "progress" in update_data:
-                    update_data["progress"] = max(0.0, min(1.0, update_data["progress"]))
+                    update_data["progress"] = max(
+                        0.0, min(1.0, update_data["progress"])
+                    )
 
                 self._batch_manager.add_operation("job_progress_update", **update_data)
 
             results = await self._batch_manager.execute_batch()
 
-            logger.info("Batch job progress update completed", extra={
-                "total_updates": len(updates),
-                "results": results
-            })
+            logger.info(
+                "Batch job progress update completed",
+                extra={"total_updates": len(updates), "results": results},
+            )
 
             return results
 
         except Exception as e:
-            logger.error("Batch job progress update failed", extra={
-                "update_count": len(updates),
-                "error": str(e)
-            })
+            logger.error(
+                "Batch job progress update failed",
+                extra={"update_count": len(updates), "error": str(e)},
+            )
             raise DatabaseError(f"Batch progress update failed: {str(e)}") from e
 
     @db_retry(max_retries=3, delay=1.0)
@@ -107,7 +115,7 @@ class JobRepository:
         payload: dict[str, Any],
         status: str = "pending",
         priority: str = "normal",
-        dedup_key: str | None = None
+        dedup_key: str | None = None,
     ) -> Job:
         """
         Create a new job in the database with retry logic and performance monitoring.
@@ -133,7 +141,9 @@ class JobRepository:
                 if payload is not None:
                     if isinstance(payload.get("csv_data"), (bytes, bytearray)):
                         safe_payload = payload.copy()
-                        safe_payload["csv_data"] = base64.b64encode(payload["csv_data"]).decode("ascii")
+                        safe_payload["csv_data"] = base64.b64encode(
+                            payload["csv_data"]
+                        ).decode("ascii")
                         safe_payload["encoding"] = "base64"
                         payload = safe_payload
             except Exception:
@@ -145,7 +155,7 @@ class JobRepository:
                 payload=payload,
                 status=status,
                 priority=priority,
-                dedup_key=dedup_key
+                dedup_key=dedup_key,
             )
 
             async def create_operation():
@@ -158,7 +168,7 @@ class JobRepository:
                 self.session,
                 create_operation,
                 timeout=30.0,
-                operation_name="create_job"
+                operation_name="create_job",
             )
 
     async def get_job_by_id(self, job_id: str) -> Job | None:
@@ -190,10 +200,7 @@ class JobRepository:
             select(Job).where(
                 and_(
                     Job.dedup_key == dedup_key,
-                    or_(
-                        Job.status == "pending",
-                        Job.status == "processing"
-                    )
+                    or_(Job.status == "pending", Job.status == "processing"),
                 )
             )
         )
@@ -222,22 +229,20 @@ class JobRepository:
             counts = {row.status: row.count for row in rows}
 
             # Ensure all statuses are represented
-            all_statuses = ['pending', 'processing', 'completed', 'failed', 'retry']
+            all_statuses = ["pending", "processing", "completed", "failed", "retry"]
             for status in all_statuses:
                 if status not in counts:
                     counts[status] = 0
 
-            logger.debug("Retrieved job counts by status", extra={
-                "counts": counts,
-                "total_jobs": sum(counts.values())
-            })
+            logger.debug(
+                "Retrieved job counts by status",
+                extra={"counts": counts, "total_jobs": sum(counts.values())},
+            )
 
             return counts
 
         except Exception as e:
-            logger.error("Failed to get job counts by status", extra={
-                "error": str(e)
-            })
+            logger.error("Failed to get job counts by status", extra={"error": str(e)})
             raise
 
     async def update_job_progress(
@@ -248,7 +253,7 @@ class JobRepository:
         current_run: int | None = None,
         total_runs: int | None = None,
         started_at: datetime | None = None,
-        completed_at: datetime | None = None
+        completed_at: datetime | None = None,
     ) -> bool:
         """
         Update job progress and timing information.
@@ -270,10 +275,7 @@ class JobRepository:
             progress = max(0.0, min(1.0, progress))
 
             # Build update values
-            update_data = {
-                "progress": progress,
-                "updated_at": datetime.utcnow()
-            }
+            update_data = {"progress": progress, "updated_at": datetime.utcnow()}
 
             # Add timing fields if provided
             if started_at is not None:
@@ -282,9 +284,7 @@ class JobRepository:
                 update_data["completed_at"] = completed_at
 
             # Get current job to update payload
-            result = await self.session.execute(
-                select(Job).where(Job.id == job_id)
-            )
+            result = await self.session.execute(select(Job).where(Job.id == job_id))
             job = result.scalar_one_or_none()
 
             if job:
@@ -298,9 +298,7 @@ class JobRepository:
                 update_data["payload"] = payload
 
             result = await self.session.execute(
-                update(Job)
-                .where(Job.id == job_id)
-                .values(**update_data)
+                update(Job).where(Job.id == job_id).values(**update_data)
             )
 
             await self.session.commit()
@@ -320,7 +318,7 @@ class JobRepository:
         error: str | None = None,
         progress: float | None = None,
         artifact_url: str | None = None,
-        completed_at: datetime | None = None
+        completed_at: datetime | None = None,
     ) -> bool:
         """
         Update job status with retry logic, timeout handling, and cache invalidation.
@@ -343,10 +341,7 @@ class JobRepository:
         """
         async with db_operation_monitor("update_job_status", self.session):
             try:
-                update_data = {
-                    "status": status,
-                    "updated_at": datetime.utcnow()
-                }
+                update_data = {"status": status, "updated_at": datetime.utcnow()}
 
                 if worker_id is not None:
                     update_data["worker_id"] = worker_id
@@ -361,9 +356,7 @@ class JobRepository:
 
                 async def update_operation():
                     result = await self.session.execute(
-                        update(Job)
-                        .where(Job.id == job_id)
-                        .values(**update_data)
+                        update(Job).where(Job.id == job_id).values(**update_data)
                     )
                     await self.session.commit()
                     return result.rowcount > 0
@@ -372,16 +365,19 @@ class JobRepository:
                     self.session,
                     update_operation,
                     timeout=15.0,
-                    operation_name="update_job_status"
+                    operation_name="update_job_status",
                 )
 
                 if success:
-                    logger.debug("Updated job status", extra={
-                        "job_id": job_id,
-                        "status": status,
-                        "worker_id": worker_id,
-                        "progress": progress
-                    })
+                    logger.debug(
+                        "Updated job status",
+                        extra={
+                            "job_id": job_id,
+                            "status": status,
+                            "worker_id": worker_id,
+                            "progress": progress,
+                        },
+                    )
 
                 return success
 
@@ -389,16 +385,15 @@ class JobRepository:
                 try:
                     await self.session.rollback()
                 except Exception as rollback_error:
-                    logger.warning("Failed to rollback after update error", extra={
-                        "job_id": job_id,
-                        "rollback_error": str(rollback_error)
-                    })
+                    logger.warning(
+                        "Failed to rollback after update error",
+                        extra={"job_id": job_id, "rollback_error": str(rollback_error)},
+                    )
 
-                logger.error("Failed to update job status", extra={
-                    "job_id": job_id,
-                    "status": status,
-                    "error": str(e)
-                })
+                logger.error(
+                    "Failed to update job status",
+                    extra={"job_id": job_id, "status": status, "error": str(e)},
+                )
                 raise DatabaseError(f"Failed to update job status: {str(e)}") from e
 
     async def increment_attempts(self, job_id: str) -> bool:
@@ -414,10 +409,7 @@ class JobRepository:
         result = await self.session.execute(
             update(Job)
             .where(Job.id == job_id)
-            .values(
-                attempts=Job.attempts + 1,
-                updated_at=datetime.utcnow()
-            )
+            .values(attempts=Job.attempts + 1, updated_at=datetime.utcnow())
         )
 
         await self.session.commit()
@@ -428,7 +420,7 @@ class JobRepository:
         status: str | None = None,
         worker_id: str | None = None,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
     ) -> list[Job]:
         """
         List jobs with optional filtering.
@@ -459,8 +451,7 @@ class JobRepository:
         from sqlalchemy import func
 
         result = await self.session.execute(
-            select(Job.status, func.count(Job.id))
-            .group_by(Job.status)
+            select(Job.status, func.count(Job.id)).group_by(Job.status)
         )
 
         return {status: count for status, count in result.all()}
@@ -486,8 +477,8 @@ class JobRepository:
                     or_(
                         Job.status == "completed",
                         Job.status == "failed",
-                        Job.status == "cancelled"
-                    )
+                        Job.status == "cancelled",
+                    ),
                 )
             )
         )

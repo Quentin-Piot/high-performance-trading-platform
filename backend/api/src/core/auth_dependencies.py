@@ -13,7 +13,7 @@ security = HTTPBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    cognito_service: CognitoService = Depends(get_cognito_service)
+    cognito_service: CognitoService = Depends(get_cognito_service),
 ) -> CognitoUser:
     """
     Dependency to get the current authenticated user from JWT token.
@@ -48,7 +48,7 @@ async def get_current_user(
 
 async def get_current_user_optional(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
-    cognito_service: CognitoService = Depends(get_cognito_service)
+    cognito_service: CognitoService = Depends(get_cognito_service),
 ) -> CognitoUser | None:
     """
     Optional dependency to get the current user if authenticated.
@@ -67,7 +67,7 @@ async def get_current_user_optional(
 
 
 async def require_verified_email(
-    current_user: CognitoUser = Depends(get_current_user)
+    current_user: CognitoUser = Depends(get_current_user),
 ) -> CognitoUser:
     """
     Dependency that requires the user to have a verified email.
@@ -83,8 +83,7 @@ async def require_verified_email(
     """
     if not current_user.email_verified:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email verification required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Email verification required"
         )
 
     return current_user

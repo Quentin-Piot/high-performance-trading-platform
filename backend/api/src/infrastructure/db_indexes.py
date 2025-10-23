@@ -4,6 +4,7 @@ Database index optimization utilities.
 This module provides utilities for creating and managing database indexes
 to improve query performance for the trading platform.
 """
+
 import logging
 from typing import Any
 
@@ -11,6 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
 
 class IndexManager:
     """Manages database indexes for performance optimization"""
@@ -35,7 +37,7 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_status_created_at
                     ON jobs (status, created_at DESC)
                 """,
-                "description": "Composite index for status filtering with time ordering"
+                "description": "Composite index for status filtering with time ordering",
             },
             {
                 "name": "idx_jobs_worker_status",
@@ -43,7 +45,7 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_worker_status
                     ON jobs (worker_id, status) WHERE worker_id IS NOT NULL
                 """,
-                "description": "Partial index for worker-specific job queries"
+                "description": "Partial index for worker-specific job queries",
             },
             {
                 "name": "idx_jobs_priority_created_at",
@@ -51,7 +53,7 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_priority_created_at
                     ON jobs (priority, created_at) WHERE status IN ('pending', 'retry')
                 """,
-                "description": "Partial index for job queue ordering"
+                "description": "Partial index for job queue ordering",
             },
             {
                 "name": "idx_jobs_dedup_key_hash",
@@ -59,7 +61,7 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_dedup_key_hash
                     ON jobs USING hash (dedup_key) WHERE dedup_key IS NOT NULL
                 """,
-                "description": "Hash index for fast deduplication lookups"
+                "description": "Hash index for fast deduplication lookups",
             },
             {
                 "name": "idx_jobs_updated_at_status",
@@ -67,7 +69,7 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_updated_at_status
                     ON jobs (updated_at DESC, status) WHERE status IN ('processing', 'completed', 'failed')
                 """,
-                "description": "Index for monitoring and cleanup queries"
+                "description": "Index for monitoring and cleanup queries",
             },
             {
                 "name": "idx_jobs_progress_processing",
@@ -75,8 +77,8 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_progress_processing
                     ON jobs (progress, updated_at DESC) WHERE status = 'processing'
                 """,
-                "description": "Partial index for progress monitoring of processing jobs"
-            }
+                "description": "Partial index for progress monitoring of processing jobs",
+            },
         ]
 
         # User table indexes (if exists)
@@ -87,7 +89,7 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email_lower
                     ON users (LOWER(email))
                 """,
-                "description": "Case-insensitive email lookup index"
+                "description": "Case-insensitive email lookup index",
             },
             {
                 "name": "idx_users_created_at",
@@ -95,8 +97,8 @@ class IndexManager:
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_created_at
                     ON users (created_at DESC)
                 """,
-                "description": "Index for user registration analytics"
-            }
+                "description": "Index for user registration analytics",
+            },
         ]
 
         all_indexes = job_indexes + user_indexes
@@ -107,18 +109,21 @@ class IndexManager:
                 await self.session.commit()
 
                 results[index_config["name"]] = True
-                logger.info("Created database index", extra={
-                    "index_name": index_config["name"],
-                    "description": index_config["description"]
-                })
+                logger.info(
+                    "Created database index",
+                    extra={
+                        "index_name": index_config["name"],
+                        "description": index_config["description"],
+                    },
+                )
 
             except Exception as e:
                 await self.session.rollback()
                 results[index_config["name"]] = False
-                logger.error("Failed to create database index", extra={
-                    "index_name": index_config["name"],
-                    "error": str(e)
-                })
+                logger.error(
+                    "Failed to create database index",
+                    extra={"index_name": index_config["name"], "error": str(e)},
+                )
 
         return results
 
@@ -181,17 +186,17 @@ class IndexManager:
                     {
                         "column": stat.attname,
                         "n_distinct": stat.n_distinct,
-                        "correlation": stat.correlation
+                        "correlation": stat.correlation,
                     }
                     for stat in stats
-                ]
+                ],
             }
 
         except Exception as e:
-            logger.error("Failed to analyze table statistics", extra={
-                "table_name": table_name,
-                "error": str(e)
-            })
+            logger.error(
+                "Failed to analyze table statistics",
+                extra={"table_name": table_name, "error": str(e)},
+            )
             return {"error": str(e)}
 
     async def get_slow_queries(self, limit: int = 10) -> list[dict[str, Any]]:
@@ -244,15 +249,15 @@ class IndexManager:
                     "total_time_ms": float(query.total_time),
                     "mean_time_ms": float(query.mean_time),
                     "rows": query.rows,
-                    "cache_hit_percent": float(query.hit_percent) if query.hit_percent else 0.0
+                    "cache_hit_percent": float(query.hit_percent)
+                    if query.hit_percent
+                    else 0.0,
                 }
                 for query in queries
             ]
 
         except Exception as e:
-            logger.error("Failed to get slow queries", extra={
-                "error": str(e)
-            })
+            logger.error("Failed to get slow queries", extra={"error": str(e)})
             return []
 
     async def optimize_table(self, table_name: str) -> dict[str, Any]:
@@ -270,10 +275,10 @@ class IndexManager:
             vacuum_query = text(f"VACUUM ANALYZE {table_name}")
             await self.session.execute(vacuum_query)
 
-            logger.info("Optimized table", extra={
-                "table_name": table_name,
-                "operation": "VACUUM ANALYZE"
-            })
+            logger.info(
+                "Optimized table",
+                extra={"table_name": table_name, "operation": "VACUUM ANALYZE"},
+            )
 
             # Get updated statistics
             stats = await self.analyze_table_statistics(table_name)
@@ -282,19 +287,15 @@ class IndexManager:
                 "success": True,
                 "table_name": table_name,
                 "operation": "VACUUM ANALYZE",
-                "statistics": stats
+                "statistics": stats,
             }
 
         except Exception as e:
-            logger.error("Failed to optimize table", extra={
-                "table_name": table_name,
-                "error": str(e)
-            })
-            return {
-                "success": False,
-                "table_name": table_name,
-                "error": str(e)
-            }
+            logger.error(
+                "Failed to optimize table",
+                extra={"table_name": table_name, "error": str(e)},
+            )
+            return {"success": False, "table_name": table_name, "error": str(e)}
 
     async def get_index_usage_stats(self) -> list[dict[str, Any]]:
         """
@@ -320,26 +321,29 @@ class IndexManager:
             stats = []
 
             for row in result:
-                stats.append({
-                    "schema": row.schemaname,
-                    "table": row.tablename,
-                    "index": row.indexname,
-                    "tuples_read": row.idx_tup_read,
-                    "tuples_fetched": row.idx_tup_fetch,
-                    "scans": row.idx_scan
-                })
+                stats.append(
+                    {
+                        "schema": row.schemaname,
+                        "table": row.tablename,
+                        "index": row.indexname,
+                        "tuples_read": row.idx_tup_read,
+                        "tuples_fetched": row.idx_tup_fetch,
+                        "scans": row.idx_scan,
+                    }
+                )
 
-            logger.info("Retrieved index usage statistics", extra={
-                "index_count": len(stats)
-            })
+            logger.info(
+                "Retrieved index usage statistics", extra={"index_count": len(stats)}
+            )
 
             return stats
 
         except Exception as e:
-            logger.error("Failed to get index usage statistics", extra={
-                "error": str(e)
-            })
+            logger.error(
+                "Failed to get index usage statistics", extra={"error": str(e)}
+            )
             return []
+
 
 async def create_optimized_indexes(session: AsyncSession) -> dict[str, bool]:
     """
@@ -353,6 +357,7 @@ async def create_optimized_indexes(session: AsyncSession) -> dict[str, bool]:
     """
     index_manager = IndexManager(session)
     return await index_manager.create_performance_indexes()
+
 
 async def analyze_database_performance(session: AsyncSession) -> dict[str, Any]:
     """
@@ -377,10 +382,10 @@ async def analyze_database_performance(session: AsyncSession) -> dict[str, Any]:
                 stats = await index_manager.analyze_table_statistics(table_name)
                 table_stats[table_name] = stats
             except Exception as e:
-                logger.warning(f"Failed to analyze table {table_name}", extra={
-                    "table_name": table_name,
-                    "error": str(e)
-                })
+                logger.warning(
+                    f"Failed to analyze table {table_name}",
+                    extra={"table_name": table_name, "error": str(e)},
+                )
                 table_stats[table_name] = {"error": str(e)}
 
         # Get slow queries
@@ -392,15 +397,9 @@ async def analyze_database_performance(session: AsyncSession) -> dict[str, Any]:
         return {
             "table_statistics": table_stats,
             "slow_queries": slow_queries,
-            "index_usage": index_usage
+            "index_usage": index_usage,
         }
 
     except Exception as e:
-        logger.error("Failed to analyze database performance", extra={
-            "error": str(e)
-        })
-        return {
-            "table_statistics": {},
-            "slow_queries": [],
-            "index_usage": []
-        }
+        logger.error("Failed to analyze database performance", extra={"error": str(e)})
+        return {"table_statistics": {}, "slow_queries": [], "index_usage": []}

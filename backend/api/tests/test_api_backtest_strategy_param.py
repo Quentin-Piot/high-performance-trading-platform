@@ -23,7 +23,12 @@ def test_backtest_rsi_ok_200():
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert "equity_curve" in body and "pnl" in body and "drawdown" in body and "sharpe" in body
+    assert (
+        "equity_curve" in body
+        and "pnl" in body
+        and "drawdown" in body
+        and "sharpe" in body
+    )
 
 
 def test_backtest_unknown_strategy_400():

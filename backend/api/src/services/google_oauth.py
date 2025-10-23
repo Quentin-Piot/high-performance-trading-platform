@@ -1,6 +1,7 @@
 """
 Google OAuth service for authentication integration.
 """
+
 import logging
 from typing import Any
 from urllib.parse import urlencode
@@ -12,6 +13,7 @@ from google.oauth2 import id_token
 from core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
 
 class GoogleOAuthService:
     """Service for handling Google OAuth authentication."""
@@ -33,17 +35,20 @@ class GoogleOAuthService:
         # Check if we're in development mode with LocalStack AND using mock OAuth
         # Use mock ONLY when Google OAuth credentials are not configured
         self.is_development = (
-            self.settings.env == "development" and
-            hasattr(self.settings, 'aws_endpoint_url') and
-            self.settings.aws_endpoint_url == "http://localhost:4566" and
+            self.settings.env == "development"
+            and hasattr(self.settings, "aws_endpoint_url")
+            and self.settings.aws_endpoint_url == "http://localhost:4566"
+            and
             # Use mock only if Google OAuth credentials are not configured
             (not self.client_id or not self.client_secret)
         )
 
         # Debug logging
-        logger.info(f"GoogleOAuthService initialized - Environment: {self.settings.env}, "
-                   f"AWS Endpoint: {getattr(self.settings, 'aws_endpoint_url', 'None')}, "
-                   f"Is Development: {self.is_development}")
+        logger.info(
+            f"GoogleOAuthService initialized - Environment: {self.settings.env}, "
+            f"AWS Endpoint: {getattr(self.settings, 'aws_endpoint_url', 'None')}, "
+            f"Is Development: {self.is_development}"
+        )
 
     def get_authorization_url(self, state: str | None = None) -> str:
         """
@@ -61,7 +66,7 @@ class GoogleOAuthService:
             "scope": "openid email profile",
             "response_type": "code",
             "access_type": "offline",
-            "prompt": "consent"
+            "prompt": "consent",
         }
 
         if state:
@@ -97,8 +102,8 @@ class GoogleOAuthService:
                     "given_name": "Test",
                     "family_name": f"User {code}",
                     "picture": "https://example.com/avatar.jpg",
-                    "locale": "en"
-                }
+                    "locale": "en",
+                },
             }
 
         # Production implementation
@@ -125,9 +130,7 @@ class GoogleOAuthService:
             # Verify ID token
             try:
                 id_info = id_token.verify_oauth2_token(
-                    tokens["id_token"],
-                    requests.Request(),
-                    self.client_id
+                    tokens["id_token"], requests.Request(), self.client_id
                 )
 
                 # Get additional user info
@@ -145,8 +148,8 @@ class GoogleOAuthService:
                         "given_name": user_info.get("given_name", ""),
                         "family_name": user_info.get("family_name", ""),
                         "picture": user_info.get("picture", ""),
-                        "locale": user_info.get("locale", "")
-                    }
+                        "locale": user_info.get("locale", ""),
+                    },
                 }
 
             except ValueError as e:
@@ -170,7 +173,7 @@ class GoogleOAuthService:
                 "given_name": "Test",
                 "family_name": "User",
                 "picture": "https://example.com/avatar.jpg",
-                "locale": "en"
+                "locale": "en",
             }
 
         # Production implementation
@@ -223,9 +226,7 @@ class GoogleOAuthService:
         """
         try:
             id_info = id_token.verify_oauth2_token(
-                id_token_str,
-                requests.Request(),
-                self.client_id
+                id_token_str, requests.Request(), self.client_id
             )
             return id_info
         except ValueError as e:
@@ -235,6 +236,7 @@ class GoogleOAuthService:
 
 # Singleton instance
 _google_oauth_service: GoogleOAuthService | None = None
+
 
 def get_google_oauth_service() -> GoogleOAuthService:
     """Get Google OAuth service instance."""

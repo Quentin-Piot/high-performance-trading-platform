@@ -1,6 +1,7 @@
 """
 Simple JWT authentication system for local development.
 """
+
 import logging
 from typing import Any
 
@@ -25,6 +26,7 @@ optional_security = HTTPBearer(auto_error=False)
 
 class SimpleUser(BaseModel):
     """Simple user information extracted from JWT token."""
+
     id: int
     email: str
     sub: str  # For compatibility with CognitoUser
@@ -42,7 +44,7 @@ class SimpleAuthService:
             payload = jwt.decode(
                 token,
                 self.settings.jwt_secret,
-                algorithms=[self.settings.jwt_algorithm]
+                algorithms=[self.settings.jwt_algorithm],
             )
             return payload
         except JWTError as e:
@@ -62,7 +64,7 @@ def get_simple_auth_service() -> SimpleAuthService:
 async def get_current_user_simple(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     auth_service: SimpleAuthService = Depends(get_simple_auth_service),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ) -> SimpleUser:
     """
     Dependency to get the current authenticated user from JWT token.
@@ -110,17 +112,13 @@ async def get_current_user_simple(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return SimpleUser(
-        id=user.id,
-        email=user.email,
-        sub=str(user.id)
-    )
+    return SimpleUser(id=user.id, email=user.email, sub=str(user.id))
 
 
 async def get_current_user_simple_optional(
     credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
     auth_service: SimpleAuthService = Depends(get_simple_auth_service),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ) -> SimpleUser | None:
     """
     Optional dependency to get the current user if authenticated.
@@ -151,14 +149,14 @@ async def get_current_user_simple_optional(
     try:
         user = await get_user_by_id(db, int(user_id))
         if not user:
-            logger.warning("User not found in database, continuing without authentication")
+            logger.warning(
+                "User not found in database, continuing without authentication"
+            )
             return None
 
-        return SimpleUser(
-            id=user.id,
-            email=user.email,
-            sub=str(user.id)
-        )
+        return SimpleUser(id=user.id, email=user.email, sub=str(user.id))
     except Exception as e:
-        logger.warning(f"Error retrieving user from database: {e}, continuing without authentication")
+        logger.warning(
+            f"Error retrieving user from database: {e}, continuing without authentication"
+        )
         return None

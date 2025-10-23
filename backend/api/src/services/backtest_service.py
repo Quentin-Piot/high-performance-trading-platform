@@ -14,7 +14,10 @@ from strategies.rsi_reversion import RSIParams, RSIReversionStrategy
 
 logger = logging.getLogger("services.backtest")
 
-def _read_csv_to_series(file_obj: io.BytesIO | bytes, price_type: str = "close") -> pd.Series:
+
+def _read_csv_to_series(
+    file_obj: io.BytesIO | bytes, price_type: str = "close"
+) -> pd.Series:
     if isinstance(file_obj, (bytes, bytearray)):
         buffer = io.BytesIO(file_obj)
         df = pd.read_csv(buffer)
@@ -30,14 +33,10 @@ def _read_csv_to_series(file_obj: io.BytesIO | bytes, price_type: str = "close")
         )
         if not price_col:
             # Fallback to close if adj_close not available
-            price_col = next(
-                (c for c in ["close"] if c in df.columns), None
-            )
+            price_col = next((c for c in ["close"] if c in df.columns), None)
     else:
         # Default to close
-        price_col = next(
-            (c for c in ["close"] if c in df.columns), None
-        )
+        price_col = next((c for c in ["close"] if c in df.columns), None)
 
     if not price_col:
         # Check if adj close is available when close is not
@@ -57,6 +56,7 @@ def _read_csv_to_series(file_obj: io.BytesIO | bytes, price_type: str = "close")
         return series
 
     return pd.Series(df[price_col].astype(float).values, dtype=float)
+
 
 class CsvBytesPriceSeriesSource(PriceSeriesSource):
     def __init__(self, data: bytes | io.BytesIO, price_type: str = "close"):
@@ -83,14 +83,10 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
             )
             if not price_col:
                 # Fallback to close if adj_close not available
-                price_col = next(
-                    (c for c in ["close"] if c in df.columns), None
-                )
+                price_col = next((c for c in ["close"] if c in df.columns), None)
         else:
             # Default to close
-            price_col = next(
-                (c for c in ["close"] if c in df.columns), None
-            )
+            price_col = next((c for c in ["close"] if c in df.columns), None)
 
         if not price_col:
             raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
@@ -110,7 +106,9 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
 
         return df
 
+
 # Stratégies supprimées - utiliser les implémentations modernes dans strategies/
+
 
 @dataclass
 class ServiceBacktestResult:
@@ -119,11 +117,13 @@ class ServiceBacktestResult:
     drawdown: float
     sharpe: float
 
+
 def _default_date_bounds():
     """Return sane date bounds to avoid pandas min/max nanosecond warnings."""
     start = pd.Timestamp("1970-01-01").to_pydatetime()
     end = pd.Timestamp("2100-01-01").to_pydatetime()
     return start, end
+
 
 def run_sma_crossover(
     source: PriceSeriesSource, sma_short: int, sma_long: int
@@ -141,7 +141,7 @@ def run_sma_crossover(
         long_window=sma_long,
         position_size=1.0,
         initial_capital=1.0,
-        commission=0.0
+        commission=0.0,
     )
 
     # Exécuter la stratégie moderne
@@ -156,9 +156,8 @@ def run_sma_crossover(
         sharpe=result.sharpe_ratio,
     )
 
-def sma_crossover_backtest(
-    file_obj: io.BytesIO | bytes, sma_short: int, sma_long: int
-):
+
+def sma_crossover_backtest(file_obj: io.BytesIO | bytes, sma_short: int, sma_long: int):
     source = CsvBytesPriceSeriesSource(file_obj)
     result = run_sma_crossover(source, sma_short, sma_long)
     return (
@@ -167,6 +166,7 @@ def sma_crossover_backtest(
         float(result.drawdown),
         float(result.sharpe),
     )
+
 
 def run_rsi(
     source: PriceSeriesSource, period: int, overbought: float, oversold: float
@@ -185,7 +185,7 @@ def run_rsi(
         rsi_high=overbought,
         position_size=1.0,
         initial_capital=1.0,
-        commission=0.0
+        commission=0.0,
     )
 
     # Exécuter la stratégie moderne

@@ -19,8 +19,7 @@ import aiohttp
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -28,6 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class JobSubmissionMetrics:
     """Metrics for job submission operations."""
+
     job_id: str | None = None
     submission_time: float = 0.0
     response_time: float = 0.0
@@ -40,12 +40,15 @@ class JobSubmissionMetrics:
 @dataclass
 class JobProcessingMetrics:
     """Metrics for job processing and progress tracking."""
+
     job_id: str
     submission_time: float = 0.0
     start_processing_time: float | None = None
     completion_time: float | None = None
     final_status: str | None = None
-    progress_updates: list[tuple[float, float]] = field(default_factory=list)  # (timestamp, progress)
+    progress_updates: list[tuple[float, float]] = field(
+        default_factory=list
+    )  # (timestamp, progress)
     total_processing_time: float | None = None
     success: bool = False
     error_message: str | None = None
@@ -54,6 +57,7 @@ class JobProcessingMetrics:
 @dataclass
 class ConcurrentStressTestResults:
     """Results from concurrent stress testing."""
+
     total_jobs_submitted: int
     successful_submissions: int
     failed_submissions: int
@@ -68,7 +72,9 @@ class ConcurrentStressTestResults:
     median_processing_time: float
     p95_processing_time: float
     p99_processing_time: float
-    queue_depth_samples: list[tuple[float, int]] = field(default_factory=list)  # (timestamp, depth)
+    queue_depth_samples: list[tuple[float, int]] = field(
+        default_factory=list
+    )  # (timestamp, depth)
     error_details: dict[str, int] = field(default_factory=dict)
 
 
@@ -109,10 +115,10 @@ class ConcurrentJobStressTester:
             "strategy_params": {
                 "risk_tolerance": random.uniform(0.1, 0.9),
                 "rebalance_frequency": random.choice(["daily", "weekly", "monthly"]),
-                "test_param": f"job_{job_index}"
+                "test_param": f"job_{job_index}",
             },
             "priority": random.choice(priorities),
-            "timeout_seconds": random.randint(300, 3600)
+            "timeout_seconds": random.randint(300, 3600),
         }
 
     async def submit_single_job(self, job_index: int) -> JobSubmissionMetrics:
@@ -126,8 +132,7 @@ class ConcurrentJobStressTester:
             start_time = time.time()
 
             async with self.session.post(
-                f"{self.base_url}/api/v1/monte-carlo/jobs",
-                json=job_data
+                f"{self.base_url}/api/v1/monte-carlo/jobs", json=job_data
             ) as response:
                 metrics.response_time = time.time() - start_time
                 metrics.status_code = response.status
@@ -142,14 +147,18 @@ class ConcurrentJobStressTester:
 
         except Exception as e:
             metrics.error_message = str(e)
-            metrics.response_time = time.time() - start_time if 'start_time' in locals() else 0.0
+            metrics.response_time = (
+                time.time() - start_time if "start_time" in locals() else 0.0
+            )
 
         finally:
             metrics.submission_time = time.time()
 
         return metrics
 
-    async def track_job_progress(self, job_id: str, timeout_seconds: int = 300) -> JobProcessingMetrics:
+    async def track_job_progress(
+        self, job_id: str, timeout_seconds: int = 300
+    ) -> JobProcessingMetrics:
         """Track a job's progress until completion."""
         metrics = JobProcessingMetrics(job_id=job_id)
         metrics.submission_time = time.time()
@@ -172,24 +181,32 @@ class ConcurrentJobStressTester:
                             metrics.progress_updates.append((time.time(), progress))
 
                             # Check if job started processing
-                            if current_status in ["processing", "completed", "failed"] and metrics.start_processing_time is None:
+                            if (
+                                current_status in ["processing", "completed", "failed"]
+                                and metrics.start_processing_time is None
+                            ):
                                 metrics.start_processing_time = time.time()
 
                             # Check if job completed
                             if current_status in ["completed", "failed"]:
                                 metrics.completion_time = time.time()
                                 metrics.final_status = current_status
-                                metrics.success = (current_status == "completed")
+                                metrics.success = current_status == "completed"
 
                                 if metrics.start_processing_time:
-                                    metrics.total_processing_time = metrics.completion_time - metrics.start_processing_time
+                                    metrics.total_processing_time = (
+                                        metrics.completion_time
+                                        - metrics.start_processing_time
+                                    )
 
                                 break
 
                             last_status = current_status
 
                         else:
-                            logger.warning(f"Failed to get job {job_id} status: {response.status}")
+                            logger.warning(
+                                f"Failed to get job {job_id} status: {response.status}"
+                            )
 
                 except Exception as e:
                     logger.warning(f"Error checking job {job_id} progress: {str(e)}")
@@ -209,7 +226,9 @@ class ConcurrentJobStressTester:
     async def get_queue_metrics(self) -> dict[str, Any]:
         """Get current queue metrics."""
         try:
-            async with self.session.get(f"{self.base_url}/api/v1/monte-carlo/queue/metrics") as response:
+            async with self.session.get(
+                f"{self.base_url}/api/v1/monte-carlo/queue/metrics"
+            ) as response:
                 if response.status == 200:
                     return await response.json()
                 else:
@@ -218,13 +237,12 @@ class ConcurrentJobStressTester:
             return {"error": str(e)}
 
     async def concurrent_submission_test(
-        self,
-        num_jobs: int,
-        batch_size: int = 10,
-        batch_delay: float = 0.1
+        self, num_jobs: int, batch_size: int = 10, batch_delay: float = 0.1
     ) -> tuple[list[JobSubmissionMetrics], float]:
         """Test concurrent job submission with batching."""
-        logger.info(f"Starting concurrent submission test: {num_jobs} jobs in batches of {batch_size}")
+        logger.info(
+            f"Starting concurrent submission test: {num_jobs} jobs in batches of {batch_size}"
+        )
 
         start_time = time.time()
         all_metrics = []
@@ -251,7 +269,9 @@ class ConcurrentJobStressTester:
                 else:
                     all_metrics.append(result)
 
-            logger.info(f"Completed batch {batch_start//batch_size + 1}/{(num_jobs-1)//batch_size + 1}")
+            logger.info(
+                f"Completed batch {batch_start // batch_size + 1}/{(num_jobs - 1) // batch_size + 1}"
+            )
 
             # Delay between batches
             if batch_end < num_jobs:
@@ -263,10 +283,7 @@ class ConcurrentJobStressTester:
         return all_metrics, total_time
 
     async def end_to_end_processing_test(
-        self,
-        num_jobs: int,
-        submission_batch_size: int = 5,
-        tracking_timeout: int = 600
+        self, num_jobs: int, submission_batch_size: int = 5, tracking_timeout: int = 600
     ) -> ConcurrentStressTestResults:
         """Test end-to-end job processing including submission and completion tracking."""
         logger.info(f"Starting end-to-end processing test: {num_jobs} jobs")
@@ -275,8 +292,7 @@ class ConcurrentJobStressTester:
 
         # Phase 1: Submit all jobs
         submission_metrics, submission_duration = await self.concurrent_submission_test(
-            num_jobs=num_jobs,
-            batch_size=submission_batch_size
+            num_jobs=num_jobs, batch_size=submission_batch_size
         )
 
         # Extract successful job IDs
@@ -301,7 +317,9 @@ class ConcurrentJobStressTester:
         ]
 
         logger.info(f"Tracking {len(job_ids)} jobs for up to {tracking_timeout}s...")
-        processing_results = await asyncio.gather(*tracking_tasks, return_exceptions=True)
+        processing_results = await asyncio.gather(
+            *tracking_tasks, return_exceptions=True
+        )
 
         # Stop queue monitoring
         queue_monitoring_task.cancel()
@@ -326,7 +344,9 @@ class ConcurrentJobStressTester:
             submission_metrics, processing_metrics, total_test_time, queue_samples
         )
 
-    async def _monitor_queue_depth(self, duration_seconds: int) -> list[tuple[float, int]]:
+    async def _monitor_queue_depth(
+        self, duration_seconds: int
+    ) -> list[tuple[float, int]]:
         """Monitor queue depth over time."""
         samples = []
         start_time = time.time()
@@ -355,7 +375,7 @@ class ConcurrentJobStressTester:
         submission_metrics: list[JobSubmissionMetrics],
         processing_metrics: list[JobProcessingMetrics],
         total_duration: float,
-        queue_samples: list[tuple[float, int]]
+        queue_samples: list[tuple[float, int]],
     ) -> ConcurrentStressTestResults:
         """Calculate comprehensive concurrent stress test results."""
 
@@ -363,15 +383,25 @@ class ConcurrentJobStressTester:
         successful_submissions = sum(1 for m in submission_metrics if m.success)
         failed_submissions = len(submission_metrics) - successful_submissions
 
-        submission_times = [m.response_time for m in submission_metrics if m.response_time > 0]
-        avg_submission_time = statistics.mean(submission_times) if submission_times else 0.0
+        submission_times = [
+            m.response_time for m in submission_metrics if m.response_time > 0
+        ]
+        avg_submission_time = (
+            statistics.mean(submission_times) if submission_times else 0.0
+        )
 
         # Processing statistics
-        completed_jobs = [m for m in processing_metrics if m.completion_time is not None]
+        completed_jobs = [
+            m for m in processing_metrics if m.completion_time is not None
+        ]
         successful_completions = sum(1 for m in completed_jobs if m.success)
         failed_completions = len(completed_jobs) - successful_completions
 
-        processing_times = [m.total_processing_time for m in completed_jobs if m.total_processing_time is not None]
+        processing_times = [
+            m.total_processing_time
+            for m in completed_jobs
+            if m.total_processing_time is not None
+        ]
 
         if processing_times:
             avg_processing_time = statistics.mean(processing_times)
@@ -379,17 +409,27 @@ class ConcurrentJobStressTester:
             p95_processing_time = statistics.quantiles(processing_times, n=20)[18]
             p99_processing_time = statistics.quantiles(processing_times, n=100)[98]
         else:
-            avg_processing_time = median_processing_time = p95_processing_time = p99_processing_time = 0.0
+            avg_processing_time = median_processing_time = p95_processing_time = (
+                p99_processing_time
+            ) = 0.0
 
         # Throughput calculations
-        submission_throughput = successful_submissions / total_duration if total_duration > 0 else 0.0
-        completion_throughput = successful_completions / total_duration if total_duration > 0 else 0.0
+        submission_throughput = (
+            successful_submissions / total_duration if total_duration > 0 else 0.0
+        )
+        completion_throughput = (
+            successful_completions / total_duration if total_duration > 0 else 0.0
+        )
 
         # Error collection
         error_details = {}
         for metrics in submission_metrics + processing_metrics:
-            if hasattr(metrics, 'error_message') and metrics.error_message:
-                error_type = metrics.error_message.split(':')[0] if ':' in metrics.error_message else metrics.error_message
+            if hasattr(metrics, "error_message") and metrics.error_message:
+                error_type = (
+                    metrics.error_message.split(":")[0]
+                    if ":" in metrics.error_message
+                    else metrics.error_message
+                )
                 error_details[error_type] = error_details.get(error_type, 0) + 1
 
         return ConcurrentStressTestResults(
@@ -408,7 +448,7 @@ class ConcurrentJobStressTester:
             p95_processing_time=p95_processing_time,
             p99_processing_time=p99_processing_time,
             queue_depth_samples=queue_samples,
-            error_details=error_details
+            error_details=error_details,
         )
 
     def _create_empty_results(self) -> ConcurrentStressTestResults:
@@ -427,28 +467,42 @@ class ConcurrentJobStressTester:
             average_processing_time=0.0,
             median_processing_time=0.0,
             p95_processing_time=0.0,
-            p99_processing_time=0.0
+            p99_processing_time=0.0,
         )
 
-    def print_results(self, results: ConcurrentStressTestResults, test_name: str = "Concurrent Job Stress Test"):
+    def print_results(
+        self,
+        results: ConcurrentStressTestResults,
+        test_name: str = "Concurrent Job Stress Test",
+    ):
         """Print formatted concurrent stress test results."""
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"{test_name} Results")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         print("Job Submission:")
         print(f"  Total Jobs Submitted: {results.total_jobs_submitted}")
         print(f"  Successful Submissions: {results.successful_submissions}")
         print(f"  Failed Submissions: {results.failed_submissions}")
-        print(f"  Submission Success Rate: {results.successful_submissions/results.total_jobs_submitted:.2%}" if results.total_jobs_submitted > 0 else "  Submission Success Rate: 0%")
-        print(f"  Average Submission Time: {results.average_submission_time*1000:.2f}ms")
+        print(
+            f"  Submission Success Rate: {results.successful_submissions / results.total_jobs_submitted:.2%}"
+            if results.total_jobs_submitted > 0
+            else "  Submission Success Rate: 0%"
+        )
+        print(
+            f"  Average Submission Time: {results.average_submission_time * 1000:.2f}ms"
+        )
         print(f"  Submission Throughput: {results.submission_throughput:.2f} jobs/s")
 
         print("\nJob Processing:")
         print(f"  Total Jobs Completed: {results.total_jobs_completed}")
         print(f"  Successful Completions: {results.successful_completions}")
         print(f"  Failed Completions: {results.failed_completions}")
-        print(f"  Completion Success Rate: {results.successful_completions/results.total_jobs_completed:.2%}" if results.total_jobs_completed > 0 else "  Completion Success Rate: 0%")
+        print(
+            f"  Completion Success Rate: {results.successful_completions / results.total_jobs_completed:.2%}"
+            if results.total_jobs_completed > 0
+            else "  Completion Success Rate: 0%"
+        )
         print(f"  Completion Throughput: {results.completion_throughput:.2f} jobs/s")
 
         print("\nProcessing Time Statistics:")
@@ -472,7 +526,7 @@ class ConcurrentJobStressTester:
             for error_type, count in results.error_details.items():
                 print(f"  {error_type}: {count}")
 
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
 
 async def main():
@@ -480,10 +534,18 @@ async def main():
     parser = argparse.ArgumentParser(description="Concurrent Job Stress Testing Tool")
     parser.add_argument("--url", default="http://localhost:8000", help="API base URL")
     parser.add_argument("--jobs", type=int, default=20, help="Number of jobs to submit")
-    parser.add_argument("--batch-size", type=int, default=5, help="Submission batch size")
-    parser.add_argument("--timeout", type=int, default=600, help="Job tracking timeout in seconds")
-    parser.add_argument("--test-type", choices=["submission", "end-to-end", "all"],
-                       default="all", help="Type of test to run")
+    parser.add_argument(
+        "--batch-size", type=int, default=5, help="Submission batch size"
+    )
+    parser.add_argument(
+        "--timeout", type=int, default=600, help="Job tracking timeout in seconds"
+    )
+    parser.add_argument(
+        "--test-type",
+        choices=["submission", "end-to-end", "all"],
+        default="all",
+        help="Type of test to run",
+    )
 
     args = parser.parse_args()
 
@@ -491,8 +553,7 @@ async def main():
         if args.test_type in ["submission", "all"]:
             logger.info("Running concurrent submission test...")
             submission_metrics, duration = await tester.concurrent_submission_test(
-                num_jobs=args.jobs,
-                batch_size=args.batch_size
+                num_jobs=args.jobs, batch_size=args.batch_size
             )
 
             # Print submission results
@@ -500,22 +561,22 @@ async def main():
             failed = len(submission_metrics) - successful
             throughput = successful / duration if duration > 0 else 0.0
 
-            print(f"\n{'='*50}")
+            print(f"\n{'=' * 50}")
             print("Concurrent Submission Test Results")
-            print(f"{'='*50}")
+            print(f"{'=' * 50}")
             print(f"Total Jobs: {len(submission_metrics)}")
             print(f"Successful: {successful}")
             print(f"Failed: {failed}")
             print(f"Duration: {duration:.2f}s")
             print(f"Throughput: {throughput:.2f} jobs/s")
-            print(f"{'='*50}\n")
+            print(f"{'=' * 50}\n")
 
         if args.test_type in ["end-to-end", "all"]:
             logger.info("Running end-to-end processing test...")
             results = await tester.end_to_end_processing_test(
                 num_jobs=args.jobs,
                 submission_batch_size=args.batch_size,
-                tracking_timeout=args.timeout
+                tracking_timeout=args.timeout,
             )
             tester.print_results(results, "End-to-End Processing Test")
 

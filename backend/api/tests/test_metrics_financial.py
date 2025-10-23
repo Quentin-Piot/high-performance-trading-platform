@@ -18,14 +18,18 @@ def test_sharpe_ratio_nan_on_zero_returns():
 
 
 def test_max_drawdown_on_known_path():
-    equity = pd.Series([100, 110, 105, 120, 90], index=pd.date_range("2023-01-01", periods=5, freq="D"))
+    equity = pd.Series(
+        [100, 110, 105, 120, 90], index=pd.date_range("2023-01-01", periods=5, freq="D")
+    )
     dd = max_drawdown(equity)
     # Peak at 120, trough at 90 => 90/120 - 1 = -0.25
     assert dd == -0.25
 
 
 def test_total_return_basic_and_empty():
-    equity = pd.Series([100, 110], index=pd.date_range("2023-01-01", periods=2, freq="D"))
+    equity = pd.Series(
+        [100, 110], index=pd.date_range("2023-01-01", periods=2, freq="D")
+    )
     assert total_return(equity) == pytest.approx(0.10, rel=1e-12)
     assert total_return(pd.Series(dtype=float)) == 0.0
 

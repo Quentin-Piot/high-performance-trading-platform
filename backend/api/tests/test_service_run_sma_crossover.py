@@ -26,7 +26,9 @@ def test_run_sma_crossover_matches_compat_helper():
     res = run_sma_crossover(source, sma_short=2, sma_long=3)
 
     # Using compatibility helper
-    equity2, pnl2, dd2, sharpe2 = sma_crossover_backtest(buf.getvalue(), sma_short=2, sma_long=3)
+    equity2, pnl2, dd2, sharpe2 = sma_crossover_backtest(
+        buf.getvalue(), sma_short=2, sma_long=3
+    )
 
     assert isinstance(res.equity, pd.Series)
     assert list(res.equity.values) == list(equity2.values)
@@ -42,5 +44,6 @@ def test_run_sma_crossover_invalid_params_raise():
     source = CsvBytesPriceSeriesSource(buf.getvalue())
     # short >= long should raise ValueError from strategy
     import pytest
+
     with pytest.raises(ValueError):
         run_sma_crossover(source, sma_short=3, sma_long=3)

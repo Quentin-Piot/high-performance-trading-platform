@@ -4,6 +4,7 @@ Simple Monte Carlo worker that runs alongside the main backend without Redis/que
 This worker provides asynchronous Monte Carlo execution capabilities while running
 in the same process as the main backend, without requiring external queue systems.
 """
+
 import logging
 import threading
 import time
@@ -30,7 +31,7 @@ class SimpleMonteCarloJob:
         runs: int,
         method: str = "bootstrap",
         method_params: dict | None = None,
-        callback: Callable[[str, dict], None] | None = None
+        callback: Callable[[str, dict], None] | None = None,
     ):
         self.job_id = job_id
         self.csv_data = csv_data
@@ -69,7 +70,7 @@ class SimpleMonteCarloWorker:
         runs: int,
         method: str = "bootstrap",
         method_params: dict | None = None,
-        callback: Callable[[str, dict], None] | None = None
+        callback: Callable[[str, dict], None] | None = None,
     ) -> str:
         """Submit a new Monte Carlo job for asynchronous execution."""
         job_id = str(uuid4())
@@ -83,7 +84,7 @@ class SimpleMonteCarloWorker:
             runs=runs,
             method=method,
             method_params=method_params,
-            callback=callback
+            callback=callback,
         )
 
         with self._lock:
@@ -108,11 +109,13 @@ class SimpleMonteCarloWorker:
                 "progress": job.progress,
                 "created_at": job.created_at.isoformat(),
                 "started_at": job.started_at.isoformat() if job.started_at else None,
-                "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+                "completed_at": job.completed_at.isoformat()
+                if job.completed_at
+                else None,
                 "result": job.result,
                 "error": job.error,
                 "runs": job.runs,
-                "filename": job.filename
+                "filename": job.filename,
             }
 
     def list_jobs(self, limit: int = 50) -> list[dict]:
@@ -130,10 +133,12 @@ class SimpleMonteCarloWorker:
                 "progress": job.progress,
                 "created_at": job.created_at.isoformat(),
                 "started_at": job.started_at.isoformat() if job.started_at else None,
-                "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+                "completed_at": job.completed_at.isoformat()
+                if job.completed_at
+                else None,
                 "runs": job.runs,
                 "filename": job.filename,
-                "error": job.error
+                "error": job.error,
             }
             for job in jobs[:limit]
         ]
@@ -160,9 +165,11 @@ class SimpleMonteCarloWorker:
         with self._lock:
             job_ids_to_remove = []
             for job_id, job in self.jobs.items():
-                if (job.status in ["completed", "failed", "cancelled"] and
-                    job.completed_at and
-                    job.completed_at.timestamp() < cutoff_time):
+                if (
+                    job.status in ["completed", "failed", "cancelled"]
+                    and job.completed_at
+                    and job.completed_at.timestamp() < cutoff_time
+                ):
                     job_ids_to_remove.append(job_id)
 
             for job_id in job_ids_to_remove:
@@ -186,7 +193,7 @@ class SimpleMonteCarloWorker:
             "completed": sum(1 for j in jobs if j.status == "completed"),
             "failed": sum(1 for j in jobs if j.status == "failed"),
             "cancelled": sum(1 for j in jobs if j.status == "cancelled"),
-            "max_concurrent_jobs": self.max_concurrent_jobs
+            "max_concurrent_jobs": self.max_concurrent_jobs,
         }
 
         return stats
@@ -220,7 +227,7 @@ class SimpleMonteCarloWorker:
                 parallel_workers=1,  # Single worker to avoid conflicts
                 seed=None,
                 include_equity_envelope=True,
-                progress_callback=progress_callback
+                progress_callback=progress_callback,
             )
 
             # Convert result to dictionary
@@ -257,7 +264,7 @@ class SimpleMonteCarloWorker:
                         "p75": result.metrics_distribution["drawdown"].p75,
                         "p95": result.metrics_distribution["drawdown"].p95,
                     },
-                }
+                },
             }
 
             # Include equity envelope if available
@@ -278,21 +285,28 @@ class SimpleMonteCarloWorker:
                 job.result = result_dict
                 job.completed_at = datetime.now(UTC)
 
-            logger.info(f"Job {job.job_id} completed successfully: {result.successful_runs}/{result.runs} runs")
+            logger.info(
+                f"Job {job.job_id} completed successfully: {result.successful_runs}/{result.runs} runs"
+            )
 
             # Call callback if provided
             if job.callback:
                 try:
                     job.callback(job.job_id, result_dict)
                 except Exception as callback_error:
-                    logger.warning(f"Callback failed for job {job.job_id}: {callback_error}")
+                    logger.warning(
+                        f"Callback failed for job {job.job_id}: {callback_error}"
+                    )
 
         except Exception as e:
             error_msg = f"Job execution failed: {str(e)}"
             logger.error(f"Job {job.job_id} failed: {error_msg}")
             print(f"DEBUG: Worker job {job.job_id} exception: {str(e)}")  # Debug print
             import traceback
-            print(f"DEBUG: Worker job {job.job_id} traceback: {traceback.format_exc()}")  # Debug traceback
+
+            print(
+                f"DEBUG: Worker job {job.job_id} traceback: {traceback.format_exc()}"
+            )  # Debug traceback
 
             # Update job with error
             with self._lock:
@@ -305,7 +319,9 @@ class SimpleMonteCarloWorker:
                 try:
                     job.callback(job.job_id, {"error": error_msg})
                 except Exception as callback_error:
-                    logger.warning(f"Error callback failed for job {job.job_id}: {callback_error}")
+                    logger.warning(
+                        f"Error callback failed for job {job.job_id}: {callback_error}"
+                    )
 
     def shutdown(self):
         """Shutdown the worker and cleanup resources."""
@@ -329,6 +345,7 @@ def get_simple_worker() -> SimpleMonteCarloWorker:
 
 def start_cleanup_task():
     """Start a background task to periodically cleanup old jobs."""
+
     def cleanup_loop():
         while True:
             try:
@@ -339,6 +356,8 @@ def start_cleanup_task():
                 logger.error(f"Cleanup task error: {e}")
                 time.sleep(300)  # Wait 5 minutes on error
 
-    cleanup_thread = threading.Thread(target=cleanup_loop, daemon=True, name="SimpleWorkerCleanup")
+    cleanup_thread = threading.Thread(
+        target=cleanup_loop, daemon=True, name="SimpleWorkerCleanup"
+    )
     cleanup_thread.start()
     logger.info("Started simple worker cleanup task")

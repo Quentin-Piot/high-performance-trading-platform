@@ -30,6 +30,7 @@ DEFAULT_LOG_RECORD_ATTRS = {
     "taskName",
 }
 
+
 class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         display_logger = "uvicorn" if record.name == "uvicorn.error" else record.name
@@ -58,6 +59,7 @@ class JSONFormatter(logging.Formatter):
             payload["context"] = context
 
         return json.dumps(payload, ensure_ascii=False)
+
 
 class ConsoleFormatter(logging.Formatter):
     LEVEL_COLORS = {
@@ -99,9 +101,11 @@ class ConsoleFormatter(logging.Formatter):
         suffix = f" {' '.join(extras)}" if extras else ""
         return f"{prefix}{message}{suffix}"
 
+
 REQUEST_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "request_id", default=None
 )
+
 
 class RequestIdFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -110,6 +114,7 @@ class RequestIdFilter(logging.Filter):
             # Attach request_id to record so formatters include it
             record.request_id = rid
         return True
+
 
 SENSITIVE_KEYS = {
     "authorization",
@@ -130,7 +135,7 @@ SENSITIVE_KEYS = {
     "connection_string",
     "redis_url",
     "smtp_password",
-    "webhook_secret"
+    "webhook_secret",
 }
 
 SENSITIVE_PATTERNS = {
@@ -143,8 +148,9 @@ SENSITIVE_PATTERNS = {
     "aws_access_key_id=",
     "aws_secret_access_key=",
     "arn:aws:iam::",
-    "-----BEGIN"
+    "-----BEGIN",
 }
+
 
 def _redact(value):
     """
@@ -183,12 +189,13 @@ def _redact(value):
         return value
     return value
 
+
 class SecretsFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         # Temporarily disable redaction for debugging
         if os.getenv("DISABLE_LOG_REDACTION", "false").lower() == "true":
             return True
-            
+
         for key in list(getattr(record, "__dict__", {}).keys()):
             if key.lower() in SENSITIVE_KEYS:
                 setattr(record, key, "[REDACTED]")
@@ -200,6 +207,7 @@ class SecretsFilter(logging.Filter):
                 except Exception:
                     setattr(record, key, str(val))
         return True
+
 
 def setup_logging():
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -232,7 +240,9 @@ def setup_logging():
     # Add a file handler if LOG_FILE is set
     log_file = os.getenv("LOG_FILE")
     if log_file:
-        file_handler = RotatingFileHandler(log_file, maxBytes=1024 * 1024 * 5, backupCount=5) # 5 MB per file, 5 backups
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=1024 * 1024 * 5, backupCount=5
+        )  # 5 MB per file, 5 backups
         file_handler.setLevel(level)
         if log_format == "console":
             file_handler.setFormatter(ConsoleFormatter())

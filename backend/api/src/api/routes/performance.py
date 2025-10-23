@@ -4,6 +4,7 @@ Performance monitoring API endpoints.
 This module provides endpoints for monitoring database performance,
 cache statistics, and system metrics.
 """
+
 import logging
 from typing import Any
 
@@ -18,15 +19,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/performance", tags=["performance"])
 
+
 class DatabaseStatsResponse(BaseModel):
     """Response model for database statistics"""
+
     connection_pool: dict[str, Any]
     table_statistics: dict[str, Any]
     slow_queries: list[dict[str, Any]]
     index_usage: list[dict[str, Any]]
 
+
 class CacheStatsResponse(BaseModel):
     """Response model for cache statistics"""
+
     enabled: bool
     connected_clients: int = 0
     used_memory: int = 0
@@ -37,15 +42,18 @@ class CacheStatsResponse(BaseModel):
     uptime_in_seconds: int = 0
     hit_ratio: float = 0.0
 
+
 class PerformanceMetricsResponse(BaseModel):
     """Response model for comprehensive performance metrics"""
+
     database: DatabaseStatsResponse
     cache: CacheStatsResponse
     timestamp: str
 
+
 @router.get("/database", response_model=DatabaseStatsResponse)
 async def get_database_performance(
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ) -> DatabaseStatsResponse:
     """
     Get comprehensive database performance metrics.
@@ -65,17 +73,18 @@ async def get_database_performance(
             connection_pool=pool_status,
             table_statistics=performance_data.get("table_statistics", {}),
             slow_queries=performance_data.get("slow_queries", []),
-            index_usage=performance_data.get("index_usage", [])
+            index_usage=performance_data.get("index_usage", []),
         )
 
     except Exception as e:
-        logger.error("Failed to get database performance metrics", extra={
-            "error": str(e)
-        })
+        logger.error(
+            "Failed to get database performance metrics", extra={"error": str(e)}
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve database performance metrics"
+            detail="Failed to retrieve database performance metrics",
         ) from e
+
 
 @router.get("/cache", response_model=CacheStatsResponse)
 async def get_cache_performance() -> CacheStatsResponse:
@@ -94,12 +103,13 @@ async def get_cache_performance() -> CacheStatsResponse:
         keyspace_misses=0,
         total_commands_processed=0,
         uptime_in_seconds=0,
-        hit_ratio=0.0
+        hit_ratio=0.0,
     )
+
 
 @router.get("/metrics", response_model=PerformanceMetricsResponse)
 async def get_performance_metrics(
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ) -> PerformanceMetricsResponse:
     """
     Get comprehensive performance metrics for database and cache.
@@ -120,22 +130,20 @@ async def get_performance_metrics(
         return PerformanceMetricsResponse(
             database=db_stats,
             cache=cache_stats,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
         )
 
     except Exception as e:
-        logger.error("Failed to get performance metrics", extra={
-            "error": str(e)
-        })
+        logger.error("Failed to get performance metrics", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve performance metrics"
+            detail="Failed to retrieve performance metrics",
         ) from e
+
 
 @router.post("/database/optimize/{table_name}")
 async def optimize_table(
-    table_name: str,
-    session: AsyncSession = Depends(get_session)
+    table_name: str, session: AsyncSession = Depends(get_session)
 ) -> dict[str, Any]:
     """
     Optimize a specific database table.
@@ -152,34 +160,35 @@ async def optimize_table(
         if table_name not in allowed_tables:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Table '{table_name}' is not allowed for optimization"
+                detail=f"Table '{table_name}' is not allowed for optimization",
             )
 
         index_manager = IndexManager(session)
         result = await index_manager.optimize_table(table_name)
 
-        logger.info("Table optimization completed", extra={
-            "table_name": table_name,
-            "success": result.get("success", False)
-        })
+        logger.info(
+            "Table optimization completed",
+            extra={"table_name": table_name, "success": result.get("success", False)},
+        )
 
         return result
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Failed to optimize table", extra={
-            "table_name": table_name,
-            "error": str(e)
-        })
+        logger.error(
+            "Failed to optimize table",
+            extra={"table_name": table_name, "error": str(e)},
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to optimize table '{table_name}'"
+            detail=f"Failed to optimize table '{table_name}'",
         ) from e
+
 
 @router.post("/database/create-indexes")
 async def create_performance_indexes(
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """
     Create performance-optimized database indexes.
@@ -194,26 +203,28 @@ async def create_performance_indexes(
         success_count = sum(1 for success in results.values() if success)
         total_count = len(results)
 
-        logger.info("Performance indexes creation completed", extra={
-            "success_count": success_count,
-            "total_count": total_count,
-            "results": results
-        })
+        logger.info(
+            "Performance indexes creation completed",
+            extra={
+                "success_count": success_count,
+                "total_count": total_count,
+                "results": results,
+            },
+        )
 
         return {
             "success": True,
             "message": f"Created {success_count}/{total_count} indexes successfully",
-            "results": results
+            "results": results,
         }
 
     except Exception as e:
-        logger.error("Failed to create performance indexes", extra={
-            "error": str(e)
-        })
+        logger.error("Failed to create performance indexes", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create performance indexes"
+            detail="Failed to create performance indexes",
         ) from e
+
 
 @router.delete("/cache/clear")
 async def clear_cache() -> dict[str, Any]:
@@ -223,10 +234,8 @@ async def clear_cache() -> dict[str, Any]:
     Returns:
         Cache clearing results (disabled - no cache system)
     """
-    return {
-        "success": False,
-        "message": "Cache system is disabled"
-    }
+    return {"success": False, "message": "Cache system is disabled"}
+
 
 @router.delete("/cache/pattern/{pattern}")
 async def clear_cache_pattern(pattern: str) -> dict[str, Any]:
@@ -239,8 +248,4 @@ async def clear_cache_pattern(pattern: str) -> dict[str, Any]:
     Returns:
         Cache clearing results (disabled - no cache system)
     """
-    return {
-        "success": False,
-        "message": "Cache system is disabled",
-        "pattern": pattern
-    }
+    return {"success": False, "message": "Cache system is disabled", "pattern": pattern}

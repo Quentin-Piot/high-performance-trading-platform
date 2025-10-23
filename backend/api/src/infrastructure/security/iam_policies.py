@@ -4,6 +4,7 @@ IAM Policy definitions for least-privilege access to AWS services.
 This module provides IAM policy templates for different components of the system,
 following the principle of least privilege for security best practices.
 """
+
 import json
 from dataclasses import dataclass
 from typing import Any
@@ -12,6 +13,7 @@ from typing import Any
 @dataclass
 class IAMPolicy:
     """IAM Policy representation"""
+
     version: str = "2012-10-17"
     statements: list[dict[str, Any]] = None
 
@@ -21,17 +23,14 @@ class IAMPolicy:
 
     def to_json(self) -> str:
         """Convert policy to JSON string"""
-        return json.dumps({
-            "Version": self.version,
-            "Statement": self.statements
-        }, indent=2)
+        return json.dumps(
+            {"Version": self.version, "Statement": self.statements}, indent=2
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert policy to dictionary"""
-        return {
-            "Version": self.version,
-            "Statement": self.statements
-        }
+        return {"Version": self.version, "Statement": self.statements}
+
 
 class IAMPolicyBuilder:
     """Builder for creating IAM policies with least-privilege principles"""
@@ -40,7 +39,7 @@ class IAMPolicyBuilder:
     def monte_carlo_worker_policy(
         sqs_queue_arn: str,
         s3_bucket_arn: str,
-        cloudwatch_log_group_arn: str | None = None
+        cloudwatch_log_group_arn: str | None = None,
     ) -> IAMPolicy:
         """
         Create IAM policy for Monte Carlo workers with minimal required permissions.
@@ -62,9 +61,9 @@ class IAMPolicyBuilder:
                     "sqs:ReceiveMessage",
                     "sqs:DeleteMessage",
                     "sqs:ChangeMessageVisibility",
-                    "sqs:GetQueueAttributes"
+                    "sqs:GetQueueAttributes",
                 ],
-                "Resource": sqs_queue_arn
+                "Resource": sqs_queue_arn,
             },
             # S3 permissions for artifact storage (scoped to specific prefix)
             {
@@ -75,17 +74,10 @@ class IAMPolicyBuilder:
                     "s3:PutObjectAcl",
                     "s3:GetObject",
                     "s3:DeleteObject",
-                    "s3:ListBucket"
+                    "s3:ListBucket",
                 ],
-                "Resource": [
-                    s3_bucket_arn,
-                    f"{s3_bucket_arn}/monte-carlo-artifacts/*"
-                ],
-                "Condition": {
-                    "StringLike": {
-                        "s3:prefix": ["monte-carlo-artifacts/*"]
-                    }
-                }
+                "Resource": [s3_bucket_arn, f"{s3_bucket_arn}/monte-carlo-artifacts/*"],
+                "Condition": {"StringLike": {"s3:prefix": ["monte-carlo-artifacts/*"]}},
             },
             # S3 lifecycle management permissions
             {
@@ -93,24 +85,26 @@ class IAMPolicyBuilder:
                 "Effect": "Allow",
                 "Action": [
                     "s3:PutLifecycleConfiguration",
-                    "s3:GetLifecycleConfiguration"
+                    "s3:GetLifecycleConfiguration",
                 ],
-                "Resource": s3_bucket_arn
-            }
+                "Resource": s3_bucket_arn,
+            },
         ]
 
         # Add CloudWatch logging permissions if specified
         if cloudwatch_log_group_arn:
-            statements.append({
-                "Sid": "CloudWatchLogging",
-                "Effect": "Allow",
-                "Action": [
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                    "logs:DescribeLogStreams"
-                ],
-                "Resource": f"{cloudwatch_log_group_arn}:*"
-            })
+            statements.append(
+                {
+                    "Sid": "CloudWatchLogging",
+                    "Effect": "Allow",
+                    "Action": [
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:DescribeLogStreams",
+                    ],
+                    "Resource": f"{cloudwatch_log_group_arn}:*",
+                }
+            )
 
         return IAMPolicy(statements=statements)
 
@@ -118,7 +112,7 @@ class IAMPolicyBuilder:
     def api_server_policy(
         sqs_queue_arn: str,
         s3_bucket_arn: str,
-        cloudwatch_log_group_arn: str | None = None
+        cloudwatch_log_group_arn: str | None = None,
     ) -> IAMPolicy:
         """
         Create IAM policy for API servers with minimal required permissions.
@@ -139,49 +133,40 @@ class IAMPolicyBuilder:
                 "Action": [
                     "sqs:SendMessage",
                     "sqs:GetQueueAttributes",
-                    "sqs:GetQueueUrl"
+                    "sqs:GetQueueUrl",
                 ],
-                "Resource": sqs_queue_arn
+                "Resource": sqs_queue_arn,
             },
             # S3 permissions for artifact access (read-only for completed jobs)
             {
                 "Sid": "S3ArtifactAccess",
                 "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:ListBucket",
-                    "s3:GetObjectVersion"
-                ],
-                "Resource": [
-                    s3_bucket_arn,
-                    f"{s3_bucket_arn}/monte-carlo-artifacts/*"
-                ],
-                "Condition": {
-                    "StringLike": {
-                        "s3:prefix": ["monte-carlo-artifacts/*"]
-                    }
-                }
-            }
+                "Action": ["s3:GetObject", "s3:ListBucket", "s3:GetObjectVersion"],
+                "Resource": [s3_bucket_arn, f"{s3_bucket_arn}/monte-carlo-artifacts/*"],
+                "Condition": {"StringLike": {"s3:prefix": ["monte-carlo-artifacts/*"]}},
+            },
         ]
 
         # Add CloudWatch logging permissions if specified
         if cloudwatch_log_group_arn:
-            statements.append({
-                "Sid": "CloudWatchLogging",
-                "Effect": "Allow",
-                "Action": [
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                    "logs:DescribeLogStreams"
-                ],
-                "Resource": f"{cloudwatch_log_group_arn}:*"
-            })
+            statements.append(
+                {
+                    "Sid": "CloudWatchLogging",
+                    "Effect": "Allow",
+                    "Action": [
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:DescribeLogStreams",
+                    ],
+                    "Resource": f"{cloudwatch_log_group_arn}:*",
+                }
+            )
 
         return IAMPolicy(statements=statements)
 
     @staticmethod
     def monitoring_policy(
-        cloudwatch_namespace: str = "TradingPlatform/MonteCarloJobs"
+        cloudwatch_namespace: str = "TradingPlatform/MonteCarloJobs",
     ) -> IAMPolicy:
         """
         Create IAM policy for monitoring and metrics collection.
@@ -200,33 +185,27 @@ class IAMPolicyBuilder:
                 "Action": [
                     "cloudwatch:PutMetricData",
                     "cloudwatch:GetMetricStatistics",
-                    "cloudwatch:ListMetrics"
+                    "cloudwatch:ListMetrics",
                 ],
                 "Resource": "*",
                 "Condition": {
-                    "StringEquals": {
-                        "cloudwatch:namespace": cloudwatch_namespace
-                    }
-                }
+                    "StringEquals": {"cloudwatch:namespace": cloudwatch_namespace}
+                },
             },
             # CloudWatch alarms (optional)
             {
                 "Sid": "CloudWatchAlarms",
                 "Effect": "Allow",
-                "Action": [
-                    "cloudwatch:DescribeAlarms",
-                    "cloudwatch:PutMetricAlarm"
-                ],
-                "Resource": "*"
-            }
+                "Action": ["cloudwatch:DescribeAlarms", "cloudwatch:PutMetricAlarm"],
+                "Resource": "*",
+            },
         ]
 
         return IAMPolicy(statements=statements)
 
+
 def generate_terraform_policies(
-    sqs_queue_arn: str,
-    s3_bucket_arn: str,
-    cloudwatch_log_group_arn: str | None = None
+    sqs_queue_arn: str, s3_bucket_arn: str, cloudwatch_log_group_arn: str | None = None
 ) -> dict[str, str]:
     """
     Generate Terraform-compatible IAM policy documents.
@@ -248,8 +227,9 @@ def generate_terraform_policies(
         "api_server_policy": builder.api_server_policy(
             sqs_queue_arn, s3_bucket_arn, cloudwatch_log_group_arn
         ).to_json(),
-        "monitoring_policy": builder.monitoring_policy().to_json()
+        "monitoring_policy": builder.monitoring_policy().to_json(),
     }
+
 
 def validate_policy_permissions(policy: IAMPolicy, required_actions: list[str]) -> bool:
     """

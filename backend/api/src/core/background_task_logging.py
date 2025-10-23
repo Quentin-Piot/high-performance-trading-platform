@@ -5,6 +5,7 @@ This module provides specialized logging decorators and utilities for tracking
 background tasks, WebSocket connections, and async operations with proper
 error handling and structured logging.
 """
+
 import asyncio
 import contextvars
 import functools
@@ -17,13 +18,20 @@ from datetime import UTC, datetime
 from typing import Any, TypeVar
 
 # Context variables for tracking background tasks
-TASK_ID: contextvars.ContextVar[str] = contextvars.ContextVar("task_id", default="unknown")
-WEBSOCKET_ID: contextvars.ContextVar[str] = contextvars.ContextVar("websocket_id", default="unknown")
-JOB_ID: contextvars.ContextVar[str] = contextvars.ContextVar("job_id", default="unknown")
+TASK_ID: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "task_id", default="unknown"
+)
+WEBSOCKET_ID: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "websocket_id", default="unknown"
+)
+JOB_ID: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "job_id", default="unknown"
+)
 
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 logger = logging.getLogger(__name__)
+
 
 class BackgroundTaskFilter(logging.Filter):
     """Filter to add background task context to log records"""
@@ -35,11 +43,12 @@ class BackgroundTaskFilter(logging.Filter):
         record.job_id = JOB_ID.get("unknown")
         return True
 
+
 def log_background_task(
     task_name: str,
     include_args: bool = False,
     include_result: bool = False,
-    log_level: int = logging.INFO
+    log_level: int = logging.INFO,
 ):
     """
     Decorator for logging background tasks with comprehensive error handling.
@@ -50,6 +59,7 @@ def log_background_task(
         include_result: Whether to log function result
         log_level: Logging level for success messages
     """
+
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -70,11 +80,15 @@ def log_background_task(
 
             if include_args and (args or kwargs):
                 log_data["args"] = {
-                    "positional": [str(arg)[:100] for arg in args],  # Truncate long args
-                    "keyword": {k: str(v)[:100] for k, v in kwargs.items()}
+                    "positional": [
+                        str(arg)[:100] for arg in args
+                    ],  # Truncate long args
+                    "keyword": {k: str(v)[:100] for k, v in kwargs.items()},
                 }
 
-            logger.log(log_level, f"Background task started: {task_name}", extra=log_data)
+            logger.log(
+                log_level, f"Background task started: {task_name}", extra=log_data
+            )
 
             try:
                 result = await func(*args, **kwargs)
@@ -84,13 +98,19 @@ def log_background_task(
                 completion_data = {
                     **log_data,
                     "duration_seconds": round(duration, 3),
-                    "status": "completed"
+                    "status": "completed",
                 }
 
                 if include_result and result is not None:
-                    completion_data["result"] = str(result)[:200]  # Truncate long results
+                    completion_data["result"] = str(result)[
+                        :200
+                    ]  # Truncate long results
 
-                logger.log(log_level, f"Background task completed: {task_name}", extra=completion_data)
+                logger.log(
+                    log_level,
+                    f"Background task completed: {task_name}",
+                    extra=completion_data,
+                )
                 return result
 
             except asyncio.CancelledError:
@@ -101,8 +121,8 @@ def log_background_task(
                     extra={
                         **log_data,
                         "duration_seconds": round(duration, 3),
-                        "status": "cancelled"
-                    }
+                        "status": "cancelled",
+                    },
                 )
                 raise
 
@@ -115,7 +135,7 @@ def log_background_task(
                     "status": "failed",
                     "error_type": type(e).__name__,
                     "error_message": str(e),
-                    "traceback": traceback.format_exc()
+                    "traceback": traceback.format_exc(),
                 }
 
                 logger.error(f"Background task failed: {task_name}", extra=error_data)
@@ -144,7 +164,7 @@ def log_background_task(
             if include_args and (args or kwargs):
                 log_data["args"] = {
                     "positional": [str(arg)[:100] for arg in args],
-                    "keyword": {k: str(v)[:100] for k, v in kwargs.items()}
+                    "keyword": {k: str(v)[:100] for k, v in kwargs.items()},
                 }
 
             logger.log(log_level, f"Task started: {task_name}", extra=log_data)
@@ -156,13 +176,15 @@ def log_background_task(
                 completion_data = {
                     **log_data,
                     "duration_seconds": round(duration, 3),
-                    "status": "completed"
+                    "status": "completed",
                 }
 
                 if include_result and result is not None:
                     completion_data["result"] = str(result)[:200]
 
-                logger.log(log_level, f"Task completed: {task_name}", extra=completion_data)
+                logger.log(
+                    log_level, f"Task completed: {task_name}", extra=completion_data
+                )
                 return result
 
             except Exception as e:
@@ -173,7 +195,7 @@ def log_background_task(
                     "status": "failed",
                     "error_type": type(e).__name__,
                     "error_message": str(e),
-                    "traceback": traceback.format_exc()
+                    "traceback": traceback.format_exc(),
                 }
 
                 logger.error(f"Task failed: {task_name}", extra=error_data)
@@ -190,6 +212,7 @@ def log_background_task(
 
     return decorator
 
+
 def log_websocket_connection(connection_name: str):
     """
     Decorator for logging WebSocket connection lifecycle.
@@ -197,6 +220,7 @@ def log_websocket_connection(connection_name: str):
     Args:
         connection_name: Name of the WebSocket connection for logging
     """
+
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -207,7 +231,7 @@ def log_websocket_connection(connection_name: str):
             start_time = time.time()
 
             # Extract job_id if available from kwargs
-            job_id = kwargs.get('job_id', 'unknown')
+            job_id = kwargs.get("job_id", "unknown")
             job_token = JOB_ID.set(job_id)
 
             log_data = {
@@ -218,7 +242,9 @@ def log_websocket_connection(connection_name: str):
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
-            logger.info(f"WebSocket connection started: {connection_name}", extra=log_data)
+            logger.info(
+                f"WebSocket connection started: {connection_name}", extra=log_data
+            )
 
             try:
                 result = await func(*args, **kwargs)
@@ -229,8 +255,8 @@ def log_websocket_connection(connection_name: str):
                     extra={
                         **log_data,
                         "duration_seconds": round(duration, 3),
-                        "status": "completed"
-                    }
+                        "status": "completed",
+                    },
                 )
                 return result
 
@@ -241,8 +267,8 @@ def log_websocket_connection(connection_name: str):
                     extra={
                         **log_data,
                         "duration_seconds": round(duration, 3),
-                        "status": "cancelled"
-                    }
+                        "status": "cancelled",
+                    },
                 )
                 raise
 
@@ -256,8 +282,8 @@ def log_websocket_connection(connection_name: str):
                         "status": "failed",
                         "error_type": type(e).__name__,
                         "error_message": str(e),
-                        "traceback": traceback.format_exc()
-                    }
+                        "traceback": traceback.format_exc(),
+                    },
                 )
                 raise
 
@@ -266,13 +292,15 @@ def log_websocket_connection(connection_name: str):
                 JOB_ID.reset(job_token)
 
         return wrapper
+
     return decorator
+
 
 @asynccontextmanager
 async def log_async_operation(
     operation_name: str,
     logger_name: str | None = None,
-    extra_context: dict[str, Any] | None = None
+    extra_context: dict[str, Any] | None = None,
 ):
     """
     Context manager for logging async operations with timing and error handling.
@@ -284,8 +312,9 @@ async def log_async_operation(
     """
     if logger_name is None:
         import inspect
+
         frame = inspect.currentframe().f_back
-        logger_name = frame.f_globals.get('__name__', 'unknown')
+        logger_name = frame.f_globals.get("__name__", "unknown")
 
     logger = logging.getLogger(logger_name)
     start_time = time.time()
@@ -311,8 +340,8 @@ async def log_async_operation(
             extra={
                 **log_data,
                 "duration_seconds": round(duration, 3),
-                "status": "completed"
-            }
+                "status": "completed",
+            },
         )
 
     except Exception as e:
@@ -325,10 +354,11 @@ async def log_async_operation(
                 "status": "failed",
                 "error_type": type(e).__name__,
                 "error_message": str(e),
-                "traceback": traceback.format_exc()
-            }
+                "traceback": traceback.format_exc(),
+            },
         )
         raise
+
 
 def setup_background_task_logging():
     """
@@ -352,10 +382,9 @@ def setup_background_task_logging():
 
     logger.info("Background task logging setup completed")
 
+
 def create_safe_background_task(
-    coro,
-    name: str | None = None,
-    logger_name: str | None = None
+    coro, name: str | None = None, logger_name: str | None = None
 ) -> asyncio.Task:
     """
     Create a background task with comprehensive error handling and logging.
@@ -370,8 +399,9 @@ def create_safe_background_task(
     """
     if logger_name is None:
         import inspect
+
         frame = inspect.currentframe().f_back
-        logger_name = frame.f_globals.get('__name__', 'background_task')
+        logger_name = frame.f_globals.get("__name__", "background_task")
 
     task_logger = logging.getLogger(logger_name)
 
@@ -387,8 +417,8 @@ def create_safe_background_task(
                 extra={
                     "error_type": type(e).__name__,
                     "error_message": str(e),
-                    "traceback": traceback.format_exc()
-                }
+                    "traceback": traceback.format_exc(),
+                },
             )
             # Don't re-raise to prevent task from dying silently
 

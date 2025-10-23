@@ -4,18 +4,16 @@ Load testing for performance optimizations.
 This module contains tests that simulate high load scenarios to validate
 the performance improvements implemented in the caching and database layers.
 """
+
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-
-
-
 
 
 class TestDatabasePerformance:
@@ -30,8 +28,15 @@ class TestDatabasePerformance:
         async def mock_execute_fast(query):
             await asyncio.sleep(0.01)  # 10ms for indexed query
             result = AsyncMock()
-            result.scalar_one_or_none.return_value = {"id": "test", "status": "completed"}
-            result.fetchall.return_value = [("pending", 5), ("processing", 3), ("completed", 10)]
+            result.scalar_one_or_none.return_value = {
+                "id": "test",
+                "status": "completed",
+            }
+            result.fetchall.return_value = [
+                ("pending", 5),
+                ("processing", 3),
+                ("completed", 10),
+            ]
             return result
 
         session.execute = AsyncMock(side_effect=mock_execute_fast)
@@ -100,14 +105,16 @@ class TestAPIPerformance:
 
         # Most requests should either succeed (200) or fail gracefully (500)
         # None should timeout or cause server crashes
-        valid_responses = [r for r in results if isinstance(r, int) and r in [200, 404, 500]]
+        valid_responses = [
+            r for r in results if isinstance(r, int) and r in [200, 404, 500]
+        ]
         assert len(valid_responses) >= 40  # At least 80% should be valid HTTP responses
 
         # Should handle 50 concurrent requests reasonably quickly
         assert execution_time < 30.0  # Should complete within 30 seconds
 
         print(f"Processed 50 concurrent requests in {execution_time:.2f} seconds")
-        print(f"Average response time: {execution_time/50:.3f} seconds per request")
+        print(f"Average response time: {execution_time / 50:.3f} seconds per request")
 
 
 class TestMemoryUsage:

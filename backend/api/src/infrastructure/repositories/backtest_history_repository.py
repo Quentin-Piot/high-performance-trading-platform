@@ -1,6 +1,7 @@
 """
 Repository for backtest history management.
 """
+
 from datetime import datetime
 from typing import Any
 
@@ -29,7 +30,7 @@ class BacktestHistoryRepository:
         sample_fraction: float | None = None,
         gaussian_scale: float | None = None,
         datasets_used: list[str] | None = None,
-        price_type: str = "close"
+        price_type: str = "close",
     ) -> BacktestHistory:
         """Create a new backtest history entry."""
         history = BacktestHistory(
@@ -45,7 +46,7 @@ class BacktestHistoryRepository:
             gaussian_scale=gaussian_scale,
             datasets_used=datasets_used or [],
             price_type=price_type,
-            status="running"
+            status="running",
         )
 
         self.session.add(history)
@@ -63,7 +64,7 @@ class BacktestHistoryRepository:
         total_trades: int | None = None,
         execution_time_seconds: float | None = None,
         status: str = "completed",
-        error_message: str | None = None
+        error_message: str | None = None,
     ) -> BacktestHistory | None:
         """Update backtest results."""
         result = await self.session.execute(
@@ -103,7 +104,7 @@ class BacktestHistoryRepository:
         user_id: int,
         limit: int = 50,
         offset: int = 0,
-        strategy_filter: str | None = None
+        strategy_filter: str | None = None,
     ) -> list[BacktestHistory]:
         """Get user's backtest history with optional filtering."""
         query = select(BacktestHistory).where(BacktestHistory.user_id == user_id)
@@ -111,12 +112,16 @@ class BacktestHistoryRepository:
         if strategy_filter:
             query = query.where(BacktestHistory.strategy == strategy_filter)
 
-        query = query.order_by(desc(BacktestHistory.created_at)).limit(limit).offset(offset)
+        query = (
+            query.order_by(desc(BacktestHistory.created_at)).limit(limit).offset(offset)
+        )
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_id(self, history_id: int, user_id: int | None = None) -> BacktestHistory | None:
+    async def get_by_id(
+        self, history_id: int, user_id: int | None = None
+    ) -> BacktestHistory | None:
         """Get backtest history by ID, optionally filtered by user."""
         query = select(BacktestHistory).where(BacktestHistory.id == history_id)
 
@@ -133,7 +138,7 @@ class BacktestHistoryRepository:
             select(BacktestHistory).where(
                 and_(
                     BacktestHistory.user_id == user_id,
-                    BacktestHistory.status == "completed"
+                    BacktestHistory.status == "completed",
                 )
             )
         )
@@ -147,7 +152,7 @@ class BacktestHistoryRepository:
                 "best_return": None,
                 "worst_return": None,
                 "avg_sharpe": None,
-                "total_monte_carlo_runs": 0
+                "total_monte_carlo_runs": 0,
             }
 
         # Calculate statistics
@@ -163,7 +168,7 @@ class BacktestHistoryRepository:
             "best_return": max(returns) if returns else None,
             "worst_return": min(returns) if returns else None,
             "avg_sharpe": sum(sharpes) / len(sharpes) if sharpes else None,
-            "total_monte_carlo_runs": total_mc_runs
+            "total_monte_carlo_runs": total_mc_runs,
         }
 
     async def delete_history(self, history_id: int, user_id: int) -> bool:
@@ -171,8 +176,7 @@ class BacktestHistoryRepository:
         result = await self.session.execute(
             select(BacktestHistory).where(
                 and_(
-                    BacktestHistory.id == history_id,
-                    BacktestHistory.user_id == user_id
+                    BacktestHistory.id == history_id, BacktestHistory.user_id == user_id
                 )
             )
         )

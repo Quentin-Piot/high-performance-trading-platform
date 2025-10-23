@@ -4,6 +4,7 @@ Monte Carlo Backtesting Service
 Provides data perturbation methods and orchestration for running multiple
 backtest simulations with statistical analysis.
 """
+
 from __future__ import annotations
 
 import logging
@@ -31,19 +32,24 @@ logger = logging.getLogger("services.mc_backtest")
 MAX_MONTE_CARLO_RUNS = int(os.getenv("MAX_MONTE_CARLO_RUNS", "20000"))
 DEFAULT_PARALLEL_WORKERS = os.cpu_count() or 1
 
+
 @dataclass
 class MonteCarloResult:
     """Results from a single Monte Carlo run"""
+
     pnl: float
     sharpe: float
     drawdown: float
     equity_curve: pd.Series | None = None
 
+
 # Types supprimés - utiliser les définitions dans domain.schemas.backtest
+
 
 @dataclass
 class MonteCarloSummary:
     """Summary of Monte Carlo simulation results"""
+
     filename: str
     method: str
     runs: int
@@ -51,7 +57,10 @@ class MonteCarloSummary:
     metrics_distribution: dict[str, MetricsDistribution]
     equity_envelope: EquityEnvelope | None = None
 
-def bootstrap_returns_to_prices(prices: pd.Series, sample_fraction: float = 1.0, rng: Generator = None) -> pd.Series:
+
+def bootstrap_returns_to_prices(
+    prices: pd.Series, sample_fraction: float = 1.0, rng: Generator = None
+) -> pd.Series:
     """
     Bootstrap method: resample returns with replacement and reconstruct prices.
 
@@ -84,7 +93,10 @@ def bootstrap_returns_to_prices(prices: pd.Series, sample_fraction: float = 1.0,
     else:
         return pd.Series(synthetic_prices)
 
-def gaussian_noise_returns_to_prices(prices: pd.Series, scale: float = 1.0, rng: Generator = None) -> pd.Series:
+
+def gaussian_noise_returns_to_prices(
+    prices: pd.Series, scale: float = 1.0, rng: Generator = None
+) -> pd.Series:
     """
     Gaussian noise method: add noise to returns and reconstruct prices.
 
@@ -114,6 +126,7 @@ def gaussian_noise_returns_to_prices(prices: pd.Series, scale: float = 1.0, rng:
 
     return pd.Series(synthetic_prices, index=prices.index)
 
+
 def monte_carlo_worker(args) -> MonteCarloResult | None:
     """
     Worker function for Monte Carlo simulation.
@@ -126,7 +139,10 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
         MonteCarloResult or None if failed
     """
     # Logging must be configured within the worker process
-    logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
     logger = logging.getLogger("services.mc_backtest_worker")
 
     try:
@@ -142,10 +158,25 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
             price_type = args.get("price_type", "close")
         else:
             if len(args) >= 7:
-                csv_data, strategy_name, strategy_params, method, method_params, seed, price_type = args
+                (
+                    csv_data,
+                    strategy_name,
+                    strategy_params,
+                    method,
+                    method_params,
+                    seed,
+                    price_type,
+                ) = args
             else:
                 # Backward compatibility
-                csv_data, strategy_name, strategy_params, method, method_params, seed = args
+                (
+                    csv_data,
+                    strategy_name,
+                    strategy_params,
+                    method,
+                    method_params,
+                    seed,
+                ) = args
                 price_type = "close"
             df = None
 
@@ -166,13 +197,11 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
             synthetic_prices = bootstrap_returns_to_prices(
                 original_prices,
                 sample_fraction=method_params.get("sample_fraction", 1.0),
-                rng=rng
+                rng=rng,
             )
         elif method == "gaussian":
             synthetic_prices = gaussian_noise_returns_to_prices(
-                original_prices,
-                scale=method_params.get("gaussian_scale", 1.0),
-                rng=rng
+                original_prices, scale=method_params.get("gaussian_scale", 1.0), rng=rng
             )
         else:
             raise ValueError(f"Unknown method: {method}")
@@ -181,15 +210,21 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
         synthetic_df = pd.DataFrame({"close": synthetic_prices})
 
         # Add date column if original data had dates
-        if hasattr(synthetic_prices, 'index') and hasattr(synthetic_prices.index, 'to_pydatetime'):
+        if hasattr(synthetic_prices, "index") and hasattr(
+            synthetic_prices.index, "to_pydatetime"
+        ):
             try:
                 synthetic_df["date"] = synthetic_prices.index
             except Exception:
                 # If date conversion fails, create a simple date range
-                synthetic_df["date"] = pd.date_range(start='2023-01-01', periods=len(synthetic_prices), freq='D')
+                synthetic_df["date"] = pd.date_range(
+                    start="2023-01-01", periods=len(synthetic_prices), freq="D"
+                )
         else:
             # Create a simple date range if no date index exists
-            synthetic_df["date"] = pd.date_range(start='2023-01-01', periods=len(synthetic_prices), freq='D')
+            synthetic_df["date"] = pd.date_range(
+                start="2023-01-01", periods=len(synthetic_prices), freq="D"
+            )
 
         # Convert back to CSV bytes
         csv_buffer = synthetic_df.to_csv(index=False).encode()
@@ -198,23 +233,25 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
         # Run strategy on synthetic data
         if strategy_name == "sma_crossover":
             # Support both parameter naming conventions
-            sma_short = strategy_params.get("sma_short") or strategy_params.get("short_window")
-            sma_long = strategy_params.get("sma_long") or strategy_params.get("long_window")
+            sma_short = strategy_params.get("sma_short") or strategy_params.get(
+                "short_window"
+            )
+            sma_long = strategy_params.get("sma_long") or strategy_params.get(
+                "long_window"
+            )
 
             if sma_short is None or sma_long is None:
-                raise ValueError(f"Missing SMA parameters. Expected 'sma_short'/'sma_long' or 'short_window'/'long_window', got: {list(strategy_params.keys())}")
+                raise ValueError(
+                    f"Missing SMA parameters. Expected 'sma_short'/'sma_long' or 'short_window'/'long_window', got: {list(strategy_params.keys())}"
+                )
 
-            result = run_sma_crossover(
-                synthetic_source,
-                sma_short,
-                sma_long
-            )
+            result = run_sma_crossover(synthetic_source, sma_short, sma_long)
         elif strategy_name == "rsi":
             result = run_rsi(
                 synthetic_source,
                 strategy_params["period"],
                 strategy_params["overbought"],
-                strategy_params["oversold"]
+                strategy_params["oversold"],
             )
         elif strategy_name == "dummy":
             # Dummy strategy for testing
@@ -225,7 +262,7 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
                 equity=pd.Series([1.0]),
                 trades=[],
                 metrics={},
-                plot_html=None
+                plot_html=None,
             )
         else:
             raise ValueError(f"Unknown strategy: {strategy_name}")
@@ -234,17 +271,21 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
             pnl=result.pnl,
             sharpe=result.sharpe,
             drawdown=result.drawdown,
-            equity_curve=result.equity
+            equity_curve=result.equity,
         )
 
     except Exception as e:
         logger.error(f"Monte Carlo worker failed: {str(e)}", exc_info=True)
         print(f"DEBUG: Monte Carlo worker exception: {str(e)}")  # Debug print
         import traceback
+
         print(f"DEBUG: Full traceback: {traceback.format_exc()}")  # Debug traceback
         return None
 
-def compute_equity_envelope(equity_curves: list[pd.Series], timestamps: list[str]) -> EquityEnvelope:
+
+def compute_equity_envelope(
+    equity_curves: list[pd.Series], timestamps: list[str]
+) -> EquityEnvelope:
     """
     Compute equity envelope with percentiles from multiple equity curves.
 
@@ -257,12 +298,7 @@ def compute_equity_envelope(equity_curves: list[pd.Series], timestamps: list[str
     """
     if not equity_curves:
         return EquityEnvelope(
-            timestamps=timestamps,
-            p5=[],
-            p25=[],
-            median=[],
-            p75=[],
-            p95=[]
+            timestamps=timestamps, p5=[], p25=[], median=[], p75=[], p95=[]
         )
 
     # Align all curves to same length and compute percentiles
@@ -276,8 +312,9 @@ def compute_equity_envelope(equity_curves: list[pd.Series], timestamps: list[str
         p25=np.percentile(equity_matrix, 25, axis=0).tolist(),
         median=np.percentile(equity_matrix, 50, axis=0).tolist(),
         p75=np.percentile(equity_matrix, 75, axis=0).tolist(),
-        p95=np.percentile(equity_matrix, 95, axis=0).tolist()
+        p95=np.percentile(equity_matrix, 95, axis=0).tolist(),
     )
+
 
 def run_monte_carlo_on_df(
     csv_data: bytes,
@@ -297,7 +334,9 @@ def run_monte_carlo_on_df(
     Run Monte Carlo simulation on CSV data with enhanced progress reporting.
     """
     if runs > MAX_MONTE_CARLO_RUNS:
-        raise ValueError(f"Number of runs ({runs}) exceeds maximum allowed ({MAX_MONTE_CARLO_RUNS})")
+        raise ValueError(
+            f"Number of runs ({runs}) exceeds maximum allowed ({MAX_MONTE_CARLO_RUNS})"
+        )
 
     if method_params is None:
         method_params = {}
@@ -312,7 +351,17 @@ def run_monte_carlo_on_df(
     rng = default_rng(seed)
     for _i in range(runs):
         worker_seed = rng.integers(0, 2**32 - 1)
-        worker_args.append((csv_data, strategy_name, strategy_params, method, method_params, worker_seed, price_type))
+        worker_args.append(
+            (
+                csv_data,
+                strategy_name,
+                strategy_params,
+                method,
+                method_params,
+                worker_seed,
+                price_type,
+            )
+        )
 
     results = []
     successful_runs = 0
@@ -342,9 +391,9 @@ def run_monte_carlo_on_df(
             progress_delta = current_progress - last_reported_progress
 
             should_update = (
-                time_elapsed >= 0.5 or  # Every 500ms minimum
-                progress_delta >= 0.05 or  # Every 5% progress
-                completed_runs == runs  # Final update
+                time_elapsed >= 0.5  # Every 500ms minimum
+                or progress_delta >= 0.05  # Every 5% progress
+                or completed_runs == runs  # Final update
             )
 
             if should_update and progress_callback:
@@ -357,7 +406,10 @@ def run_monte_carlo_on_df(
         logger.info(f"Using {parallel_workers} parallel workers")
         try:
             with ProcessPoolExecutor(max_workers=parallel_workers) as executor:
-                future_to_idx = {executor.submit(monte_carlo_worker, args): i for i, args in enumerate(worker_args)}
+                future_to_idx = {
+                    executor.submit(monte_carlo_worker, args): i
+                    for i, args in enumerate(worker_args)
+                }
 
                 for future in as_completed(future_to_idx):
                     result = future.result()
@@ -400,13 +452,13 @@ def run_monte_carlo_on_df(
             p25=float(np.percentile(arr, 25)),
             median=float(np.percentile(arr, 50)),
             p75=float(np.percentile(arr, 75)),
-            p95=float(np.percentile(arr, 95))
+            p95=float(np.percentile(arr, 95)),
         )
 
     metrics_distribution = {
         "pnl": create_metrics_distribution(pnl_values),
         "sharpe": create_metrics_distribution(sharpe_values),
-        "drawdown": create_metrics_distribution(drawdown_values)
+        "drawdown": create_metrics_distribution(drawdown_values),
     }
 
     # Compute equity envelope if requested and we have equity curves
@@ -416,8 +468,8 @@ def run_monte_carlo_on_df(
         if equity_curves:
             # Use first curve's index for timestamps
             first_curve = equity_curves[0]
-            if hasattr(first_curve.index, 'strftime'):
-                timestamps = [t.strftime('%Y-%m-%d') for t in first_curve.index]
+            if hasattr(first_curve.index, "strftime"):
+                timestamps = [t.strftime("%Y-%m-%d") for t in first_curve.index]
             else:
                 timestamps = [str(i) for i in range(len(first_curve))]
 
@@ -429,8 +481,9 @@ def run_monte_carlo_on_df(
         runs=runs,
         successful_runs=successful_runs,
         metrics_distribution=metrics_distribution,
-        equity_envelope=equity_envelope
+        equity_envelope=equity_envelope,
     )
+
 
 class ProgressPublisher:
     """Simple progress publisher for logging or future SSE integration"""
@@ -441,9 +494,13 @@ class ProgressPublisher:
     def publish_progress(self, processed: int, total: int, filename: str = ""):
         """Publish progress update"""
         percentage = (processed / total) * 100 if total > 0 else 0
-        self.logger.info(f"Progress {filename}: {processed}/{total} ({percentage:.1f}%)")
+        self.logger.info(
+            f"Progress {filename}: {processed}/{total} ({percentage:.1f}%)"
+        )
 
     def publish_completion(self, summary: MonteCarloSummary):
         """Publish completion summary"""
-        self.logger.info(f"Completed Monte Carlo for {summary.filename}: "
-                        f"{summary.successful_runs}/{summary.runs} successful runs")
+        self.logger.info(
+            f"Completed Monte Carlo for {summary.filename}: "
+            f"{summary.successful_runs}/{summary.runs} successful runs"
+        )

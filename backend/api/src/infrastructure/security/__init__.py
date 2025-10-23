@@ -17,5 +17,5 @@ __all__ = [
     "validate_policy_permissions",
     "CredentialManager",
     "AWSCredentials",
-    "CredentialSource"
+    "CredentialSource",
 ]

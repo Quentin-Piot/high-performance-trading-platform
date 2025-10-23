@@ -29,12 +29,19 @@ from services.backtest_service import (
 
 router = APIRouter(tags=["backtest"])  # no internal prefix; main adds versioned prefix
 
+
 @router.get("/backtest", response_model=BacktestResponse)
 async def backtest_get(
     # Dataset parameters (required for GET)
-    symbol: str = Query(..., description="Symbol to use from local datasets (e.g., AAPL, AMZN)"),
-    start_date: str = Query(..., description="Start date for dataset filtering (YYYY-MM-DD)"),
-    end_date: str = Query(..., description="End date for dataset filtering (YYYY-MM-DD)"),
+    symbol: str = Query(
+        ..., description="Symbol to use from local datasets (e.g., AAPL, AMZN)"
+    ),
+    start_date: str = Query(
+        ..., description="Start date for dataset filtering (YYYY-MM-DD)"
+    ),
+    end_date: str = Query(
+        ..., description="End date for dataset filtering (YYYY-MM-DD)"
+    ),
     strategy: str = Query(
         "sma_crossover",
         description="Strategy name (e.g., sma_crossover, rsi)",
@@ -81,19 +88,20 @@ async def backtest_get(
     if symbol_lower not in symbol_to_file:
         raise HTTPException(
             status_code=400,
-            detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}"
+            detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
         )
 
     # Load and filter dataset
     # Use relative path that works in both dev and prod
-    current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Go up to src/
+    current_dir = os.path.dirname(
+        os.path.dirname(os.path.dirname(__file__))
+    )  # Go up to src/
     datasets_path = os.path.join(current_dir, "datasets")
     csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
 
     if not os.path.exists(csv_file_path):
         raise HTTPException(
-            status_code=404,
-            detail=f"Dataset file not found for symbol {symbol}"
+            status_code=404, detail=f"Dataset file not found for symbol {symbol}"
         )
 
     # Read and filter data by date range
@@ -106,12 +114,12 @@ async def backtest_get(
         # Parse date parameters
         try:
             from datetime import datetime
+
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             end_dt = datetime.strptime(end_date, "%Y-%m-%d")
         except ValueError as e:
             raise HTTPException(
-                status_code=422,
-                detail="Invalid date format. Use YYYY-MM-DD"
+                status_code=422, detail="Invalid date format. Use YYYY-MM-DD"
             ) from e
 
         # Filter by date range
@@ -121,7 +129,7 @@ async def backtest_get(
         if df.empty:
             raise HTTPException(
                 status_code=400,
-                detail=f"No data available for {symbol} in the specified date range"
+                detail=f"No data available for {symbol} in the specified date range",
             )
 
     # Convert filtered DataFrame to CSV bytes and create mock UploadFile
@@ -178,12 +186,20 @@ async def backtest_get(
         include_aggregated=include_aggregated,
         price_type=price_type,
     )
+
+
 @router.post("/backtest", response_model=BacktestResponse)
 async def backtest_post(
     # Dataset parameters (alternative to CSV upload)
-    symbol: str | None = Query(None, description="Symbol to use from local datasets (e.g., AAPL, AMZN)"),
-    start_date: str | None = Query(None, description="Start date for dataset filtering (YYYY-MM-DD)"),
-    end_date: str | None = Query(None, description="End date for dataset filtering (YYYY-MM-DD)"),
+    symbol: str | None = Query(
+        None, description="Symbol to use from local datasets (e.g., AAPL, AMZN)"
+    ),
+    start_date: str | None = Query(
+        None, description="Start date for dataset filtering (YYYY-MM-DD)"
+    ),
+    end_date: str | None = Query(
+        None, description="End date for dataset filtering (YYYY-MM-DD)"
+    ),
     strategy: str = Query(
         "sma_crossover",
         description="Strategy name (e.g., sma_crossover, rsi)",
@@ -239,20 +255,22 @@ async def backtest_post(
         if symbol_lower not in symbol_to_file:
             raise HTTPException(
                 status_code=400,
-                detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}"
+                detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
             )
 
         # Load and filter dataset
         # Use relative path that works in both dev and prod
         import os
-        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Go up to src/
+
+        current_dir = os.path.dirname(
+            os.path.dirname(os.path.dirname(__file__))
+        )  # Go up to src/
         datasets_path = os.path.join(current_dir, "datasets")
         csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
 
         if not os.path.exists(csv_file_path):
             raise HTTPException(
-                status_code=404,
-                detail=f"Dataset file not found for symbol {symbol}"
+                status_code=404, detail=f"Dataset file not found for symbol {symbol}"
             )
 
         # Read and filter data by date range
@@ -265,12 +283,12 @@ async def backtest_post(
             # Parse date parameters
             try:
                 from datetime import datetime
+
                 start_dt = datetime.strptime(start_date, "%Y-%m-%d")
                 end_dt = datetime.strptime(end_date, "%Y-%m-%d")
             except ValueError as e:
                 raise HTTPException(
-                    status_code=422,
-                    detail="Invalid date format. Use YYYY-MM-DD"
+                    status_code=422, detail="Invalid date format. Use YYYY-MM-DD"
                 ) from e
 
             # Filter data by date range
@@ -280,7 +298,7 @@ async def backtest_post(
             if df.empty:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"No data available for {symbol} in the specified date range"
+                    detail=f"No data available for {symbol} in the specified date range",
                 )
 
         # Convert filtered DataFrame to CSV bytes and create mock UploadFile
@@ -301,16 +319,18 @@ async def backtest_post(
             def seek(self, offset: int) -> None:
                 self._file.seek(offset)
 
-        mock_file = MockUploadFile(csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv")
+        mock_file = MockUploadFile(
+            csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
+        )
         files = [mock_file]
 
     elif csv:
-         # Use uploaded files - csv is now always a list
-         files = csv
+        # Use uploaded files - csv is now always a list
+        files = csv
     else:
         raise HTTPException(
             status_code=422,
-            detail="Either csv file(s) or symbol with start_date and end_date must be provided"
+            detail="Either csv file(s) or symbol with start_date and end_date must be provided",
         )
 
     # Validate file count
@@ -338,7 +358,6 @@ async def backtest_post(
             )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
-
 
     print("Calling run_regular_backtest")
     result = await run_regular_backtest(
@@ -371,19 +390,21 @@ async def backtest_post(
                 if symbol:
                     datasets_used = [symbol.upper()]
                 elif csv:
-                    datasets_used = [f.filename or f"file_{i+1}.csv" for i, f in enumerate(csv)]
+                    datasets_used = [
+                        f.filename or f"file_{i + 1}.csv" for i, f in enumerate(csv)
+                    ]
 
                 # Extract results for history
                 total_return = None
                 sharpe_ratio = None
                 max_drawdown = None
 
-                if hasattr(result, 'pnl'):
+                if hasattr(result, "pnl"):
                     # Single backtest result
                     total_return = float(result.pnl)
                     sharpe_ratio = float(result.sharpe)
                     max_drawdown = float(result.drawdown)
-                elif hasattr(result, 'results') and result.results:
+                elif hasattr(result, "results") and result.results:
                     # Multiple backtest results - use first result or average
                     first_result = result.results[0]
                     total_return = float(first_result.pnl)
@@ -416,7 +437,7 @@ async def backtest_post(
                         total_return=total_return,
                         sharpe_ratio=sharpe_ratio,
                         max_drawdown=max_drawdown,
-                        status="completed"
+                        status="completed",
                     )
 
         except Exception as e:
@@ -424,6 +445,7 @@ async def backtest_post(
             print(f"Warning: Failed to save backtest to history: {str(e)}")
 
     return result
+
 
 async def run_regular_backtest(
     files: list[UploadFile],

@@ -26,6 +26,7 @@ load_dotenv()
 # log
 setup_logging()
 
+
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
     logging.getLogger("app").info("Startup")
@@ -39,7 +40,11 @@ async def app_lifespan(app: FastAPI):
             # The monitoring service will handle this appropriately
             return "healthy", "Database connection available", {}
         except Exception as e:
-            return "unhealthy", f"Database connection failed: {str(e)}", {"error": str(e)}
+            return (
+                "unhealthy",
+                f"Database connection failed: {str(e)}",
+                {"error": str(e)},
+            )
 
     monitoring_service.register_health_check("database", db_health_check)
 
@@ -47,6 +52,7 @@ async def app_lifespan(app: FastAPI):
 
     # Cleanup on shutdown
     logging.getLogger("app").info("Shutdown")
+
 
 app = FastAPI(title="Trading Backtest API", version="0.1.0", lifespan=app_lifespan)
 
@@ -59,12 +65,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
     # Record error metric
     await monitoring_service.increment_counter(
-        "http_errors",
-        tags={"error_type": "ValueError", "path": request.url.path}
+        "http_errors", tags={"error_type": "ValueError", "path": request.url.path}
     )
 
     logging.getLogger("http").warning(
@@ -80,6 +86,7 @@ async def value_error_handler(request: Request, exc: ValueError):
         },
     )
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
 
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
@@ -120,7 +127,7 @@ async def request_logging_middleware(request: Request, call_next):
             "method": request.method,
             "path": request.url.path,
             "status": str(response.status_code),
-        }
+        },
     )
 
     # Enhanced response logging
@@ -145,14 +152,17 @@ async def request_logging_middleware(request: Request, call_next):
     REQUEST_ID.reset(token)
     return response
 
+
 @app.get("/")
 async def root():
     return {"message": "OK", "service": "Trading Backtest API"}
+
 
 @app.get("/api/healthz")
 async def healthz():
     """Basic health check endpoint"""
     return {"status": "ok", "timestamp": datetime.now(UTC).isoformat()}
+
 
 @app.get("/api/health")
 async def health_comprehensive():
@@ -167,10 +177,7 @@ async def health_comprehensive():
         elif health_status["overall_status"] == "warning":
             status_code = 200  # Still operational but with warnings
 
-        return JSONResponse(
-            status_code=status_code,
-            content=health_status
-        )
+        return JSONResponse(status_code=status_code, content=health_status)
     except Exception as e:
         logging.getLogger("app").error(f"Health check failed: {str(e)}")
         return JSONResponse(
@@ -178,9 +185,10 @@ async def health_comprehensive():
             content={
                 "overall_status": "unhealthy",
                 "timestamp": datetime.now(UTC).isoformat(),
-                "error": "Health check system unavailable"
-            }
+                "error": "Health check system unavailable",
+            },
         )
+
 
 @app.get("/api/readyz")
 async def readyz():
@@ -191,7 +199,7 @@ async def readyz():
         return {
             "ready": True,
             "timestamp": datetime.now(UTC).isoformat(),
-            "database": "connected"
+            "database": "connected",
         }
     except Exception as e:
         logging.getLogger("app").error(f"Readiness check failed: {str(e)}")
@@ -201,9 +209,10 @@ async def readyz():
                 "ready": False,
                 "timestamp": datetime.now(UTC).isoformat(),
                 "database": "disconnected",
-                "error": str(e)
-            }
+                "error": str(e),
+            },
         )
+
 
 @app.get("/api/metrics")
 async def metrics():
@@ -215,7 +224,7 @@ async def metrics():
         return {
             "timestamp": datetime.now(UTC).isoformat(),
             "metrics": metrics_data,
-            "performance": performance_data
+            "performance": performance_data,
         }
     except Exception as e:
         logging.getLogger("app").error(f"Metrics collection failed: {str(e)}")
@@ -223,16 +232,16 @@ async def metrics():
             status_code=500,
             content={
                 "error": "Metrics collection unavailable",
-                "timestamp": datetime.now(UTC).isoformat()
-            }
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
         )
+
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     # Record error metric
     await monitoring_service.increment_counter(
-        "http_errors",
-        tags={"error_type": "Exception", "path": request.url.path}
+        "http_errors", tags={"error_type": "Exception", "path": request.url.path}
     )
 
     logging.getLogger("http").exception(
@@ -244,9 +253,10 @@ async def generic_exception_handler(request: Request, exc: Exception):
             "url": str(request.url),
             "path": request.url.path,
             "timestamp": datetime.now(UTC).isoformat(),
-        }
+        },
     )
     return JSONResponse(status_code=500, content={"detail": "internal server error"})
+
 
 # Add this endpoint for debugging
 @app.get("/routes")
@@ -255,10 +265,15 @@ def list_routes():
     routes = []
     for route in app.routes:
         if isinstance(route, Route):
-            routes.append({"path": route.path, "name": route.name, "methods": list(route.methods)})
+            routes.append(
+                {"path": route.path, "name": route.name, "methods": list(route.methods)}
+            )
         elif isinstance(route, WebSocketRoute):
-            routes.append({"path": route.path, "name": route.name, "methods": ["WEBSOCKET"]})
+            routes.append(
+                {"path": route.path, "name": route.name, "methods": ["WEBSOCKET"]}
+            )
     return routes
+
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")

@@ -21,8 +21,7 @@ from websockets.exceptions import ConnectionClosed
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -30,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ConnectionMetrics:
     """Metrics for a single WebSocket connection."""
+
     connection_id: str
     connect_time: float = 0.0
     disconnect_time: float = 0.0
@@ -44,6 +44,7 @@ class ConnectionMetrics:
 @dataclass
 class StressTestResults:
     """Results from a stress test run."""
+
     total_connections: int
     successful_connections: int
     failed_connections: int
@@ -65,7 +66,9 @@ class WebSocketStressTester:
 
     def __init__(self, base_url: str = "ws://localhost:8000"):
         self.base_url = base_url
-        self.http_base_url = base_url.replace("ws://", "http://").replace("wss://", "https://")
+        self.http_base_url = base_url.replace("ws://", "http://").replace(
+            "wss://", "https://"
+        )
         self.session: aiohttp.ClientSession | None = None
 
     async def __aenter__(self):
@@ -88,12 +91,11 @@ class WebSocketStressTester:
             "num_runs": 1000,
             "initial_capital": 10000.0,
             "strategy_params": {},
-            "priority": 2
+            "priority": 2,
         }
 
         async with self.session.post(
-            f"{self.http_base_url}/api/v1/monte-carlo/jobs",
-            json=job_data
+            f"{self.http_base_url}/api/v1/monte-carlo/jobs", json=job_data
         ) as response:
             if response.status == 201:  # Check for 201 Created
                 result = await response.json()
@@ -106,7 +108,7 @@ class WebSocketStressTester:
         connection_id: str,
         job_id: str,
         duration_seconds: int = 30,
-        message_interval: float = 1.0
+        message_interval: float = 1.0,
     ) -> ConnectionMetrics:
         """Test a single WebSocket connection."""
         metrics = ConnectionMetrics(connection_id=connection_id)
@@ -119,7 +121,9 @@ class WebSocketStressTester:
 
             async with websockets.connect(uri) as websocket:
                 metrics.connect_time = time.time() - connect_start
-                logger.info(f"Connection {connection_id} established in {metrics.connect_time:.3f}s")
+                logger.info(
+                    f"Connection {connection_id} established in {metrics.connect_time:.3f}s"
+                )
 
                 # Listen for messages with timeout
                 end_time = start_time + duration_seconds
@@ -129,7 +133,7 @@ class WebSocketStressTester:
                         # Wait for message with timeout
                         message = await asyncio.wait_for(
                             websocket.recv(),
-                            timeout=min(message_interval, end_time - time.time())
+                            timeout=min(message_interval, end_time - time.time()),
                         )
 
                         receive_time = time.time()
@@ -138,8 +142,10 @@ class WebSocketStressTester:
                         # Parse message and calculate latency if possible
                         try:
                             data = json.loads(message)
-                            if 'timestamp' in data:
-                                msg_timestamp = datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
+                            if "timestamp" in data:
+                                msg_timestamp = datetime.fromisoformat(
+                                    data["timestamp"].replace("Z", "+00:00")
+                                )
                                 latency = receive_time - msg_timestamp.timestamp()
                                 metrics.latencies.append(latency)
                         except (json.JSONDecodeError, ValueError, KeyError):
@@ -170,13 +176,12 @@ class WebSocketStressTester:
         return metrics
 
     async def concurrent_connections_test(
-        self,
-        num_connections: int,
-        duration_seconds: int = 30,
-        ramp_up_seconds: int = 5
+        self, num_connections: int, duration_seconds: int = 30, ramp_up_seconds: int = 5
     ) -> StressTestResults:
         """Test multiple concurrent WebSocket connections."""
-        logger.info(f"Starting concurrent connections test: {num_connections} connections")
+        logger.info(
+            f"Starting concurrent connections test: {num_connections} connections"
+        )
 
         # Create a test job
         job_id = await self.create_test_job()
@@ -200,13 +205,15 @@ class WebSocketStressTester:
                 self.single_websocket_test(
                     connection_id=connection_id,
                     job_id=job_id,
-                    duration_seconds=duration_seconds
+                    duration_seconds=duration_seconds,
                 )
             )
             tasks.append(task)
 
         # Wait for all connections to complete
-        logger.info(f"All {num_connections} connections started, waiting for completion...")
+        logger.info(
+            f"All {num_connections} connections started, waiting for completion..."
+        )
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results
@@ -220,16 +227,20 @@ class WebSocketStressTester:
             else:
                 metrics_list.append(result)
 
-        return self._calculate_stress_test_results(metrics_list, time.time() - start_time)
+        return self._calculate_stress_test_results(
+            metrics_list, time.time() - start_time
+        )
 
     async def message_throughput_test(
         self,
         num_connections: int = 10,
         messages_per_connection: int = 100,
-        burst_mode: bool = False
+        burst_mode: bool = False,
     ) -> StressTestResults:
         """Test message throughput with multiple connections."""
-        logger.info(f"Starting throughput test: {num_connections} connections, {messages_per_connection} messages each")
+        logger.info(
+            f"Starting throughput test: {num_connections} connections, {messages_per_connection} messages each"
+        )
 
         # Create test jobs for each connection
         job_ids = []
@@ -248,7 +259,7 @@ class WebSocketStressTester:
                     connection_id=connection_id,
                     job_id=job_id,
                     target_messages=messages_per_connection,
-                    burst_mode=burst_mode
+                    burst_mode=burst_mode,
                 )
             )
             tasks.append(task)
@@ -260,20 +271,24 @@ class WebSocketStressTester:
         metrics_list = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                error_metrics = ConnectionMetrics(connection_id=f"throughput_conn_{i:04d}")
+                error_metrics = ConnectionMetrics(
+                    connection_id=f"throughput_conn_{i:04d}"
+                )
                 error_metrics.errors.append(str(result))
                 metrics_list.append(error_metrics)
             else:
                 metrics_list.append(result)
 
-        return self._calculate_stress_test_results(metrics_list, time.time() - start_time)
+        return self._calculate_stress_test_results(
+            metrics_list, time.time() - start_time
+        )
 
     async def _throughput_connection_test(
         self,
         connection_id: str,
         job_id: str,
         target_messages: int,
-        burst_mode: bool = False
+        burst_mode: bool = False,
     ) -> ConnectionMetrics:
         """Test throughput for a single connection."""
         metrics = ConnectionMetrics(connection_id=connection_id)
@@ -286,7 +301,10 @@ class WebSocketStressTester:
                 messages_received = 0
                 timeout_seconds = 60  # Maximum time to wait for messages
 
-                while messages_received < target_messages and (time.time() - start_time) < timeout_seconds:
+                while (
+                    messages_received < target_messages
+                    and (time.time() - start_time) < timeout_seconds
+                ):
                     try:
                         await asyncio.wait_for(websocket.recv(), timeout=1.0)
                         messages_received += 1
@@ -294,7 +312,9 @@ class WebSocketStressTester:
 
                         # In burst mode, don't wait between messages
                         if not burst_mode:
-                            await asyncio.sleep(0.01)  # Small delay for controlled throughput
+                            await asyncio.sleep(
+                                0.01
+                            )  # Small delay for controlled throughput
 
                     except asyncio.TimeoutError:
                         continue
@@ -346,27 +366,25 @@ class WebSocketStressTester:
         error_results["rapid_disconnect"] = {
             "total_attempts": 10,
             "errors": len(rapid_disconnect_errors),
-            "error_details": rapid_disconnect_errors
+            "error_details": rapid_disconnect_errors,
         }
 
         # Test 3: Connection timeout
         try:
             # Try to connect to non-existent endpoint
             invalid_uri = f"{self.base_url}/api/v1/invalid/endpoint"
-            await asyncio.wait_for(
-                websockets.connect(invalid_uri),
-                timeout=5.0
-            )
-            error_results["connection_timeout"] = {"success": False, "error": "Should have failed"}
+            await asyncio.wait_for(websockets.connect(invalid_uri), timeout=5.0)
+            error_results["connection_timeout"] = {
+                "success": False,
+                "error": "Should have failed",
+            }
         except Exception as e:
             error_results["connection_timeout"] = {"success": True, "error": str(e)}
 
         return error_results
 
     def _calculate_stress_test_results(
-        self,
-        metrics_list: list[ConnectionMetrics],
-        total_duration: float
+        self, metrics_list: list[ConnectionMetrics], total_duration: float
     ) -> StressTestResults:
         """Calculate comprehensive stress test results."""
         successful_connections = sum(1 for m in metrics_list if m.successful)
@@ -384,22 +402,30 @@ class WebSocketStressTester:
         if all_latencies:
             avg_latency = statistics.mean(all_latencies)
             median_latency = statistics.median(all_latencies)
-            p95_latency = statistics.quantiles(all_latencies, n=20)[18]  # 95th percentile
-            p99_latency = statistics.quantiles(all_latencies, n=100)[98]  # 99th percentile
+            p95_latency = statistics.quantiles(all_latencies, n=20)[
+                18
+            ]  # 95th percentile
+            p99_latency = statistics.quantiles(all_latencies, n=100)[
+                98
+            ]  # 99th percentile
         else:
             avg_latency = median_latency = p95_latency = p99_latency = 0.0
 
         # Calculate throughput
-        throughput = total_messages_received / total_duration if total_duration > 0 else 0.0
+        throughput = (
+            total_messages_received / total_duration if total_duration > 0 else 0.0
+        )
 
         # Calculate connection success rate
-        success_rate = successful_connections / len(metrics_list) if metrics_list else 0.0
+        success_rate = (
+            successful_connections / len(metrics_list) if metrics_list else 0.0
+        )
 
         # Collect error details
         error_details = {}
         for metrics in metrics_list:
             for error in metrics.errors:
-                error_type = error.split(':')[0] if ':' in error else error
+                error_type = error.split(":")[0] if ":" in error else error
                 error_details[error_type] = error_details.get(error_type, 0) + 1
 
         return StressTestResults(
@@ -416,14 +442,14 @@ class WebSocketStressTester:
             p99_latency=p99_latency,
             throughput_messages_per_second=throughput,
             connection_success_rate=success_rate,
-            error_details=error_details
+            error_details=error_details,
         )
 
     def print_results(self, results: StressTestResults, test_name: str = "Stress Test"):
         """Print formatted stress test results."""
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"{test_name} Results")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"Total Connections: {results.total_connections}")
         print(f"Successful Connections: {results.successful_connections}")
         print(f"Failed Connections: {results.failed_connections}")
@@ -434,26 +460,36 @@ class WebSocketStressTester:
         print(f"  Messages Received: {results.total_messages_received}")
         print(f"  Throughput: {results.throughput_messages_per_second:.2f} msg/s")
         print("\nLatency Statistics:")
-        print(f"  Average: {results.average_latency*1000:.2f}ms")
-        print(f"  Median: {results.median_latency*1000:.2f}ms")
-        print(f"  95th Percentile: {results.p95_latency*1000:.2f}ms")
-        print(f"  99th Percentile: {results.p99_latency*1000:.2f}ms")
+        print(f"  Average: {results.average_latency * 1000:.2f}ms")
+        print(f"  Median: {results.median_latency * 1000:.2f}ms")
+        print(f"  95th Percentile: {results.p95_latency * 1000:.2f}ms")
+        print(f"  99th Percentile: {results.p99_latency * 1000:.2f}ms")
         print(f"\nErrors: {results.total_errors}")
         if results.error_details:
             print("Error Details:")
             for error_type, count in results.error_details.items():
                 print(f"  {error_type}: {count}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
 
 async def main():
     """Main function to run stress tests."""
     parser = argparse.ArgumentParser(description="WebSocket Stress Testing Tool")
-    parser.add_argument("--url", default="ws://localhost:8000", help="WebSocket base URL")
-    parser.add_argument("--connections", type=int, default=10, help="Number of concurrent connections")
-    parser.add_argument("--duration", type=int, default=30, help="Test duration in seconds")
-    parser.add_argument("--test-type", choices=["concurrent", "throughput", "errors", "all"],
-                       default="all", help="Type of test to run")
+    parser.add_argument(
+        "--url", default="ws://localhost:8000", help="WebSocket base URL"
+    )
+    parser.add_argument(
+        "--connections", type=int, default=10, help="Number of concurrent connections"
+    )
+    parser.add_argument(
+        "--duration", type=int, default=30, help="Test duration in seconds"
+    )
+    parser.add_argument(
+        "--test-type",
+        choices=["concurrent", "throughput", "errors", "all"],
+        default="all",
+        help="Type of test to run",
+    )
 
     args = parser.parse_args()
 
@@ -461,8 +497,7 @@ async def main():
         if args.test_type in ["concurrent", "all"]:
             logger.info("Running concurrent connections test...")
             results = await tester.concurrent_connections_test(
-                num_connections=args.connections,
-                duration_seconds=args.duration
+                num_connections=args.connections, duration_seconds=args.duration
             )
             tester.print_results(results, "Concurrent Connections Test")
 
@@ -470,19 +505,19 @@ async def main():
             logger.info("Running throughput test...")
             results = await tester.message_throughput_test(
                 num_connections=min(args.connections, 5),  # Limit for throughput test
-                messages_per_connection=100
+                messages_per_connection=100,
             )
             tester.print_results(results, "Message Throughput Test")
 
         if args.test_type in ["errors", "all"]:
             logger.info("Running error scenario tests...")
             error_results = await tester.error_scenario_test()
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print("Error Scenario Test Results")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             for scenario, result in error_results.items():
                 print(f"{scenario}: {result}")
-            print(f"{'='*60}\n")
+            print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":
