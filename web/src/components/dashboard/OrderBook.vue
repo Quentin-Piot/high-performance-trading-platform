@@ -2,12 +2,9 @@
 import { computed } from 'vue'
 import { useSimulationStore } from '@/stores/simulation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
 const store = useSimulationStore()
-
 const ob = computed(() => store.snapshot?.orderBook)
 </script>
-
 <template>
   <Card>
     <CardHeader>

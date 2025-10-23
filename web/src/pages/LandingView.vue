@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { Button } from "@/components/ui/button";
-
 import {
     Card,
     CardContent,
@@ -20,17 +19,12 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-
-// Supprimé: objet non utilisé provoquant TS6133
-
 const { t } = useI18n();
 const { navigate } = useRouter();
-
 function goToSimulate() {
     navigate("/simulate");
 }
 </script>
-
 <template>
     <div
         class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900"
@@ -47,7 +41,6 @@ function goToSimulate() {
                     <div class="liquid-glass-reflection"></div>
                     <div class="liquid-glass-shimmer"></div>
                     <div class="liquid-glass-noise"></div>
-
                     <div class="relative z-20 text-center space-y-8">
                         <div class="space-y-6">
                             <h1
@@ -55,14 +48,12 @@ function goToSimulate() {
                             >
                                 {{ t("landing.title") }}
                             </h1>
-
                             <p
                                 class="text-lg sm:text-xl lg:text-2xl hero-description max-w-3xl mx-auto leading-relaxed"
                             >
                                 {{ t("landing.subtitle") }}
                             </p>
                         </div>
-
                         <div
                             class="flex flex-col sm:flex-row gap-4 justify-center pt-4"
                         >
@@ -78,7 +69,6 @@ function goToSimulate() {
                     </div>
                 </div>
             </section>
-
             <section class="py-16 px-4 sm:px-6 lg:px-8">
                 <div class="max-w-7xl mx-auto">
                     <div class="text-center mb-12">
@@ -93,7 +83,6 @@ function goToSimulate() {
                             {{ t("landing.project.description") }}
                         </p>
                     </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                         <Dialog>
                             <DialogTrigger as-child>
@@ -198,7 +187,6 @@ function goToSimulate() {
                                             </li>
                                         </ul>
                                     </div>
-
                                     <!-- Expérience Utilisateur -->
                                     <div class="mt-6">
                                         <h4
@@ -224,7 +212,6 @@ function goToSimulate() {
                                 </div>
                             </DialogScrollContent>
                         </Dialog>
-
                         <Dialog>
                             <DialogTrigger as-child>
                                 <Card
@@ -330,7 +317,6 @@ function goToSimulate() {
                                             </li>
                                         </ul>
                                     </div>
-
                                     <!-- Alignement Rôle Architecte/Lead -->
                                     <div class="mt-6">
                                         <h4
@@ -374,7 +360,6 @@ function goToSimulate() {
                                 </div>
                             </DialogScrollContent>
                         </Dialog>
-
                         <Dialog>
                             <DialogTrigger as-child>
                                 <Card
@@ -517,7 +502,6 @@ function goToSimulate() {
         </footer>
     </div>
 </template>
-
 <style scoped>
 .liquid-glass-hero {
     position: relative;
@@ -532,20 +516,18 @@ function goToSimulate() {
     transition: none;
     overflow: hidden;
 }
-
 .liquid-glass-hero::before {
     content: "";
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 600%; /* Augmenté pour couvrir plus de terrain */
-    height: 600%; /* Augmenté pour couvrir plus de terrain */
+    width: 600%; 
+    height: 600%; 
     background: radial-gradient(
         circle closest-corner at 50% 50%,
         rgba(255, 255, 255, 0.1) 0%,
         rgba(255, 255, 255, 0.05) 5%,
-        /* Réduit la partie la plus intense */ transparent 15%
-            /* Transparence plus rapide pour un effet de rayon plus net */
+         transparent 15%
     );
     transform: translate(-50%, -50%) scale(0);
     border-radius: 50%;
@@ -556,12 +538,10 @@ function goToSimulate() {
     pointer-events: none;
     z-index: 1;
 }
-
 .liquid-glass-hero:hover::before {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1); /* Va à l'échelle normale, couvrant les coins */
+    transform: translate(-50%, -50%) scale(1); 
 }
-
 .liquid-glass-bg {
     position: absolute;
     inset: 0;
@@ -574,7 +554,6 @@ function goToSimulate() {
     background-size: 180% 180%;
     border-radius: inherit;
 }
-
 .liquid-glass-overlay {
     position: absolute;
     inset: 0;
@@ -587,7 +566,6 @@ function goToSimulate() {
     border-radius: inherit;
     opacity: 0.95;
 }
-
 .liquid-glass-reflection {
     position: absolute;
     top: 0;
@@ -604,7 +582,6 @@ function goToSimulate() {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
-
 .liquid-glass-shimmer {
     position: absolute;
     inset: 0;
@@ -619,7 +596,6 @@ function goToSimulate() {
     opacity: 0;
     transition: none;
 }
-
 .liquid-glass-noise {
     position: absolute;
     inset: 0;
@@ -630,7 +606,6 @@ function goToSimulate() {
     opacity: 0.15;
     pointer-events: none;
 }
-
 .gradient-text {
     background:
         radial-gradient(
@@ -660,7 +635,6 @@ function goToSimulate() {
         0 8px 22px rgba(0, 0, 0, 0.2),
         0 -1px 8px rgba(255, 255, 255, 0.2);
 }
-
 .hero-title {
     text-shadow:
         0 1px 2px rgba(0, 0, 0, 0.06),
@@ -668,13 +642,11 @@ function goToSimulate() {
     opacity: 0.96;
     filter: blur(0.15px);
 }
-
 .hero-description {
     color: rgba(255, 255, 255, 0.88);
     opacity: 0.95;
     filter: blur(0.2px);
 }
-
 @media (prefers-color-scheme: dark) {
     .liquid-glass-hero {
         background: rgba(0, 0, 0, 0.28);
@@ -684,7 +656,6 @@ function goToSimulate() {
             inset 0 1px 0 rgba(255, 255, 255, 0.14),
             inset 0 -1px 0 rgba(255, 255, 255, 0.08);
     }
-
     .liquid-glass-hero::before {
         background: radial-gradient(
             circle closest-corner at 50% 50%,
@@ -693,7 +664,6 @@ function goToSimulate() {
             transparent 15%
         );
     }
-
     .liquid-glass-overlay {
         background: radial-gradient(
             circle at 30% 20%,
@@ -702,7 +672,6 @@ function goToSimulate() {
             transparent 70%
         );
     }
-
     .liquid-glass-reflection {
         background: linear-gradient(
             180deg,
@@ -711,13 +680,11 @@ function goToSimulate() {
             transparent 100%
         );
     }
-
     .gradient-text {
         text-shadow:
             0 1px 2px rgba(0, 0, 0, 0.12),
             0 8px 20px rgba(255, 255, 255, 0.18);
     }
-
     .hero-description {
         color: rgba(255, 255, 255, 0.92);
     }

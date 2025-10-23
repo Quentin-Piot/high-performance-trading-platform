@@ -1,43 +1,34 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
-
 const props = defineProps<{ label: string; value: number | null | undefined; percentage?: boolean }>()
-
 const formattedValue = computed(() => {
   if (props.value === null || props.value === undefined) return '—'
   const p = props.percentage ? (props.value * 100) : props.value
   const s = p.toFixed(2) + (props.percentage ? '%' : '')
   return s.startsWith('-') ? s : '+' + s
 })
-
 const isPositive = computed(() => (props.value ?? 0) >= 0)
 const isNeutral = computed(() => props.value === null || props.value === 0)
-
 const trendIcon = computed(() => {
   if (isNeutral.value) return Minus
   return isPositive.value ? TrendingUp : TrendingDown
 })
-
 const colorClasses = computed(() => {
   if (isNeutral.value) return 'text-muted-foreground'
   return isPositive.value ? 'text-trading-green' : 'text-trading-red'
 })
-
 const bgGradient = computed(() => {
   if (isNeutral.value) return 'from-muted/20 to-muted/10'
   return isPositive.value ? 'from-trading-green/10 to-trading-green/5' : 'from-trading-red/10 to-trading-red/5'
 })
 </script>
-
 <template>
   <div class="group relative overflow-hidden rounded-xl border-0 p-6 shadow-medium hover-lift transition-smooth bg-gradient-to-br from-card via-card to-secondary/20 animate-fade-in">
     <!-- Effet de brillance au survol -->
     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-smooth -translate-x-full group-hover:translate-x-full duration-1000"></div>
-    
     <!-- Indicateur de tendance décoratif -->
     <div :class="['absolute top-0 right-0 w-16 h-16 rounded-full -translate-y-8 translate-x-8 transition-smooth', `bg-gradient-to-br ${bgGradient}`]"></div>
-    
     <!-- Contenu principal -->
     <div class="relative z-10 space-y-3">
       <!-- Label avec icône de tendance -->
@@ -49,13 +40,11 @@ const bgGradient = computed(() => {
           <component :is="trendIcon" :class="['size-3 transition-smooth', colorClasses]" />
         </div>
       </div>
-      
       <!-- Valeur principale avec animation -->
       <div class="space-y-1">
         <div :class="['text-2xl font-bold tabular-nums transition-smooth group-hover:scale-105', colorClasses]">
           {{ formattedValue }}
         </div>
-        
         <!-- Barre de progression subtile -->
         <div class="h-1 w-full bg-muted/20 rounded-full overflow-hidden">
           <div 
@@ -65,7 +54,6 @@ const bgGradient = computed(() => {
         </div>
       </div>
     </div>
-    
     <!-- Effet de pulse pour les valeurs importantes -->
     <div 
       v-if="!isNeutral && Math.abs(props.value ?? 0) > (props.percentage ? 0.1 : 1000)"

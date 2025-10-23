@@ -41,27 +41,21 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { Label } from '@/components/ui/label'
 import { MultiLineToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Database, CheckCircle } from 'lucide-vue-next'
 import { AVAILABLE_DATASETS } from '@/config/datasets'
-
 interface Props {
   selectedDatasets: string[]
 }
-
 interface Emits {
   (e: 'update:selectedDatasets', datasets: string[]): void
 }
-
 defineProps<Props>()
 const emit = defineEmits<Emits>()
-
 const { t } = useI18n()
-
 function onDatasetsChange(newDatasets: string[]) {
   emit('update:selectedDatasets', newDatasets)
 }

@@ -22,9 +22,7 @@
     >
       <!-- Animated background effect -->
       <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-      
       <input ref="inputEl" type="file" accept=".csv" class="hidden" @change="onFileChange" />
-      
       <div class="relative z-10 flex flex-col items-center gap-3">
         <div class="rounded-full bg-secondary/50 p-3 group-hover:bg-trading-blue/10 transition-colors">
           <FileSpreadsheet class="size-6 text-muted-foreground group-hover:text-trading-blue transition-colors" />
@@ -55,37 +53,29 @@ class="ml-2 p-1 hover:bg-red-100 rounded-full transition-colors"
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Label } from '@/components/ui/label'
 import { Upload, FileSpreadsheet, CheckCircle, X } from 'lucide-vue-next'
-
 interface Props {
   selectedFiles: File[]
   error?: string | null
 }
-
 interface Emits {
   (e: 'update:selectedFiles', files: File[]): void
   (e: 'update:error', error: string | null): void
 }
-
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
-
 const { t } = useI18n()
-
 const dragActive = ref(false)
 const inputEl = ref<HTMLInputElement | null>(null)
-
 function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const files = Array.from(input.files || [])
   addFiles(files)
 }
-
 function addFiles(files: File[]) {
   emit('update:error', null)
   const validFiles = files.filter(f => {
@@ -95,42 +85,32 @@ function addFiles(files: File[]) {
     }
     return true
   })
-  
-  // Only allow one file at a time - replace existing files
   if (validFiles.length > 0) {
     emit('update:selectedFiles', [validFiles[0]])
   }
 }
-
 function removeFile(index: number) {
   const newFiles = props.selectedFiles.filter((_, i) => i !== index)
   emit('update:selectedFiles', newFiles)
 }
-
 function isCsvFile(f: File) {
-  // Certains navigateurs remettent un type mimé incohérent pour CSV, on tolère l'extension
   return f.type === 'text/csv' || f.name.toLowerCase().endsWith('.csv')
 }
-
 function onZoneClick() {
   inputEl.value?.click()
 }
-
 function onDragOver(e: DragEvent) {
   e.preventDefault()
   dragActive.value = true
 }
-
 function onDragEnter(e: DragEvent) {
   e.preventDefault()
   dragActive.value = true
 }
-
 function onDragLeave(e: DragEvent) {
   e.preventDefault()
   dragActive.value = false
 }
-
 function onDrop(e: DragEvent) {
   e.preventDefault()
   dragActive.value = false

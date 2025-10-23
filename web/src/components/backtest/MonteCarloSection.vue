@@ -26,7 +26,6 @@
         </div>
         <p class="text-xs text-muted-foreground">{{ t('simulate.form.monte_carlo.runs_description') }}</p>
       </div>
-
       <!-- Method Selection (only show when Monte Carlo is enabled) -->
       <div v-if="isMonteCarloEnabled" class="space-y-2">
         <Label class="text-xs font-medium text-muted-foreground">
@@ -67,7 +66,6 @@
           </ToggleGroupItem>
         </MultiLineToggleGroup>
       </div>
-
       <!-- Method-specific parameters -->
       <div v-if="isMonteCarloEnabled" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Sample Fraction (for bootstrap) -->
@@ -88,7 +86,6 @@
             <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-trading-purple/0 via-trading-purple/5 to-trading-purple/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
           </div>
         </div>
-
         <!-- Gaussian Scale (for gaussian) -->
         <div v-if="monteCarloMethod === 'gaussian'" class="space-y-2">
           <Label class="text-xs font-medium text-muted-foreground">
@@ -111,14 +108,12 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { MultiLineToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { TrendingUp } from 'lucide-vue-next'
-
 interface Props {
   monteCarloRuns: number
   monteCarloMethod: string
@@ -126,16 +121,13 @@ interface Props {
   gaussianScale: number
   isMonteCarloEnabled: boolean
 }
-
 interface Emits {
   (e: 'update:monteCarloRuns', value: number): void
   (e: 'update:monteCarloMethod', value: string): void
   (e: 'update:sampleFraction', value: number): void
   (e: 'update:gaussianScale', value: number): void
 }
-
 defineProps<Props>()
 defineEmits<Emits>()
-
 const { t } = useI18n()
 </script>

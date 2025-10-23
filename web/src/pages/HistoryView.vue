@@ -14,7 +14,6 @@
               </CardTitle>
               <p class="text-muted-foreground text-sm sm:text-base">{{ t('history.description') }}</p>
             </div>
-            
             <div class="flex items-center gap-3 w-full sm:w-auto">
               <!-- Strategy Filter -->
               <Select v-model="selectedStrategy">
@@ -32,14 +31,13 @@
                   </SelectItem>
                 </SelectContent>
               </Select>
-              
               <!-- Refresh Button -->
               <Button 
-                @click="loadHistory" 
                 :disabled="loading" 
-                variant="ghost"
+                variant="ghost" 
                 size="sm"
                 class="rounded-lg hover:bg-trading-green/10 hover:text-trading-green transition-smooth shadow-soft hover-scale h-10 w-10 p-0"
+                @click="loadHistory"
               >
                 <RefreshCw :class="{ 'animate-spin': loading }" class="size-4" />
               </Button>
@@ -48,7 +46,6 @@
         </CardHeader>
       </Card>
     </section>
-
     <!-- Stats Cards avec design moderne -->
     <section v-if="stats" class="animate-scale-in mb-6" style="animation-delay: 0.2s">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -65,7 +62,6 @@
             </div>
           </CardContent>
         </Card>
-        
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
           <CardContent class="p-4 sm:p-6">
             <div class="flex items-center">
@@ -81,7 +77,6 @@
             </div>
           </CardContent>
         </Card>
-        
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
           <CardContent class="p-4 sm:p-6">
             <div class="flex items-center">
@@ -97,7 +92,6 @@
             </div>
           </CardContent>
         </Card>
-        
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
           <CardContent class="p-4 sm:p-6">
             <div class="flex items-center">
@@ -113,7 +107,6 @@
         </Card>
       </div>
     </section>
-
     <!-- History Table avec design moderne -->
     <section class="animate-scale-in" style="animation-delay: 0.3s">
       <Card class="border-0 shadow-strong bg-gradient-to-br from-card via-card to-secondary/10 overflow-hidden">
@@ -132,7 +125,6 @@
               <span class="text-sm text-muted-foreground">{{ t('common.loading') }}</span>
             </div>
           </div>
-          
           <div v-else-if="error" class="text-center py-12">
             <div class="rounded-xl bg-trading-red/5 text-trading-red p-4 shadow-soft animate-slide-up">
               <div class="flex items-center justify-center gap-3 mb-4">
@@ -141,12 +133,11 @@
                 </div>
                 <span class="font-medium">{{ error }}</span>
               </div>
-              <Button @click="loadHistory" variant="outline" size="sm" class="border-trading-red/20 hover:border-trading-red hover:bg-trading-red/5 hover:text-trading-red">
+              <Button variant="outline" size="sm" class="border-trading-red/20 hover:border-trading-red hover:bg-trading-red/5 hover:text-trading-red" @click="loadHistory">
                 {{ t('common.retry') }}
               </Button>
             </div>
           </div>
-          
           <div v-else-if="!history.length" class="text-center py-12">
             <div class="flex flex-col items-center gap-4">
               <div class="rounded-xl bg-secondary/50 p-4">
@@ -154,13 +145,12 @@
               </div>
               <div class="space-y-2">
                 <p class="text-muted-foreground">{{ t('history.no_history') }}</p>
-                <Button @click="navigateToSimulate" class="bg-trading-blue hover:bg-trading-blue/90 transition-smooth shadow-soft hover-scale">
+                <Button class="bg-trading-blue hover:bg-trading-blue/90 transition-smooth shadow-soft hover-scale" @click="navigateToSimulate">
                   {{ t('history.run_first_backtest') }}
                 </Button>
               </div>
             </div>
           </div>
-        
         <div v-else class="space-y-4">
           <!-- History Items -->
           <div v-for="item in history" :key="item.id" class="border-0 rounded-xl p-4 sm:p-6 bg-gradient-to-br from-secondary/30 via-secondary/20 to-secondary/10 hover:shadow-medium transition-all duration-300 hover-scale shadow-soft">
@@ -177,7 +167,6 @@
                     {{ getStatusLabel(item.status) }}
                   </Badge>
                 </div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm mb-4">
                   <div class="space-y-1">
                     <p class="text-muted-foreground font-medium">{{ t('history.date_range') }}</p>
@@ -185,61 +174,51 @@
                       {{ item.start_date || 'N/A' }} - {{ item.end_date || 'N/A' }}
                     </p>
                   </div>
-                  
                   <div v-if="item.total_return !== null" class="space-y-1">
                     <p class="text-muted-foreground font-medium">{{ t('history.total_return') }}</p>
                     <p class="font-bold text-lg" :class="getReturnColor(item.total_return)">
                       {{ item.total_return.toFixed(2) }}%
                     </p>
                   </div>
-                  
                   <div v-if="item.sharpe_ratio !== null" class="space-y-1">
                     <p class="text-muted-foreground font-medium">{{ t('history.sharpe_ratio') }}</p>
                     <p class="font-bold text-lg text-trading-purple">{{ item.sharpe_ratio.toFixed(3) }}</p>
                   </div>
-                  
                   <div v-if="item.max_drawdown !== null" class="space-y-1">
                     <p class="text-muted-foreground font-medium">{{ t('history.max_drawdown') }}</p>
                     <p class="font-bold text-lg text-trading-red">{{ item.max_drawdown.toFixed(2) }}%</p>
                   </div>
-                  
                   <div class="space-y-1">
                     <p class="text-muted-foreground font-medium">{{ t('history.created_at') }}</p>
                     <p class="font-semibold text-foreground">{{ formatDate(item.created_at) }}</p>
                   </div>
                 </div>
-                
                 <!-- Strategy Parameters -->
                 <div class="mt-3 p-3 rounded-lg bg-secondary/30 text-xs">
                   <span class="font-semibold text-trading-blue">{{ t('history.parameters') }}:</span>
                   <span class="text-muted-foreground ml-2">{{ formatStrategyParams(item.strategy_params) }}</span>
                 </div>
-                
                 <!-- Datasets Used -->
                 <div v-if="item.datasets_used && item.datasets_used.length" class="mt-2 p-3 rounded-lg bg-secondary/30 text-xs">
                   <span class="font-semibold text-trading-cyan">{{ t('history.datasets') }}:</span>
                   <span class="text-muted-foreground ml-2">{{ item.datasets_used.join(', ') }}</span>
                 </div>
               </div>
-              
               <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                <Button @click="viewDetails(item)" variant="outline" size="sm" class="rounded-lg border-0 bg-trading-blue/10 hover:bg-trading-blue/20 text-trading-blue hover:text-trading-blue transition-smooth shadow-soft hover-scale">
+                <Button variant="outline" size="sm" class="rounded-lg border-0 bg-trading-blue/10 hover:bg-trading-blue/20 text-trading-blue hover:text-trading-blue transition-smooth shadow-soft hover-scale" @click="viewDetails(item)">
                   <Eye class="size-4 mr-2" />
                   {{ t('history.view_details') }}
                 </Button>
-                
-                <Button @click="rerunBacktest(item)" variant="outline" size="sm" class="rounded-lg border-0 bg-trading-green/10 hover:bg-trading-green/20 text-trading-green hover:text-trading-green transition-smooth shadow-soft hover-scale">
+                <Button variant="outline" size="sm" class="rounded-lg border-0 bg-trading-green/10 hover:bg-trading-green/20 text-trading-green hover:text-trading-green transition-smooth shadow-soft hover-scale" @click="rerunBacktest(item)">
                   <Play class="size-4 mr-2" />
                   {{ t('history.rerun') }}
                 </Button>
-                
-                <Button @click="deleteBacktest(item)" variant="destructive" size="sm" class="rounded-lg border-0 bg-trading-red/10 hover:bg-trading-red/20 text-trading-red hover:text-trading-red transition-smooth shadow-soft hover-scale">
+                <Button variant="destructive" size="sm" class="rounded-lg border-0 bg-trading-red/10 hover:bg-trading-red/20 text-trading-red hover:text-trading-red transition-smooth shadow-soft hover-scale" @click="deleteBacktest(item)">
                   <Trash2 class="size-4" />
                 </Button>
               </div>
             </div>
           </div>
-          
           <!-- Pagination -->
           <div v-if="pagination.total > pagination.per_page" class="pt-6">
             <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10">
@@ -250,27 +229,24 @@
                     {{ Math.min(pagination.page * pagination.per_page, pagination.total) }} 
                     {{ t('history.of') }} {{ pagination.total }} {{ t('history.results') }}
                   </p>
-                  
                   <div class="flex items-center gap-3">
                     <Button 
-                      @click="loadHistory(pagination.page - 1)" 
-                      :disabled="!pagination.has_prev"
-                      variant="outline" 
-                      size="sm"
+                      :disabled="!pagination.has_prev" 
+                      variant="outline"
+                      size="sm" 
                       class="rounded-lg border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft hover-scale"
+                      @click="loadHistory(pagination.page - 1)"
                     >
                       <ChevronLeft class="size-4" />
                       {{ t('common.previous') }}
                     </Button>
-                    
                     <span class="text-sm font-medium px-3 py-1 rounded-lg bg-trading-blue/10 text-trading-blue">{{ pagination.page }}</span>
-                    
                     <Button 
-                      @click="loadHistory(pagination.page + 1)" 
-                      :disabled="!pagination.has_next"
-                      variant="outline" 
-                      size="sm"
+                      :disabled="!pagination.has_next" 
+                      variant="outline"
+                      size="sm" 
                       class="rounded-lg border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft hover-scale"
+                      @click="loadHistory(pagination.page + 1)"
                     >
                       {{ t('common.next') }}
                       <ChevronRight class="size-4" />
@@ -286,12 +262,10 @@
     </section>
   </BaseLayout>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from '@/router'
 import { useI18n } from 'vue-i18n'
-
 import { BACKTEST_STRATEGIES, type StrategyId } from '@/config/backtestStrategies'
 import {
   BarChart3,
@@ -307,18 +281,14 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-vue-next'
-
 import BaseLayout from '@/components/layouts/BaseLayout.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchJson } from '@/services/apiClient'
-
 const { t } = useI18n()
 const { navigate } = useRouter()
-
-// State
 const loading = ref(false)
 const error = ref<string | null>(null)
 const history = ref<any[]>([])
@@ -331,25 +301,19 @@ const pagination = ref({
   has_prev: false,
   has_next: false
 })
-
-// Functions
 const loadHistory = async (page = 1) => {
   loading.value = true
   error.value = null
-  
   try {
     const params = new URLSearchParams({
       page: page.toString(),
       per_page: pagination.value.per_page.toString()
     })
-    
     if (selectedStrategy.value && selectedStrategy.value !== 'all') {
       console.log('Adding strategy filter:', selectedStrategy.value)
       params.append('strategy', selectedStrategy.value)
     }
-    
     console.log('Loading history with params:', params.toString())
-    
     const response = await fetchJson<any>(`/history/?${params}`)
     history.value = response.items || []
     pagination.value = {
@@ -365,7 +329,6 @@ const loadHistory = async (page = 1) => {
     loading.value = false
   }
 }
-
 const loadStats = async () => {
   try {
     const response = await fetchJson<any>('/history/stats')
@@ -374,20 +337,16 @@ const loadStats = async () => {
     console.error('Error loading stats:', err)
   }
 }
-
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
-
 const getStrategyVariant = (strategyId: StrategyId) => {
-  // Utiliser des variants par défaut basés sur l'ID de stratégie
   const variants: Record<StrategyId, 'default' | 'secondary' | 'outline'> = {
     'sma_crossover': 'default',
     'rsi': 'secondary'
   };
   return variants[strategyId] || 'default' as const;
 }
-
 const getStatusVariant = (status: string) => {
   const variants = {
     'completed': 'default' as const,
@@ -396,12 +355,10 @@ const getStatusVariant = (status: string) => {
   }
   return variants[status as keyof typeof variants] || 'outline' as const
 }
-
 const getStrategyLabel = (strategyId: StrategyId) => {
   const strategyConfig = BACKTEST_STRATEGIES[strategyId];
   return strategyConfig?.name || strategyId;
 }
-
 const getStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
     'completed': t('history.status.completed'),
@@ -410,13 +367,11 @@ const getStatusLabel = (status: string) => {
   }
   return labels[status] || status
 }
-
 const getReturnColor = (returnValue: number) => {
   if (returnValue > 0) return 'text-trading-green'
   if (returnValue < 0) return 'text-trading-red'
   return 'text-muted-foreground'
 }
-
 const formatStrategyParams = (params: any) => {
   if (!params) return 'N/A'
   return Object.entries(params)
@@ -424,11 +379,9 @@ const formatStrategyParams = (params: any) => {
     .map(([key, value]) => `${key}: ${value}`)
     .join(', ')
 }
-
 const viewDetails = (item: any) => {
   navigate(`/history/${item.id}`)
 }
-
 const rerunBacktest = (item: any) => {
   const queryParams: Record<string, string | number | undefined> = {
     strategy: item.strategy,
@@ -441,8 +394,6 @@ const rerunBacktest = (item: any) => {
     priceType: item.price_type,
     datasets: item.datasets_used && item.datasets_used.length > 0 ? item.datasets_used.join(',') : undefined
   };
-
-  // Add strategy specific parameters
   const strategyConfig = BACKTEST_STRATEGIES[item.strategy];
   if (strategyConfig && item.strategy_params) {
     for (const p of strategyConfig.params) {
@@ -451,23 +402,16 @@ const rerunBacktest = (item: any) => {
       }
     }
   }
-
-  // Filter out null/undefined/empty string values
   const filteredQueryParams = Object.fromEntries(
     Object.entries(queryParams).filter(([, value]) => value !== null && value !== undefined && value !== '')
   );
-
-  // Build query string
   const queryString = new URLSearchParams(
     Object.entries(filteredQueryParams).map(([key, value]) => [key, String(value)])
   ).toString();
-
   navigate(`/simulate?${queryString}`);
 }
-
 const deleteBacktest = async (id: string) => {
   if (!confirm(t('history.confirm_delete'))) return
-  
   try {
     await fetchJson(`/history/${id}`, { method: 'DELETE' })
     await loadHistory()
@@ -476,19 +420,14 @@ const deleteBacktest = async (id: string) => {
     error.value = err.message || t('history.error_deleting')
   }
 }
-
 const navigateToSimulate = () => {
   navigate('/simulate')
 }
-
-// Watchers
 watch(selectedStrategy, (newValue, oldValue) => {
   console.log('Strategy filter changed:', { from: oldValue, to: newValue })
   pagination.value.page = 1
   loadHistory()
 })
-
-// Lifecycle
 onMounted(() => {
   loadHistory()
   loadStats()

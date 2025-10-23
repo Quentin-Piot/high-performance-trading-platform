@@ -6,7 +6,6 @@
             </div>
             {{ t("simulate.form.labels.date_range") }}
         </Label>
-
         <div class="flex flex-col gap-4">
             <!-- Date de début -->
             <div class="space-y-2">
@@ -43,7 +42,6 @@
                     </PopoverContent>
                 </Popover>
             </div>
-
             <!-- Date de fin -->
             <div class="space-y-2">
                 <Label class="text-xs text-muted-foreground">{{
@@ -82,7 +80,6 @@
         </div>
     </div>
 </template>
-
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -98,23 +95,17 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-vue-next";
-
 interface Props {
     startDate: string;
     endDate: string;
 }
-
 interface Emits {
     (e: "update:startDate", date: string): void;
     (e: "update:endDate", date: string): void;
 }
-
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-
 const { t } = useI18n();
-
-// Convert string dates to DateValue objects
 const startDateValue = computed({
     get: () => {
         if (!props.startDate) return undefined;
@@ -132,7 +123,6 @@ const startDateValue = computed({
         }
     },
 });
-
 const endDateValue = computed({
     get: () => {
         if (!props.endDate) return undefined;
@@ -150,17 +140,12 @@ const endDateValue = computed({
         }
     },
 });
-
-// Format date for display
 function formatDate(date: DateValue): string {
     return `${String(date.day).padStart(2, "0")}/${String(date.month).padStart(2, "0")}/${date.year}`;
 }
-
-// Handle date changes
 function onStartDateChange(value: DateValue | undefined) {
     startDateValue.value = value;
 }
-
 function onEndDateChange(value: DateValue | undefined) {
     endDateValue.value = value;
 }

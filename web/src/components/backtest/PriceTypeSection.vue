@@ -37,22 +37,17 @@
     </p>
   </div>
 </template>
-
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { Label } from '@/components/ui/label'
 import { DollarSign } from 'lucide-vue-next'
-
 interface Props {
   priceType: 'close' | 'adj_close'
 }
-
 interface Emits {
   (e: 'update:priceType', value: 'close' | 'adj_close'): void
 }
-
 defineProps<Props>()
 defineEmits<Emits>()
-
 const { t } = useI18n()
 </script>

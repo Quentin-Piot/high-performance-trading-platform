@@ -2,17 +2,14 @@
 import { computed } from 'vue'
 import { useSimulationStore } from '@/stores/simulation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
 const store = useSimulationStore()
 store.init()
-
 const balance = computed(() => store.balance)
 const unrealized = computed(() => store.unrealizedPnl)
 const closed = computed(() => store.closedPnl)
 const openQty = computed(() => store.openPositionQty)
 const avgEntry = computed(() => store.avgEntryPrice)
 </script>
-
 <template>
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <Card>

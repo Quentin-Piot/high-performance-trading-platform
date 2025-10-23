@@ -9,11 +9,8 @@ import {
 import { TrendingUp, Activity, BarChart3, Eye, EyeOff } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
 import type { BacktestResult } from "@/services/backtestService";
-
 const { t } = useI18n();
-
 type LinePoint = { time: number; value: number };
-
 interface ChartSeries {
     id: string;
     name: string;
@@ -21,45 +18,36 @@ interface ChartSeries {
     color: string;
     visible: boolean;
 }
-
 const props = defineProps<{
     results?: BacktestResult[];
     aggregatedData?: LinePoint[];
     activeRange?: "1W" | "1M" | "YTD" | "All";
 }>();
-
 const el = ref<HTMLDivElement | null>(null);
 let chart: ChartApi | null = null;
 const loaded = ref(false);
 let ro: ResizeObserver | null = null;
 const seriesMap = new Map<string, LineSeriesApi>();
-
-// Couleurs distinctes pour chaque ligne
 const colors = [
-    "#10b981", // emerald-500
-    "#3b82f6", // blue-500
-    "#f59e0b", // amber-500
-    "#ef4444", // red-500
-    "#8b5cf6", // violet-500
-    "#06b6d4", // cyan-500
-    "#f97316", // orange-500
-    "#84cc16", // lime-500
-    "#ec4899", // pink-500
-    "#6366f1", // indigo-500
+    "#10b981", 
+    "#3b82f6", 
+    "#f59e0b", 
+    "#ef4444", 
+    "#8b5cf6", 
+    "#06b6d4", 
+    "#f97316", 
+    "#84cc16", 
+    "#ec4899", 
+    "#6366f1", 
 ];
-
 const seriesVisibility = ref<Record<string, boolean>>({});
-
-// Function to apply time range filtering to data points
 function applyTimeRangeFilter(data: LinePoint[]): LinePoint[] {
     if (!props.activeRange || props.activeRange === "All" || data.length === 0) {
         return data;
     }
-
     const times = data.map(d => d.time);
     const maxTime = Math.max(...times);
     let cutoff = maxTime;
-
     if (props.activeRange === "1W") cutoff = maxTime - 7 * 86400;
     else if (props.activeRange === "1M") cutoff = maxTime - 30 * 86400;
     else if (props.activeRange === "YTD") {
@@ -67,23 +55,17 @@ function applyTimeRangeFilter(data: LinePoint[]): LinePoint[] {
         const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
         cutoff = jan1;
     }
-
     return data.filter(d => d.time >= cutoff);
 }
-
 const chartSeries = computed<ChartSeries[]>(() => {
     const series: ChartSeries[] = [];
-
     if (props.results) {
         props.results.forEach((result, index) => {
             let data = result.timestamps.map((timestamp, i) => ({
                 time: Math.floor(new Date(timestamp).getTime() / 1000),
                 value: result.equity_curve[i] || 0,
             }));
-
-            // Apply time range filtering
             data = applyTimeRangeFilter(data);
-
             const seriesId = `result-${index}`;
             series.push({
                 id: seriesId,
@@ -94,24 +76,19 @@ const chartSeries = computed<ChartSeries[]>(() => {
             });
         });
     }
-
     if (props.aggregatedData && props.aggregatedData.length > 0) {
         const aggregatedId = "aggregated";
-        // Apply time range filtering to aggregated data
         const filteredAggregatedData = applyTimeRangeFilter(props.aggregatedData);
-        
         series.push({
             id: aggregatedId,
             name: t("simulate.chart.aggregated"),
             data: filteredAggregatedData,
-            color: "#1f2937", // gray-800
+            color: "#1f2937", 
             visible: seriesVisibility.value[aggregatedId] !== false,
         });
     }
-
     return series;
 });
-
 watch(
     () => props.results,
     () => {
@@ -129,20 +106,16 @@ watch(
     },
     { immediate: true },
 );
-
 const hasData = computed(() => chartSeries.value.length > 0);
 const visibleSeries = computed(() =>
     chartSeries.value.filter((s) => s.visible),
 );
-
 function toggleSeriesVisibility(seriesId: string) {
     seriesVisibility.value[seriesId] = !seriesVisibility.value[seriesId];
     updateChartSeries();
 }
-
 function updateChartSeries() {
     if (!chart) return;
-
     seriesMap.forEach((series) => {
         try {
             (chart as any)?.removeSeries(series);
@@ -151,7 +124,6 @@ function updateChartSeries() {
         }
     });
     seriesMap.clear();
-
     visibleSeries.value.forEach((series) => {
         if (chart) {
             const lineSeries = chart.addLineSeries({
@@ -161,13 +133,11 @@ function updateChartSeries() {
                 crosshairMarkerRadius: 4,
                 priceLineVisible: false,
             } as any);
-
             lineSeries.setData(series.data);
             seriesMap.set(series.id, lineSeries);
         }
     });
 }
-
 onMounted(() => {
     if (!el.value) return;
     const rootEl = el.value!;
@@ -175,10 +145,8 @@ onMounted(() => {
         320,
         rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
     );
-
     const textColor = "#e2e8f0";
     const gridColor = "#1e293b";
-
     rootEl.style.color = textColor;
     chart = createChart(rootEl, {
         layout: {
@@ -200,12 +168,9 @@ onMounted(() => {
             horzLines: { color: gridColor },
         },
     });
-
     if (!chart) return;
-
     updateChartSeries();
     loaded.value = true;
-
     ro = new ResizeObserver(() => {
         if (rootEl && chart) {
             const w = Math.max(
@@ -219,14 +184,12 @@ onMounted(() => {
     });
     ro.observe(rootEl);
 });
-
 onUnmounted(() => {
     chart?.remove();
     if (ro && el.value) ro.unobserve(el.value);
     chart = null;
     seriesMap.clear();
 });
-
 watch(
     () => [props.results, props.aggregatedData],
     () => {
@@ -236,7 +199,6 @@ watch(
     },
     { deep: true },
 );
-
 watch(
     () => seriesVisibility.value,
     () => {
@@ -247,7 +209,6 @@ watch(
     { deep: true },
 );
 </script>
-
 <template>
     <div class="relative group">
         <div class="flex items-center justify-between mb-4 px-2">
@@ -269,7 +230,6 @@ watch(
                     </p>
                 </div>
             </div>
-
             <div v-if="hasData" class="flex items-center gap-2 text-xs">
                 <div
                     class="rounded-lg bg-trading-green/10 p-1.5 text-trading-green"
@@ -281,7 +241,6 @@ watch(
                 }}</span>
             </div>
         </div>
-
         <div
             v-if="hasData"
             class="mb-4 p-3 bg-secondary/20 rounded-lg border border-border/50"
@@ -324,13 +283,11 @@ watch(
                 </button>
             </div>
         </div>
-
         <div
             ref="el"
             class="w-full h-[400px] rounded-lg bg-card/50 border border-border/20 shadow-inner"
             :class="{ 'animate-pulse': !loaded }"
         />
-
         <div
             v-if="!hasData"
             class="absolute inset-0 flex items-center justify-center bg-card/80 rounded-lg border-2 border-dashed border-border/50"

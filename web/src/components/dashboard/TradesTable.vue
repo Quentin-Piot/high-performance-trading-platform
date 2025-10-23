@@ -3,21 +3,17 @@ import { computed, ref } from 'vue'
 import { useSimulationStore } from '@/stores/simulation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
-
 const store = useSimulationStore()
-
 const sideFilter = ref<'ALL' | 'BUY' | 'SELL'>('ALL')
 const assetFilter = ref<string>('ALL')
 const fromDate = ref<string>('')
 const toDate = ref<string>('')
-
 const assets = [
   { label: 'All', value: 'ALL' },
   { label: 'QUTE', value: 'QUTE' },
   { label: 'INDEXX', value: 'INDEXX' },
   { label: 'ALPHA', value: 'ALPHA' },
 ]
-
 const rows = computed(() => store.trades)
 const filteredRows = computed(() => {
   const from = fromDate.value ? new Date(fromDate.value).getTime() : -Infinity
@@ -30,7 +26,6 @@ const filteredRows = computed(() => {
   })
 })
 </script>
-
 <template>
   <Card>
     <CardHeader>

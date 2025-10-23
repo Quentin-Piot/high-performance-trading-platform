@@ -6,11 +6,8 @@ import { GridComponent, TooltipComponent, DataZoomComponent, LegendComponent } f
 import VChart from 'vue-echarts'
 import { computed } from 'vue'
 import { useSimulationStore } from '@/stores/simulation'
-
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, DataZoomComponent, LegendComponent])
-
 const store = useSimulationStore()
-
 const option = computed(() => {
   const data = store.priceSeries.map(pt => [pt.time, pt.price])
   const latest = data[data.length - 1]
@@ -45,7 +42,6 @@ const option = computed(() => {
   }
 })
 </script>
-
 <template>
   <VChart :option="option" autoresize class="h-64 w-full" />
 </template>

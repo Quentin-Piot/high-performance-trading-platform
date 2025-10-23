@@ -22,22 +22,17 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { buildEquityPoints } from "@/composables/useEquitySeries";
-// Local chart types avoiding dependency on lightweight-charts TS exports
 type BusinessDay = { year: number; month: number; day: number };
 type ChartTime = number | BusinessDay;
 type ChartPoint = { time: ChartTime; value: number };
 type LinePoint = { time: number; value: number };
-
 const store = useBacktestStore();
 const auth = useAuthStore();
 const loading = computed(() => store.status === "loading");
 const { t } = useI18n();
-// Toolbar state and helpers
 const selectedResolution = ref<"1m" | "5m" | "1h" | "1d">("1d");
 const activeRange = ref<"1W" | "1M" | "YTD" | "All">("All");
-
 type EquitySeries = ChartPoint[];
-
 function timeToSeconds(p: ChartPoint): number {
     if (typeof p.time === "number") return p.time;
     const bd = p.time as BusinessDay;
@@ -51,7 +46,6 @@ function timeToSeconds(p: ChartPoint): number {
     }
     return Number(p.time) || 0;
 }
-
 function downsample(
     series: EquitySeries,
     resolution: "1m" | "5m" | "1h" | "1d",
@@ -81,7 +75,6 @@ function downsample(
     }
     return out;
 }
-
 function applyRange(
     series: EquitySeries,
     range: "1W" | "1M" | "YTD" | "All",
@@ -99,36 +92,26 @@ function applyRange(
     }
     return series.filter((s) => timeToSeconds(s) >= cutoff);
 }
-
 const displaySeries = computed<EquitySeries>(() => {
     const base: EquitySeries = store.equitySeries || [];
     const ranged = applyRange(base, activeRange.value);
     return downsample(ranged, selectedResolution.value);
 });
-
 const chartSeries = computed<LinePoint[]>(() =>
     displaySeries.value.map((p) => ({
         time: timeToSeconds(p),
         value: p.value,
     })),
 );
-
-// Computed properties pour le graphique multi-lignes
 const hasMultipleResults = computed(
     () => store.isMultipleResults && store.results.length > 1,
 );
 const hasMonteCarloResults = computed(() => {
     return store.isMonteCarloResults && store.monteCarloResults.length > 0;
 });
-
-// Données agrégées pour le graphique multi-lignes
 const aggregatedData = computed<LinePoint[]>(() => {
     if (!hasMultipleResults.value || !store.results.length) return [];
-
-    // Créer un map des timestamps vers les valeurs moyennes
     const timestampMap = new Map<number, { sum: number; count: number }>();
-
-    // Parcourir tous les résultats pour calculer les moyennes
     store.results.forEach((result) => {
         const points = buildEquityPoints(
             result.timestamps,
@@ -144,21 +127,16 @@ const aggregatedData = computed<LinePoint[]>(() => {
             }
         });
     });
-
-    // Convertir en points de ligne avec moyennes
     let aggregatedPoints = Array.from(timestampMap.entries())
         .map(([time, { sum, count }]) => ({
             time,
             value: sum / count,
         }))
         .sort((a, b) => a.time - b.time);
-
-    // Appliquer le filtrage par plage temporelle
     if (activeRange.value !== "All" && aggregatedPoints.length > 0) {
         const times = aggregatedPoints.map((p) => p.time);
         const maxTime = Math.max(...times);
         let cutoff = maxTime;
-
         if (activeRange.value === "1W") cutoff = maxTime - 7 * 86400;
         else if (activeRange.value === "1M") cutoff = maxTime - 30 * 86400;
         else if (activeRange.value === "YTD") {
@@ -166,13 +144,10 @@ const aggregatedData = computed<LinePoint[]>(() => {
             const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
             cutoff = jan1;
         }
-
         aggregatedPoints = aggregatedPoints.filter((p) => p.time >= cutoff);
     }
-
     return aggregatedPoints;
 });
-
 function downloadCsv() {
     const rows = [
         ["time", "value"],
@@ -190,38 +165,25 @@ function downloadCsv() {
     a.click();
     URL.revokeObjectURL(url);
 }
-
-// Auto-run backtest if URL parameters are present
 onMounted(async () => {
-    // Rehydrate auth state first
     await auth.rehydrate();
-    
-    // Check for Google OAuth callback parameters
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('auth') === 'success' && urlParams.get('provider') === 'google') {
         console.log('Google OAuth callback detected on /simulate');
         await auth.handleGoogleCallback();
-        
-        // Clean URL after processing callback
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
-        
         console.log('Authentication state after callback:', {
             isAuthenticated: auth.isAuthenticated,
             user: auth.user,
             token: auth.token ? 'present' : 'missing'
         });
     }
-    
     if (urlParams.size > 0) {
-        // Trigger backtest with URL parameters
-        // The BacktestForm component will handle reading the parameters
-        // and automatically running the backtest
         console.log('URL parameters detected, BacktestForm will auto-run');
     }
 });
 </script>
-
 <template>
     <BaseLayout>
         <!-- Layout: mobile empilé, desktop côte à côte -->
@@ -251,7 +213,6 @@ onMounted(async () => {
                     <BacktestForm />
                 </CardContent>
             </Card>
-
             <!-- Chart panel avec interface TradingView - responsive -->
             <div
                 class="lg:col-span-2 order-2 lg:order-2 space-y-4 sm:space-y-6"
@@ -272,7 +233,6 @@ onMounted(async () => {
                         }}</span>
                     </div>
                 </div>
-
                 <!-- Chart card avec toolbar TradingView style - responsive -->
                 <Card
                     class="border-0 shadow-strong bg-gradient-to-br from-card via-card to-secondary/10 overflow-hidden"
@@ -299,7 +259,6 @@ onMounted(async () => {
                                 {{ t("simulate.header.subtitle") }}
                             </p>
                         </div>
-
                         <!-- Toolbar type TradingView avec design premium - mobile optimisé -->
                         <div
                             class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto"
@@ -361,7 +320,6 @@ onMounted(async () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-
                             <!-- Boutons de plage temporelle avec style TradingView - mobile adapté -->
                             <div
                                 class="flex items-center gap-1 bg-secondary/30 rounded-lg p-1"
@@ -419,7 +377,6 @@ onMounted(async () => {
                                     {{ t("simulate.chart.range.All") }}
                                 </Button>
                             </div>
-
                             <!-- Actions avec effets visuels - mobile optimisé -->
                             <div class="flex items-center gap-1 sm:gap-2">
                                 <Button
@@ -441,7 +398,6 @@ onMounted(async () => {
                             </div>
                         </div>
                     </CardHeader>
-
                     <CardContent class="p-3 sm:p-4 relative">
                         <template v-if="loading">
                             <div
@@ -480,7 +436,6 @@ onMounted(async () => {
                         </template>
                     </CardContent>
                 </Card>
-
                 <!-- KPI grid avec design premium - mobile responsive -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <!-- Monte Carlo Metrics Display -->
@@ -518,7 +473,6 @@ onMounted(async () => {
                             />
                         </div>
                     </div>
-
                     <!-- Regular Metrics Display -->
                     <div
                         v-if="!hasMonteCarloResults"
@@ -534,7 +488,6 @@ onMounted(async () => {
                             class="relative z-10 bg-transparent border-0 shadow-none p-4 sm:p-6"
                         />
                     </div>
-
                     <div
                         v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-red/5"
@@ -549,7 +502,6 @@ onMounted(async () => {
                             class="relative z-10 bg-transparent border-0 shadow-none p-4 sm:p-6"
                         />
                     </div>
-
                     <div
                         v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-blue/5"
@@ -568,84 +520,59 @@ onMounted(async () => {
         </section>
     </BaseLayout>
 </template>
-
 <style scoped>
-/* Optimisations tactiles pour mobile */
 @media (hover: none) and (pointer: coarse) {
     .hover-lift:hover {
         transform: none;
     }
-
     .hover-lift:active {
         transform: translateY(1px);
     }
-
     .hover-glow:hover {
         box-shadow: none;
     }
-
     .hover-scale:hover {
         transform: none;
     }
-
     .hover-scale:active {
         transform: scale(0.98);
     }
-
-    /* Améliorer la zone de toucher pour les boutons */
     .hover-scale {
         min-height: 44px;
         min-width: 44px;
     }
 }
-
-/* Amélioration des performances sur mobile */
 @media (max-width: 640px) {
     .shadow-strong {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-
     .shadow-medium {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
-
     .shadow-soft {
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     }
-
-    /* Réduire le blur pour les performances */
     .backdrop-blur-sm {
         backdrop-filter: blur(4px);
     }
-
-    /* Optimiser les transitions sur mobile */
     .transition-smooth {
         transition: all 0.2s ease;
     }
 }
-
-/* Améliorer l'accessibilité tactile */
 @media (max-width: 1024px) {
-    /* Augmenter la taille des éléments interactifs */
     .SelectTrigger {
         min-height: 40px;
     }
-
     button {
         min-height: 40px;
     }
-
-    /* Espacement amélioré pour le tactile */
     .gap-1 {
         gap: 0.375rem;
     }
-
     .gap-2 {
         gap: 0.625rem;
     }
 }
-
-/* Optimisation de la grille KPI sur très petits écrans */
 @media (max-width: 480px) {
     .grid-cols-1 {
         gap: 0.75rem;

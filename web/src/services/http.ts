@@ -9,7 +9,6 @@ export async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
     clearTimeout(timer)
   }
 }
-
 export async function postJson<T>(url: string, body: unknown, init?: RequestInit): Promise<T> {
   return getJson<T>(url, {
     method: 'POST',
@@ -18,7 +17,6 @@ export async function postJson<T>(url: string, body: unknown, init?: RequestInit
     ...init,
   })
 }
-
 export async function postForm<T>(url: string, form: FormData, init?: RequestInit): Promise<T> {
   return getJson<T>(url, {
     method: 'POST',
