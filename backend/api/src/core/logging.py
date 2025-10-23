@@ -185,6 +185,10 @@ def _redact(value):
 
 class SecretsFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
+        # Temporarily disable redaction for debugging
+        if os.getenv("DISABLE_LOG_REDACTION", "false").lower() == "true":
+            return True
+            
         for key in list(getattr(record, "__dict__", {}).keys()):
             if key.lower() in SENSITIVE_KEYS:
                 setattr(record, key, "[REDACTED]")

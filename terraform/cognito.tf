@@ -77,6 +77,34 @@ resource "aws_cognito_user_pool" "main" {
     string_attribute_constraints {}
   }
 
+  # Custom attribute for Google sub (user ID from Google)
+  schema {
+    name                     = "google_sub"
+    attribute_data_type      = "String"
+    required                 = false
+    mutable                  = true
+    developer_only_attribute = true
+
+    string_attribute_constraints {
+      min_length = "0"
+      max_length = "256"
+    }
+  }
+
+  # Custom attribute for identity provider
+  schema {
+    name                     = "provider"
+    attribute_data_type      = "String"
+    required                 = false
+    mutable                  = true
+    developer_only_attribute = true
+
+    string_attribute_constraints {
+      min_length = "0"
+      max_length = "64"
+    }
+  }
+
   tags = {
     Name        = "${var.project_name}-user-pool"
     Project     = var.project_name

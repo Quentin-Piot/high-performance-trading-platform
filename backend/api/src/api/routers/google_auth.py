@@ -47,7 +47,7 @@ async def google_login(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to initiate Google authentication"
-        )
+        ) from e
 
 
 @router.get("/callback")
@@ -84,47 +84,80 @@ async def google_callback(
 
     try:
         # Exchange code for tokens
+        logger.debug("Starting token exchange with Google")
         token_data = await google_service.exchange_code_for_tokens(code)
+        logger.debug("Token exchange successful")
+        
         user_info = token_data["user_info"]
+        logger.debug(f"User info retrieved: {user_info}")
 
         # Create or link federated user in Cognito
+        logger.debug("Creating federated user in Cognito")
         cognito_user = await cognito_google_service.create_federated_user(user_info)
+        logger.debug(f"Cognito user created: {cognito_user}")
 
         if not cognito_user:
             logger.error("Failed to create or link federated user")
             return RedirectResponse(url=f"{state}?error=federated_user_error")
 
         # Sync user with local database
+        logger.debug("Syncing user with local database")
         user_repo = UserRepository(db)
-        db_user = await user_repo.get_or_create_from_cognito(cognito_user)
+        
+        try:
+            db_user = await user_repo.get_or_create_from_cognito(cognito_user)
+            logger.debug(f"Database user: {db_user}")
+        except Exception as db_error:
+            logger.error(f"Database sync error: {db_error}", exc_info=True)
+            logger.error(f"Cognito user data: {cognito_user}")
+            return RedirectResponse(url=f"{state}?error=database_sync_error&message=Failed to sync user with database")
+
+        # Verify that db_user was created successfully
+        if not db_user or not hasattr(db_user, 'id') or db_user.id is None:
+            logger.error(f"Failed to create or retrieve user from database for cognito_user: {cognito_user}")
+            return RedirectResponse(url=f"{state}?error=database_error&message=User creation failed")
 
         # Get federated credentials for the user
+        logger.debug("Getting federated credentials")
         federated_creds = await cognito_google_service.get_federated_credentials(token_data["id_token"])
+        logger.debug(f"Federated credentials: {federated_creds}")
 
         # For now, redirect with success and user info
-        # Check if we're in development mode and redirect to dashboard instead of simulate
-        if state and "/simulate" in state:
-            redirect_url = f"{google_service.settings.frontend_url}/dashboard"
+        # Redirect to simulate by default, but allow custom redirect based on state parameter
+        logger.debug("Preparing redirect URL")
+        
+        # Use frontend URL for proper redirection
+        if state == "/" or not state:
+            # Default redirect to simulate instead of dashboard
+            redirect_url = f"{google_service.settings.frontend_url}/simulate"
         else:
-            # Use frontend URL for proper redirection
-            if state == "/" or not state:
-                redirect_url = f"{google_service.settings.frontend_url}/dashboard"
+            # If state contains a full URL, use it as is, otherwise prepend frontend URL
+            if state.startswith("http"):
+                redirect_url = state
             else:
-                # If state contains a full URL, use it as is, otherwise prepend frontend URL
-                if state.startswith("http"):
-                    redirect_url = state
-                else:
-                    redirect_url = f"{google_service.settings.frontend_url}{state}"
+                redirect_url = f"{google_service.settings.frontend_url}{state}"
 
-        query_params = f"auth=success&provider=google&email={user_info['email']}&user_id={db_user.id}"
+        logger.debug(f"Redirect URL: {redirect_url}")
+        
+        # Generate JWT token for the authenticated user
+        from core.security import create_access_token
+        access_token = create_access_token(subject=str(db_user.id))
+        
+        query_params = f"auth=success&provider=google&email={user_info['email']}&user_id={db_user.id}&token={access_token}"
 
         if federated_creds:
             query_params += f"&identity_id={federated_creds['identity_id']}"
 
-        return RedirectResponse(url=f"{redirect_url}?{query_params}")
+        final_url = f"{redirect_url}?{query_params}"
+        logger.debug(f"Final redirect URL: {final_url}")
+        
+        return RedirectResponse(url=final_url)
 
     except Exception as e:
-        logger.error(f"Google OAuth callback error: {e}")
+        logger.error(f"Google OAuth callback error: {e}", exc_info=True)
+        logger.error(f"Token data: {token_data if 'token_data' in locals() else 'Not available'}")
+        logger.error(f"User info: {user_info if 'user_info' in locals() else 'Not available'}")
+        logger.error(f"Cognito user: {cognito_user if 'cognito_user' in locals() else 'Not available'}")
         return RedirectResponse(url=f"{state}?error=callback_error&message=Authentication failed")
 
 

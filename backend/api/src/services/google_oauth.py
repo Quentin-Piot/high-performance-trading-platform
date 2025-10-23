@@ -27,6 +27,9 @@ class GoogleOAuthService:
         self.token_url = "https://oauth2.googleapis.com/token"
         self.userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
 
+        # Configure HTTP timeout settings (30 seconds total, 10 seconds connect)
+        self.timeout = httpx.Timeout(30.0, connect=10.0)
+
         # Check if we're in development mode with LocalStack AND using mock OAuth
         # Use mock ONLY when Google OAuth credentials are not configured
         self.is_development = (
@@ -107,11 +110,14 @@ class GoogleOAuthService:
             "redirect_uri": self.redirect_uri,
         }
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(self.token_url, data=token_data)
 
             if response.status_code != 200:
                 logger.error(f"Token exchange failed: {response.text}")
+                logger.error(f"Request data: {token_data}")
+                logger.error(f"Response status: {response.status_code}")
+                logger.error(f"Response headers: {response.headers}")
                 raise Exception(f"Failed to exchange code for tokens: {response.text}")
 
             tokens = response.json()
@@ -145,7 +151,7 @@ class GoogleOAuthService:
 
             except ValueError as e:
                 logger.error(f"ID token verification failed: {e}")
-                raise Exception(f"Invalid ID token: {e}")
+                raise Exception(f"Invalid ID token: {e}") from e
 
     async def _get_user_info(self, access_token: str) -> dict[str, Any]:
         """
@@ -170,7 +176,7 @@ class GoogleOAuthService:
         # Production implementation
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(self.userinfo_url, headers=headers)
 
             if response.status_code != 200:
@@ -196,7 +202,7 @@ class GoogleOAuthService:
             "grant_type": "refresh_token",
         }
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(self.token_url, data=token_data)
 
             if response.status_code == 200:

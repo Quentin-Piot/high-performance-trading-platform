@@ -29,6 +29,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=True)  # Made nullable for Cognito users
     cognito_sub: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=True)  # Cognito user ID
     name: Mapped[str] = mapped_column(String(255), nullable=True)  # User's display name
+    auth_method: Mapped[str] = mapped_column(String(50), nullable=False, default="email")  # "email", "google", "mixed"
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
