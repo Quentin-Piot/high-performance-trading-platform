@@ -1,4 +1,5 @@
-from pydantic import AliasChoices, Field
+import secrets
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,9 +9,24 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://postgres:postgres@pg:5432/trading_db",
         validation_alias=AliasChoices("DATABASE_URL", "DB_URL"),
     )
-    jwt_secret: str = "changeme-dev-secret"
+    jwt_secret: str = Field(
+        default_factory=lambda: secrets.token_urlsafe(32),
+        description="JWT secret key - should be set via environment variable in production"
+    )
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080  # 7 days = 7 * 24 * 60 minutes
+
+    @field_validator('jwt_secret')
+    @classmethod
+    def validate_jwt_secret(cls, v: str, info) -> str:
+        """Ensure JWT secret is secure in production."""
+        env = info.data.get('env', 'development') if info.data else 'development'
+        if env == 'production' and (not v or v == 'changeme-dev-secret' or len(v) < 32):
+            raise ValueError(
+                "JWT secret must be set to a secure value (at least 32 characters) in production. "
+                "Use a strong random string and set it via the JWT_SECRET environment variable."
+            )
+        return v
 
     # Database connection pooling settings
     db_pool_size: int = Field(

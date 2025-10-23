@@ -2,6 +2,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from typing import Any, AsyncGenerator, Tuple
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -20,20 +21,20 @@ from core.logging import REQUEST_ID, setup_logging
 from infrastructure.db import engine, init_db
 from infrastructure.monitoring import monitoring_service
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-# log
+# Setup logging
 setup_logging()
 
 
 @asynccontextmanager
-async def app_lifespan(app: FastAPI):
+async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logging.getLogger("app").info("Startup")
     await init_db()
 
     # Register database health check
-    def db_health_check():
+    def db_health_check() -> Tuple[str, str, dict[str, Any]]:
         """Check database connectivity"""
         try:
             # This is a sync function, so we can't use async here

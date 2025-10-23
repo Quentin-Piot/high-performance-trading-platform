@@ -138,12 +138,16 @@ class IndexManager:
             Dictionary containing table statistics
         """
         try:
+            # Validate table name to prevent SQL injection
+            if not table_name.replace('_', '').isalnum():
+                raise ValueError(f"Invalid table name: {table_name}")
+            
             # Update table statistics
-            await self.session.execute(text(f"ANALYZE {table_name}"))
+            await self.session.execute(text("ANALYZE :table_name").bindparam(table_name=table_name))
 
             # Get table size and row count
             # Get column statistics from pg_stats
-            stats_query = text(f"""
+            stats_query = text("""
                 SELECT
                     schemaname,
                     tablename,
@@ -151,28 +155,28 @@ class IndexManager:
                     n_distinct,
                     correlation
                 FROM pg_stats
-                WHERE tablename = '{table_name}'
+                WHERE tablename = :table_name
                 ORDER BY attname
             """)
 
-            result = await self.session.execute(stats_query)
+            result = await self.session.execute(stats_query, {"table_name": table_name})
             stats = result.fetchall()
 
-            # Get table size information
-            # Use direct table name interpolation for PostgreSQL functions
-            size_query = text(f"""
+            # Get table size information using parameterized queries
+            size_query = text("""
                 SELECT
-                    pg_size_pretty(pg_total_relation_size('{table_name}')) as total_size,
-                    pg_size_pretty(pg_relation_size('{table_name}')) as table_size
+                    pg_size_pretty(pg_total_relation_size(:table_name)) as total_size,
+                    pg_size_pretty(pg_relation_size(:table_name)) as table_size
             """)
 
-            # Get row count with a separate, safer query
+            # Get row count with a parameterized query
+            # Note: For table names in FROM clause, we need to use identifier() or validate the name
             count_query = text(f"""
                 SELECT count(*) as row_count
                 FROM {table_name}
             """)
 
-            size_result = await self.session.execute(size_query)
+            size_result = await self.session.execute(size_query, {"table_name": table_name})
             count_result = await self.session.execute(count_query)
             size_info = size_result.fetchone()
             count_info = count_result.fetchone()
@@ -271,7 +275,12 @@ class IndexManager:
             Dictionary containing optimization results
         """
         try:
+            # Validate table name to prevent SQL injection
+            if not table_name.replace('_', '').isalnum():
+                raise ValueError(f"Invalid table name: {table_name}")
+                
             # Run VACUUM ANALYZE for the table
+            # Note: VACUUM doesn't support parameterized table names, so we validate the name above
             vacuum_query = text(f"VACUUM ANALYZE {table_name}")
             await self.session.execute(vacuum_query)
 

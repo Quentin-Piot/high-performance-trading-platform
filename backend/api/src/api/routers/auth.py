@@ -1,3 +1,5 @@
+from typing import AsyncGenerator
+
 import logging
 import secrets
 import string
@@ -17,7 +19,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-async def get_db():
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async for session in get_session():
         yield session
 
