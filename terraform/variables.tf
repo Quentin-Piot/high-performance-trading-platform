@@ -20,6 +20,12 @@ variable "env" {
   default     = "staging"
 }
 
+variable "jwt" {
+  description = "JWT Secret"
+  type        = string
+  default     = "change-me"
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string

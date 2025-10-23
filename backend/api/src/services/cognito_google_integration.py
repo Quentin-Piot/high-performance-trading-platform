@@ -158,21 +158,17 @@ class CognitoGoogleIntegrationService:
     async def _link_google_identity(self, username: str, google_user_info: dict[str, Any]) -> bool:
         """Link Google identity to existing Cognito user."""
         try:
-            # Since custom attributes are not available in the existing User Pool schema,
-            # we'll use the 'nickname' attribute to store the Google sub as a workaround
-            # Format: "google:{google_sub}"
-            
-            google_identifier = f"google:{google_user_info['sub']}"
-            
+            # Use custom attributes with proper prefix for developer-only attributes
             self.cognito_idp.admin_update_user_attributes(
                 UserPoolId=self.user_pool_id,
                 Username=username,
                 UserAttributes=[
-                    {'Name': 'nickname', 'Value': google_identifier},
+                    {'Name': 'custom:google_sub', 'Value': google_user_info['sub']},
+                    {'Name': 'custom:provider', 'Value': 'google'},
                 ]
             )
 
-            logger.info(f"Linked Google identity for user: {username} with identifier: {google_identifier}")
+            logger.info(f"Linked Google identity for user: {username} with Google sub: {google_user_info['sub']}")
             return True
 
         except ClientError as e:
