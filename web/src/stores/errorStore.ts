@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia'
-
 export type ErrorEvent = {
   id: string
   time: number
-  code: string // i18n key-like code: e.g., 'error.invalid_csv'
-  message?: string // optional raw message for debugging
+  code: string 
+  message?: string 
   context?: Record<string, unknown>
 }
-
 export const useErrorStore = defineStore('errors', {
   state: () => ({
     events: [] as ErrorEvent[],
@@ -26,8 +24,6 @@ export const useErrorStore = defineStore('errors', {
         context,
       }
       this.events.unshift(evt)
-      // Optional: send to analytics endpoint later
-      // console.debug('[error]', evt)
     },
     clear() {
       this.events = []

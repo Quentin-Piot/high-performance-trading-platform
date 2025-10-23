@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
 import { login as loginSvc, register as registerSvc } from '@/services/authService'
 import { useErrorStore } from '@/stores/errorStore'
-
 type Credentials = { email: string; password: string }
-
 interface User {
   sub?: string
   email: string
@@ -11,7 +9,6 @@ interface User {
   email_verified?: boolean
   provider: 'cognito' | 'google'
 }
-
 interface AuthState {
   token: string | null
   userEmail: string | undefined
@@ -19,14 +16,11 @@ interface AuthState {
   isLoading: boolean
   googleAuthUrl: string | null
 }
-
-// Utility functions for secure localStorage operations
 const STORAGE_KEYS = {
   TOKEN: 'hptp_auth_token',
   USER: 'hptp_user_data',
   USER_EMAIL: 'hptp_user_email'
 } as const
-
 const secureStorage = {
   setItem: (key: string, value: string) => {
     try {
@@ -35,7 +29,6 @@ const secureStorage = {
       console.warn('Failed to save to localStorage:', error)
     }
   },
-  
   getItem: (key: string): string | null => {
     try {
       return localStorage.getItem(key)
@@ -44,7 +37,6 @@ const secureStorage = {
       return null
     }
   },
-  
   removeItem: (key: string) => {
     try {
       localStorage.removeItem(key)
@@ -52,7 +44,6 @@ const secureStorage = {
       console.warn('Failed to remove from localStorage:', error)
     }
   },
-  
   clear: () => {
     try {
       Object.values(STORAGE_KEYS).forEach(key => {
@@ -63,7 +54,6 @@ const secureStorage = {
     }
   }
 }
-
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     token: null,
@@ -79,7 +69,6 @@ export const useAuthStore = defineStore('auth', {
     userName: (s) => s.user?.name || s.user?.email?.split('@')[0] || 'User',
   },
   actions: {
-    // Persist user data to localStorage
     persistUserData() {
       if (this.token) {
         secureStorage.setItem(STORAGE_KEYS.TOKEN, this.token)
@@ -91,17 +80,13 @@ export const useAuthStore = defineStore('auth', {
         secureStorage.setItem(STORAGE_KEYS.USER_EMAIL, this.userEmail)
       }
     },
-
-    // Load user data from localStorage
     loadPersistedData() {
       const token = secureStorage.getItem(STORAGE_KEYS.TOKEN)
       const userData = secureStorage.getItem(STORAGE_KEYS.USER)
       const userEmail = secureStorage.getItem(STORAGE_KEYS.USER_EMAIL)
-
       if (token) {
         this.token = token
       }
-
       if (userData) {
         try {
           this.user = JSON.parse(userData)
@@ -110,19 +95,16 @@ export const useAuthStore = defineStore('auth', {
           secureStorage.removeItem(STORAGE_KEYS.USER)
         }
       }
-
       if (userEmail) {
         this.userEmail = userEmail
       }
     },
-
     async register({ email, password }: Credentials) {
       this.isLoading = true
       try {
         const resp = await registerSvc({ email, password })
         this.token = resp.access_token
         this.userEmail = email
-        // Set basic user info for Cognito registration
         this.user = {
           sub: resp.sub || '',
           email,
@@ -137,14 +119,12 @@ export const useAuthStore = defineStore('auth', {
         this.isLoading = false
       }
     },
-    
     async login({ email, password }: Credentials) {
       this.isLoading = true
       try {
         const resp = await loginSvc({ email, password })
         this.token = resp.access_token
         this.userEmail = email
-        // Set basic user info for Cognito login
         this.user = {
           sub: resp.sub || '',
           email,
@@ -159,18 +139,12 @@ export const useAuthStore = defineStore('auth', {
         this.isLoading = false
       }
     },
-
     async loginWithGoogle(redirectUrl: string = '/simulate') {
       this.isLoading = true
       try {
-        // Redirect to backend Google OAuth endpoint
         const baseUrl = '/api/v1'
         const googleAuthUrl = `${baseUrl}/auth/google/login?redirect_url=${encodeURIComponent(window.location.origin + redirectUrl)}`
-        
-        // Store the intended redirect URL
         secureStorage.setItem('google_redirect_url', redirectUrl)
-        
-        // Redirect to Google OAuth
         window.location.href = googleAuthUrl
       } catch (e: unknown) {
         useErrorStore().log('error.google_auth_failed', e instanceof Error ? e.message : String(e))
@@ -178,7 +152,6 @@ export const useAuthStore = defineStore('auth', {
         throw e
       }
     },
-
     async handleGoogleCallback() {
       const urlParams = new URLSearchParams(window.location.search)
       const authStatus = urlParams.get('auth')
@@ -189,14 +162,11 @@ export const useAuthStore = defineStore('auth', {
       const identityId = urlParams.get('identity_id')
       const error = urlParams.get('error')
       const message = urlParams.get('message')
-
       if (error) {
         useErrorStore().log('error.google_callback_failed', message || error)
         return false
       }
-
       if (authStatus === 'success' && provider === 'google' && email && token) {
-        // Set user as authenticated with Google using the real JWT token
         this.user = {
           sub: identityId || `google_${userId}`,
           email,
@@ -204,33 +174,23 @@ export const useAuthStore = defineStore('auth', {
           provider: 'google'
         }
         this.userEmail = email
-        this.token = token // Use the real JWT token from backend
-        
+        this.token = token 
         this.persistUserData()
-        
-        // Clean up URL parameters
         const cleanUrl = window.location.pathname
         window.history.replaceState({}, document.title, cleanUrl)
-        
         return true
       }
-
       return false
     },
-
     async fetchUserInfo() {
       if (!this.token) return null
-      
       try {
-        // This would call the backend to get current user info
-        // For now, return the stored user
         return this.user
       } catch (e: unknown) {
         useErrorStore().log('error.fetch_user_failed', e instanceof Error ? e.message : String(e))
         return null
       }
     },
-
     logout() {
       this.token = null
       this.userEmail = undefined
@@ -238,13 +198,9 @@ export const useAuthStore = defineStore('auth', {
       this.googleAuthUrl = null
       secureStorage.clear()
     },
-
     rehydrate() {
       this.loadPersistedData()
-      
-      // Validate token if it exists (you might want to add token validation logic here)
       if (this.token && !this.user) {
-        // If we have a token but no user data, clear everything
         this.logout()
       }
     },

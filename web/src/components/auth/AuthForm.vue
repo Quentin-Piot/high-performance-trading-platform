@@ -5,19 +5,15 @@ import { useRouter } from '@/router'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-
 type Mode = 'login' | 'register'
 const props = defineProps<{ mode: Mode }>()
-
 const email = ref('')
 const password = ref('')
 const error = ref<string | null>(null)
 const loading = ref(false)
 const valid = computed(() => email.value.includes('@') && password.value.length >= 6)
-
 const auth = useAuthStore()
 const { navigate } = useRouter()
-
 async function onSubmit() {
   error.value = null
   if (!valid.value) {
@@ -35,7 +31,6 @@ async function onSubmit() {
     loading.value = false
   }
 }
-
 async function onGoogleLogin() {
   error.value = null
   try {
@@ -45,18 +40,16 @@ async function onGoogleLogin() {
   }
 }
 </script>
-
 <template>
   <div class="max-w-sm w-full mx-auto p-4 rounded-md border">
     <h2 class="text-lg font-semibold mb-3">{{ props.mode === 'login' ? 'Login' : 'Register' }}</h2>
-    
     <!-- Google OAuth Button -->
     <div class="mb-4">
       <Button 
         variant="outline" 
         class="w-full h-10 flex items-center justify-center gap-2" 
-        @click="onGoogleLogin"
         :disabled="loading"
+        @click="onGoogleLogin"
       >
         <svg class="w-4 h-4" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -67,7 +60,6 @@ async function onGoogleLogin() {
         Continue with Google
       </Button>
     </div>
-
     <!-- Divider -->
     <div class="relative mb-4">
       <div class="absolute inset-0 flex items-center">
@@ -77,7 +69,6 @@ async function onGoogleLogin() {
         <span class="bg-background px-2 text-muted-foreground">Or continue with email</span>
       </div>
     </div>
-
     <!-- Email/Password Form -->
     <div class="space-y-3">
       <div>

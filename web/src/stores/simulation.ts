@@ -1,14 +1,12 @@
 import { defineStore } from "pinia"
 import { createSimulator, type SimState, type SimulationParams } from "@/services/mockSim"
 import type { Trade, PriceTick } from "@/services/api"
-
 export const useSimulationStore = defineStore("simulation", {
   state: () => ({
     running: false as boolean,
     params: { symbol: "QUTE", intervalMs: 1000, volatility: 0.2, initialBalance: 100000 } as SimulationParams,
     sim: null as ReturnType<typeof createSimulator> | null,
     snapshot: null as SimState | null,
-    // flattened reactive mirrors for UI
     tradesArr: [] as Trade[],
     pricesArr: [] as PriceTick[],
     realizedClosedPnl: 0 as number,
@@ -19,7 +17,6 @@ export const useSimulationStore = defineStore("simulation", {
     positions: (s) => s.snapshot?.positions ?? {},
     priceSeries: (s) => s.pricesArr,
     trades: (s) => s.tradesArr,
-    // Portfolio metrics
     openPositionQty: (s): number => Object.values(s.snapshot?.positions ?? {}).reduce((a, p) => a + p.qty, 0),
     avgEntryPrice: (s): number => {
       const pos = (s.snapshot?.positions ?? {})[s.params.symbol]
@@ -51,9 +48,7 @@ export const useSimulationStore = defineStore("simulation", {
       this.running = false
     },
     reset() {
-      // reset realized closed pnl
       this.realizedClosedPnl = 0
-      // recreate simulator with same params and initial balance
       if (this.sim) {
         this.sim.stop()
         this.sim = null
@@ -67,13 +62,11 @@ export const useSimulationStore = defineStore("simulation", {
     triggerTrade(side: "BUY" | "SELL", qty: number) {
       if (!this.sim) this.init()
       this.sim!.triggerTrade(side, qty)
-      // update closed PnL if realized present
       const latest = this.trades[0]
       if (latest?.realizedPnl !== undefined) this.realizedClosedPnl += latest.realizedPnl
     },
     setParams(p: Partial<SimulationParams>) {
       this.params = { ...this.params, ...p }
-      // reinit simulator on param changes affecting dynamics
       if (this.sim && (p.intervalMs || p.volatility || p.symbol || p.initialBalance !== undefined)) {
         this.sim.stop()
         this.sim = createSimulator(this.sim.price, this.params)

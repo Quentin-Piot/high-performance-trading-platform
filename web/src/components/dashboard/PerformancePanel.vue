@@ -2,14 +2,10 @@
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSimulationStore } from '@/stores/simulation'
-
 const store = useSimulationStore()
-
 const totalTrades = computed(() => store.trades.length)
 const wins = computed(() => store.trades.filter(t => (t.realizedPnl ?? 0) > 0).length)
 const winRate = computed(() => totalTrades.value ? Math.round((wins.value / totalTrades.value) * 100) : 0)
-
-// Simulated latency
 const latency = ref(0)
 let timer: number | null = null
 onMounted(() => {
@@ -19,7 +15,6 @@ onMounted(() => {
 })
 onBeforeUnmount(() => { if (timer) clearInterval(timer as unknown as number) })
 </script>
-
 <template>
   <Card>
     <CardHeader>

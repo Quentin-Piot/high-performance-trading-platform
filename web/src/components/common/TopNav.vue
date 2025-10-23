@@ -29,47 +29,37 @@ import {
     Settings,
     History,
 } from "lucide-vue-next";
-
 const { navigate } = useRouter();
 const { t } = useI18n();
 const i18n = useI18n();
 const auth = useAuthStore();
-
 const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } })
     .locale;
 const selectedLocale = ref<"en" | "fr">(localeRef?.value ?? "en");
 const mobileMenuOpen = ref(false);
-
-// Computed properties for authentication state
 const isAuthenticated = computed(() => auth.isAuthenticated);
 const userName = computed(() => auth.userName || auth.userEmail || "User");
 const userProvider = computed(() => auth.user?.provider || "cognito");
-
 watch(selectedLocale, (val) => {
     if (localeRef) localeRef.value = val;
 });
-
 function go(path: string) {
     navigate(path);
     mobileMenuOpen.value = false;
 }
-
 function goHome() {
     navigate("/");
     mobileMenuOpen.value = false;
 }
-
 function toggleMobileMenu() {
     mobileMenuOpen.value = !mobileMenuOpen.value;
 }
-
 async function handleLogout() {
     await auth.logout();
     navigate("/");
     mobileMenuOpen.value = false;
 }
 </script>
-
 <template>
     <nav class="relative">
         <!-- Liquid glass hero background -->
@@ -80,7 +70,6 @@ async function handleLogout() {
             <div class="liquid-glass-shimmer"></div>
             <div class="liquid-glass-noise"></div>
         </div>
-
         <!-- Navigation content -->
         <div class="relative z-10 mx-auto max-w-7xl">
             <div
@@ -114,7 +103,6 @@ async function handleLogout() {
                         </span>
                     </div>
                 </div>
-
                 <!-- Desktop Navigation -->
                 <div class="hidden lg:flex items-center gap-3">
                     <!-- Navigation Links -->
@@ -128,7 +116,6 @@ async function handleLogout() {
                             <Home class="size-4 mr-2" />
                             <span class="font-medium">{{ t("nav.home") }}</span>
                         </Button>
-
                         <Button
                             variant="ghost"
                             size="sm"
@@ -140,7 +127,6 @@ async function handleLogout() {
                                 t("nav.simulate")
                             }}</span>
                         </Button>
-
                         <Button
                             v-if="isAuthenticated"
                             variant="ghost"
@@ -154,7 +140,6 @@ async function handleLogout() {
                             }}</span>
                         </Button>
                     </div>
-
                     <!-- Right side actions -->
                     <div class="flex items-center gap-2">
                         <!-- Language selector -->
@@ -191,10 +176,8 @@ async function handleLogout() {
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-
                         <!-- Divider -->
                         <div class="w-px h-6 bg-white/20 mx-1"></div>
-
                         <!-- Authentication Section -->
                         <div v-if="isAuthenticated" class="flex items-center">
                             <Popover>
@@ -287,7 +270,6 @@ async function handleLogout() {
                                 </PopoverContent>
                             </Popover>
                         </div>
-
                         <!-- Auth buttons for non-authenticated users -->
                         <div v-else class="flex items-center gap-2">
                             <Button
@@ -301,7 +283,6 @@ async function handleLogout() {
                                     t("nav.login")
                                 }}</span>
                             </Button>
-
                             <Button
                                 size="sm"
                                 class="h-9 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium shadow-lg shadow-blue-500/25 transition-all duration-300"
@@ -313,7 +294,6 @@ async function handleLogout() {
                         </div>
                     </div>
                 </div>
-
                 <!-- Mobile/Tablet Navigation -->
                 <div class="flex lg:hidden items-center gap-3">
                     <!-- Language selector mobile -->
@@ -346,7 +326,6 @@ async function handleLogout() {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-
                     <!-- Menu hamburger -->
                     <Button
                         variant="ghost"
@@ -360,7 +339,6 @@ async function handleLogout() {
                 </div>
             </div>
         </div>
-
         <!-- Mobile menu overlay -->
         <Transition name="mobile-menu">
             <div
@@ -381,7 +359,6 @@ async function handleLogout() {
                             <Home class="size-5 mr-3" />
                             <span class="font-medium">{{ t("nav.home") }}</span>
                         </Button>
-
                         <Button
                             variant="ghost"
                             size="sm"
@@ -393,7 +370,6 @@ async function handleLogout() {
                                 t("nav.simulate")
                             }}</span>
                         </Button>
-
                         <Button
                             v-if="isAuthenticated"
                             variant="ghost"
@@ -407,10 +383,8 @@ async function handleLogout() {
                             }}</span>
                         </Button>
                     </div>
-
                     <!-- Divider -->
                     <div class="h-px bg-white/10"></div>
-
                     <!-- Auth Section -->
                     <div v-if="isAuthenticated" class="p-3 space-y-2">
                         <!-- User Info Card -->
@@ -448,7 +422,6 @@ async function handleLogout() {
                                 </div>
                             </div>
                         </div>
-
                         <Button
                             variant="ghost"
                             size="sm"
@@ -457,7 +430,6 @@ async function handleLogout() {
                             <Settings class="size-5 mr-3" />
                             <span class="font-medium">Settings</span>
                         </Button>
-
                         <Button
                             variant="ghost"
                             size="sm"
@@ -468,7 +440,6 @@ async function handleLogout() {
                             <span class="font-medium">Logout</span>
                         </Button>
                     </div>
-
                     <!-- Auth buttons for non-authenticated users -->
                     <div v-else class="p-3 space-y-2">
                         <Button
@@ -482,7 +453,6 @@ async function handleLogout() {
                                 t("nav.login")
                             }}</span>
                         </Button>
-
                         <Button
                             size="sm"
                             class="w-full justify-start h-11 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium"
@@ -499,9 +469,7 @@ async function handleLogout() {
         </Transition>
     </nav>
 </template>
-
 <style scoped>
-/* Liquid glass hero styling */
 .liquid-glass-hero {
     position: absolute;
     inset: 0;
@@ -516,7 +484,6 @@ async function handleLogout() {
     border-radius: 1rem;
     overflow: hidden;
 }
-
 .liquid-glass-bg {
     position: absolute;
     inset: 0;
@@ -529,7 +496,6 @@ async function handleLogout() {
     background-size: 180% 180%;
     border-radius: inherit;
 }
-
 .liquid-glass-overlay {
     position: absolute;
     inset: 0;
@@ -542,7 +508,6 @@ async function handleLogout() {
     border-radius: inherit;
     opacity: 0.95;
 }
-
 .liquid-glass-reflection {
     position: absolute;
     top: 0;
@@ -559,7 +524,6 @@ async function handleLogout() {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
-
 .liquid-glass-shimmer {
     position: absolute;
     inset: 0;
@@ -573,7 +537,6 @@ async function handleLogout() {
     border-radius: inherit;
     opacity: 0;
 }
-
 .liquid-glass-noise {
     position: absolute;
     inset: 0;
@@ -584,8 +547,6 @@ async function handleLogout() {
     opacity: 0.15;
     pointer-events: none;
 }
-
-/* Gradient text styling */
 .gradient-text {
     background:
         radial-gradient(
@@ -615,23 +576,17 @@ async function handleLogout() {
         0 8px 22px rgba(0, 0, 0, 0.2),
         0 -1px 8px rgba(255, 255, 255, 0.2);
 }
-
-/* Enhanced hover effects */
 .hover-scale:hover {
     transform: scale(1.02);
 }
-
-/* Mobile menu transition */
 .mobile-menu-enter-active,
 .mobile-menu-leave-active {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .mobile-menu-enter-from {
     opacity: 0;
     transform: translateY(-8px);
 }
-
 .mobile-menu-leave-to {
     opacity: 0;
     transform: translateY(-8px);

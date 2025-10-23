@@ -16,9 +16,7 @@ import {
 } from "@/services/backtestService";
 import { useErrorStore } from "@/stores/errorStore";
 import { buildEquityPoints, toLineData } from "@/composables/useEquitySeries";
-
 export type BacktestStatus = "idle" | "loading" | "success" | "error";
-
 export const useBacktestStore = defineStore("backtest", {
   state: () => ({
     status: "idle" as BacktestStatus,
@@ -32,11 +30,9 @@ export const useBacktestStore = defineStore("backtest", {
     lastFile: null as File | null,
     lastFiles: [] as File[],
     lastRequest: null as BacktestRequest | null,
-    // Multiple backtest results
     results: [] as BacktestResult[],
     aggregatedMetrics: null as AggregatedMetrics | null,
     isMultipleResults: false,
-    // Monte Carlo specific state
     isMonteCarloResults: false,
     monteCarloResults: [] as MonteCarloResult[],
     metricsDistribution: null as {
@@ -68,7 +64,6 @@ export const useBacktestStore = defineStore("backtest", {
       this.results = [];
       this.aggregatedMetrics = null;
       this.isMultipleResults = false;
-      // Reset Monte Carlo state
       this.isMonteCarloResults = false;
       this.monteCarloResults = [];
       this.metricsDistribution = null;
@@ -80,11 +75,9 @@ export const useBacktestStore = defineStore("backtest", {
       this.errorMessage = null;
       try {
         const resp: BacktestResponse = await runBacktestSvc(file, req);
-
         const curve = resp.equity_curve || [];
         const base = curve.length ? curve[0] : 1;
         const normalized = base ? curve.map((v) => v / base) : curve;
-
         this.timestamps = resp.timestamps || [];
         this.equityCurve = normalized;
         this.pnl = resp.pnl;
@@ -115,15 +108,11 @@ export const useBacktestStore = defineStore("backtest", {
           req,
           selectedDatasets,
         );
-
         if (isMultipleBacktestResponse(resp)) {
-          // Handle multiple results
           this.results = resp.results;
           this.aggregatedMetrics = resp.aggregated_metrics;
           this.isMultipleResults = true;
           this.isMonteCarloResults = false;
-
-          // For backward compatibility, set the first result as the main result
           if (resp.results.length > 0) {
             const firstResult = resp.results[0]!;
             const curve = firstResult.equity_curve || [];
@@ -131,7 +120,6 @@ export const useBacktestStore = defineStore("backtest", {
             const normalized = base
               ? curve.map((v: number) => v / base)
               : curve;
-
             this.timestamps = firstResult.timestamps || [];
             this.equityCurve = normalized;
             this.pnl = firstResult.pnl;
@@ -139,35 +127,24 @@ export const useBacktestStore = defineStore("backtest", {
             this.sharpe = firstResult.sharpe;
           }
         } else if (isMonteCarloResponse(resp)) {
-          // Handle Monte Carlo results
           this.monteCarloResults = resp.results;
           this.aggregatedMetrics = resp.aggregated_metrics;
           this.isMonteCarloResults = true;
           this.isMultipleResults = false;
-
-          // Set distribution data from first result
           if (resp.results.length > 0) {
             const firstResult = resp.results[0]!;
             this.metricsDistribution = firstResult.metrics_distribution;
             this.equityEnvelope = firstResult.equity_envelope;
-
-            // Set median values as main metrics for display
             this.pnl = firstResult.metrics_distribution.pnl.median;
             this.drawdown = firstResult.metrics_distribution.drawdown.median;
             this.sharpe = firstResult.metrics_distribution.sharpe.median;
-
-            // Use median equity curve for main display
             this.timestamps = firstResult.equity_envelope.timestamps;
             this.equityCurve = firstResult.equity_envelope.median;
           }
-
-
         } else {
-          // Handle single result (backward compatible)
           const curve = resp.equity_curve || [];
           const base = curve.length ? curve[0] : 1;
           const normalized = base ? curve.map((v: number) => v / base) : curve;
-
           this.timestamps = resp.timestamps || [];
           this.equityCurve = normalized;
           this.pnl = resp.pnl;
@@ -178,7 +155,6 @@ export const useBacktestStore = defineStore("backtest", {
           this.results = [];
           this.aggregatedMetrics = null;
         }
-
         this.lastFiles = files;
         this.lastFile = files.length === 1 ? files[0] || null : null;
         this.lastRequest = req;

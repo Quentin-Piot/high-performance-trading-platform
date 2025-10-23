@@ -5,9 +5,7 @@ import { SelectContent } from '@/components/ui/select'
 import { SelectItem } from '@/components/ui/select'
 import { SelectValue } from '@/components/ui/select'
 import { useSimulationStore } from '@/stores/simulation'
-
 const store = useSimulationStore()
-
 const intervals = [500, 1000, 2000, 5000]
 const assets = [
   { label: 'QUTE', value: 'QUTE' },
@@ -15,7 +13,6 @@ const assets = [
   { label: 'ALPHA', value: 'ALPHA' },
 ]
 </script>
-
 <template>
   <div class="flex flex-wrap items-center gap-4">
     <div class="flex items-center gap-2">

@@ -5,14 +5,13 @@
       <Button 
         variant="outline" 
         size="sm" 
-        @click="addTodo"
         class="flex items-center gap-2"
+        @click="addTodo"
       >
         <Plus class="size-4" />
         {{ t('todo.add') }}
       </Button>
     </div>
-
     <div class="space-y-2">
       <div
         v-for="todo in todos"
@@ -49,19 +48,17 @@
         <Button
           variant="ghost"
           size="sm"
-          @click="removeTodo(todo.id)"
           class="text-muted-foreground hover:text-destructive"
+          @click="removeTodo(todo.id)"
         >
           <Trash2 class="size-4" />
         </Button>
       </div>
-
       <div v-if="todos.length === 0" class="text-center py-8 text-muted-foreground">
         <CheckCircle class="size-8 mx-auto mb-2 opacity-50" />
         <p>{{ t('todo.empty') }}</p>
       </div>
     </div>
-
     <!-- Add Todo Dialog -->
     <Dialog v-model:open="showAddDialog">
       <DialogContent class="sm:max-w-md">
@@ -96,7 +93,7 @@
           <Button variant="outline" @click="showAddDialog = false">
             {{ t('common.cancel') }}
           </Button>
-          <Button @click="submitTodo" :disabled="!newTodoText.trim()">
+          <Button :disabled="!newTodoText.trim()" @click="submitTodo">
             {{ t('todo.add') }}
           </Button>
         </DialogFooter>
@@ -104,7 +101,6 @@
     </Dialog>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -128,9 +124,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Plus, Trash2, CheckCircle } from 'lucide-vue-next'
-
 const { t } = useI18n()
-
 interface Todo {
   id: string
   text: string
@@ -138,7 +132,6 @@ interface Todo {
   priority: 'low' | 'medium' | 'high'
   createdAt: Date
 }
-
 const todos = ref<Todo[]>([
   {
     id: '1',
@@ -162,20 +155,16 @@ const todos = ref<Todo[]>([
     createdAt: new Date('2024-01-14')
   }
 ])
-
 const showAddDialog = ref(false)
 const newTodoText = ref('')
 const newTodoPriority = ref<'low' | 'medium' | 'high'>('medium')
-
 const addTodo = () => {
   showAddDialog.value = true
   newTodoText.value = ''
   newTodoPriority.value = 'medium'
 }
-
 const submitTodo = () => {
   if (!newTodoText.value.trim()) return
-  
   const newTodo: Todo = {
     id: Date.now().toString(),
     text: newTodoText.value.trim(),
@@ -183,25 +172,21 @@ const submitTodo = () => {
     priority: newTodoPriority.value,
     createdAt: new Date()
   }
-  
   todos.value.unshift(newTodo)
   showAddDialog.value = false
 }
-
 const toggleTodo = (id: string) => {
   const todo = todos.value.find(t => t.id === id)
   if (todo) {
     todo.completed = !todo.completed
   }
 }
-
 const removeTodo = (id: string) => {
   const index = todos.value.findIndex(t => t.id === id)
   if (index > -1) {
     todos.value.splice(index, 1)
   }
 }
-
 const getPriorityVariant = (priority: string) => {
   switch (priority) {
     case 'high': return 'destructive'
@@ -210,7 +195,6 @@ const getPriorityVariant = (priority: string) => {
     default: return 'default'
   }
 }
-
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
