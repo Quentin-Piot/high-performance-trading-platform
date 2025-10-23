@@ -20,7 +20,7 @@ from fastapi import (
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.simple_auth import SimpleUser, get_current_user_simple
+from core.simple_auth import SimpleUser, get_current_user_simple_optional
 from infrastructure.db import get_session
 from infrastructure.repositories.backtest_history_repository import (
     BacktestHistoryRepository,
@@ -83,7 +83,7 @@ async def run_monte_carlo_sync(
     ),
     file: UploadFile | None = File(None),
     # Authentication and database dependencies
-    current_user: SimpleUser = Depends(get_current_user_simple),
+    current_user: SimpleUser | None = Depends(get_current_user_simple_optional),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """
@@ -241,72 +241,73 @@ async def run_monte_carlo_sync(
         )
 
         # Save Monte Carlo simulation to history if user is authenticated
-        try:
-            # Get user from database
-            user_repo = UserRepository(session)
-            user = await user_repo.get_by_id(current_user.id)
+        if current_user:
+            try:
+                # Get user from database
+                user_repo = UserRepository(session)
+                user = await user_repo.get_by_id(current_user.id)
 
-            if user:
-                # Create history repository
-                history_repo = BacktestHistoryRepository(session)
+                if user:
+                    # Create history repository
+                    history_repo = BacktestHistoryRepository(session)
 
-                # Prepare datasets used list
-                datasets_used = []
-                if symbol:
-                    datasets_used = [symbol.upper()]
-                elif file:
-                    datasets_used = [file.filename or "uploaded_file.csv"]
+                    # Prepare datasets used list
+                    datasets_used = []
+                    if symbol:
+                        datasets_used = [symbol.upper()]
+                    elif file:
+                        datasets_used = [file.filename or "uploaded_file.csv"]
 
-                # Extract results for history from Monte Carlo summary
-                total_return = None
-                sharpe_ratio = None
-                max_drawdown = None
+                    # Extract results for history from Monte Carlo summary
+                    total_return = None
+                    sharpe_ratio = None
+                    max_drawdown = None
 
-                if result.metrics_distribution:
-                    # Use mean values from distribution
-                    metrics = result.metrics_distribution
-                    if "pnl" in metrics:
-                        total_return = float(metrics["pnl"]["mean"])
-                    if "sharpe" in metrics:
-                        sharpe_ratio = float(metrics["sharpe"]["mean"])
-                    if "drawdown" in metrics:
-                        max_drawdown = float(metrics["drawdown"]["mean"])
+                    if result.metrics_distribution:
+                        # Use mean values from distribution
+                        metrics = result.metrics_distribution
+                        if "pnl" in metrics:
+                            total_return = float(metrics["pnl"]["mean"])
+                        if "sharpe" in metrics:
+                            sharpe_ratio = float(metrics["sharpe"]["mean"])
+                        if "drawdown" in metrics:
+                            max_drawdown = float(metrics["drawdown"]["mean"])
 
-                # Create history entry
-                history_entry = await history_repo.create_history_entry(
-                    user_id=user.id,
-                    strategy=strategy,
-                    strategy_params={
-                        "sma_short": sma_short,
-                        "sma_long": sma_long,
-                        "period": period,
-                        "overbought": overbought,
-                        "oversold": oversold,
-                    },
-                    start_date=start_date.strftime("%Y-%m-%d"),
-                    end_date=end_date.strftime("%Y-%m-%d"),
-                    initial_capital=initial_capital,
-                    monte_carlo_runs=num_runs,
-                    monte_carlo_method="bootstrap",  # Default method
-                    datasets_used=datasets_used,
-                    price_type="close",  # Default price type
-                )
-
-                # Update results if we have them
-                if total_return is not None:
-                    await history_repo.update_results(
-                        history_id=history_entry.id,
-                        total_return=total_return,
-                        sharpe_ratio=sharpe_ratio,
-                        max_drawdown=max_drawdown,
-                        status="completed",
+                    # Create history entry
+                    history_entry = await history_repo.create_history_entry(
+                        user_id=user.id,
+                        strategy=strategy,
+                        strategy_params={
+                            "sma_short": sma_short,
+                            "sma_long": sma_long,
+                            "period": period,
+                            "overbought": overbought,
+                            "oversold": oversold,
+                        },
+                        start_date=start_date.strftime("%Y-%m-%d"),
+                        end_date=end_date.strftime("%Y-%m-%d"),
+                        initial_capital=initial_capital,
+                        monte_carlo_runs=num_runs,
+                        monte_carlo_method="bootstrap",  # Default method
+                        datasets_used=datasets_used,
+                        price_type="close",  # Default price type
                     )
 
-        except Exception as e:
-            # Log error but don't fail the Monte Carlo simulation
-            logger.warning(
-                f"Failed to save Monte Carlo simulation to history: {str(e)}"
-            )
+                    # Update results if we have them
+                    if total_return is not None:
+                        await history_repo.update_results(
+                            history_id=history_entry.id,
+                            total_return=total_return,
+                            sharpe_ratio=sharpe_ratio,
+                            max_drawdown=max_drawdown,
+                            status="completed",
+                        )
+
+            except Exception as e:
+                # Log error but don't fail the Monte Carlo simulation
+                logger.warning(
+                    f"Failed to save Monte Carlo simulation to history: {str(e)}"
+                )
 
         return response.model_dump()
 

@@ -55,7 +55,7 @@ async def google_login(
 
 @router.get("/callback")
 async def google_callback(
-    code: str = Query(..., description="Authorization code from Google"),
+    code: str | None = Query(default=None, description="Authorization code from Google"),
     state: str = Query(default="/", description="State parameter (redirect URL)"),
     error: str = Query(default=None, description="Error from Google OAuth"),
     google_service: GoogleOAuthService = Depends(get_google_oauth_service),

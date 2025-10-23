@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 class CognitoGoogleIntegrationService:
     """Service for managing Google OAuth integration with Cognito."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        cognito_idp_client: Any | None = None,
+        cognito_identity_client: Any | None = None,
+    ):
         self.settings = get_settings()
         self.region = self.settings.cognito_region
         self.user_pool_id = self.settings.cognito_user_pool_id
@@ -36,11 +40,13 @@ class CognitoGoogleIntegrationService:
             logger.info(
                 "Running in development mode with LocalStack - using mock Cognito Google integration"
             )
-            self.cognito_idp = None
-            self.cognito_identity = None
+            self.cognito_idp = cognito_idp_client
+            self.cognito_identity = cognito_identity_client
         elif self.user_pool_id and self.identity_pool_id:
-            self.cognito_idp = boto3.client("cognito-idp", region_name=self.region)
-            self.cognito_identity = boto3.client(
+            self.cognito_idp = cognito_idp_client or boto3.client(
+                "cognito-idp", region_name=self.region
+            )
+            self.cognito_identity = cognito_identity_client or boto3.client(
                 "cognito-identity", region_name=self.region
             )
         else:
@@ -156,13 +162,28 @@ class CognitoGoogleIntegrationService:
             return None
 
         try:
-            # In a real implementation, this would:
-            # 1. Check if user exists in Cognito User Pool
-            # 2. Create user if doesn't exist
-            # 3. Link Google identity to Cognito user
-            # 4. Return CognitoUser with proper attributes
+            # Create user in Cognito User Pool
+            self.cognito_idp.admin_create_user(
+                UserPoolId=self.user_pool_id,
+                Username=user_info["email"],
+                UserAttributes=[
+                    {"Name": "email", "Value": user_info["email"]},
+                    {"Name": "email_verified", "Value": str(user_info.get("email_verified", False)).lower()},
+                    {"Name": "name", "Value": user_info.get("name", "")},
+                ],
+                DesiredDeliveryMediums=["EMAIL"],
+            )
 
-            # For now, return a mock user based on Google info
+            # Link Google identity to Cognito user
+            self.cognito_idp.admin_update_user_attributes(
+                UserPoolId=self.user_pool_id,
+                Username=user_info["email"],
+                UserAttributes=[
+                    {"Name": "custom:google_sub", "Value": user_info["sub"]},
+                    {"Name": "custom:provider", "Value": "google"},
+                ],
+            )
+
             logger.info(
                 f"Successfully created/retrieved federated user: {user_info['email']}"
             )
