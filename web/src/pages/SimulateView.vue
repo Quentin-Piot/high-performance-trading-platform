@@ -7,6 +7,7 @@ import MetricsCard from "@/components/common/MetricsCard.vue";
 import DistributionMetricsCard from "@/components/common/DistributionMetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { useBacktestStore } from "@/stores/backtestStore";
+import { useAuthStore } from "@/stores/authStore";
 import { computed, ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ type ChartPoint = { time: ChartTime; value: number };
 type LinePoint = { time: number; value: number };
 
 const store = useBacktestStore();
+const auth = useAuthStore();
 const loading = computed(() => store.status === "loading");
 const { t } = useI18n();
 // Toolbar state and helpers
@@ -190,8 +192,27 @@ function downloadCsv() {
 }
 
 // Auto-run backtest if URL parameters are present
-onMounted(() => {
+onMounted(async () => {
+    // Rehydrate auth state first
+    await auth.rehydrate();
+    
+    // Check for Google OAuth callback parameters
     const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('auth') === 'success' && urlParams.get('provider') === 'google') {
+        console.log('Google OAuth callback detected on /simulate');
+        await auth.handleGoogleCallback();
+        
+        // Clean URL after processing callback
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        console.log('Authentication state after callback:', {
+            isAuthenticated: auth.isAuthenticated,
+            user: auth.user,
+            token: auth.token ? 'present' : 'missing'
+        });
+    }
+    
     if (urlParams.size > 0) {
         // Trigger backtest with URL parameters
         // The BacktestForm component will handle reading the parameters
