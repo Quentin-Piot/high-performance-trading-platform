@@ -1,4 +1,5 @@
 import secrets
+
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,8 +15,7 @@ class Settings(BaseSettings):
         description="JWT secret key - should be set via environment variable in production"
     )
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 10080  # 7 days = 7 * 24 * 60 minutes
-
+    access_token_expire_minutes: int = 10080
     @field_validator('jwt_secret')
     @classmethod
     def validate_jwt_secret(cls, v: str, info) -> str:
@@ -27,8 +27,6 @@ class Settings(BaseSettings):
                 "Use a strong random string and set it via the JWT_SECRET environment variable."
             )
         return v
-
-    # Database connection pooling settings
     db_pool_size: int = Field(
         default=10, description="Number of connections to maintain in the pool"
     )
@@ -45,8 +43,6 @@ class Settings(BaseSettings):
     db_pool_pre_ping: bool = Field(
         default=True, description="Enable connection health checks"
     )
-
-    # Query performance settings
     db_echo: bool = Field(default=False, description="Enable SQL query logging")
     db_echo_pool: bool = Field(
         default=False, description="Enable connection pool logging"
@@ -54,15 +50,11 @@ class Settings(BaseSettings):
     db_query_timeout: int = Field(
         default=30, description="Default query timeout in seconds"
     )
-
-    # Cache settings
     redis_url: str = Field(
         default="redis://localhost:6379/0", description="Redis connection URL"
     )
     cache_ttl: int = Field(default=300, description="Default cache TTL in seconds")
     cache_enabled: bool = Field(default=True, description="Enable caching layer")
-
-    # AWS Cognito settings
     aws_endpoint_url: str = Field(
         default="", description="AWS endpoint URL for LocalStack"
     )
@@ -72,8 +64,6 @@ class Settings(BaseSettings):
     cognito_identity_pool_id: str = Field(
         default="", description="Cognito Identity Pool ID"
     )
-
-    # Google OAuth settings
     google_client_id: str = Field(default="", description="Google OAuth Client ID")
     google_client_secret: str = Field(
         default="", description="Google OAuth Client Secret"
@@ -81,16 +71,11 @@ class Settings(BaseSettings):
     google_redirect_uri: str = Field(
         default="", description="Google OAuth Redirect URI"
     )
-
-    # Frontend URL settings
     frontend_url: str = Field(
         default="http://localhost:5173", description="Frontend URL for redirects"
     )
-
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
-
-
 def get_settings() -> Settings:
     return Settings()

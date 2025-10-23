@@ -1,8 +1,9 @@
 import logging
 import time
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from typing import Any, AsyncGenerator, Tuple
+from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -21,24 +22,15 @@ from core.logging import REQUEST_ID, setup_logging
 from infrastructure.db import engine, init_db
 from infrastructure.monitoring import monitoring_service
 
-# Load environment variables
 load_dotenv()
-
-# Setup logging
 setup_logging()
-
-
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logging.getLogger("app").info("Startup")
     await init_db()
-
-    # Register database health check
-    def db_health_check() -> Tuple[str, str, dict[str, Any]]:
+    def db_health_check() -> tuple[str, str, dict[str, Any]]:
         """Check database connectivity"""
         try:
-            # This is a sync function, so we can't use async here
-            # The monitoring service will handle this appropriately
             return "healthy", "Database connection available", {}
         except Exception as e:
             return (
@@ -46,17 +38,10 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 f"Database connection failed: {str(e)}",
                 {"error": str(e)},
             )
-
     monitoring_service.register_health_check("database", db_health_check)
-
     yield
-
-    # Cleanup on shutdown
     logging.getLogger("app").info("Shutdown")
-
-
 app = FastAPI(title="Trading Backtest API", version="0.1.0", lifespan=app_lifespan)
-
 allowed_origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
@@ -65,15 +50,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
-    # Record error metric
     await monitoring_service.increment_counter(
         "http_errors", tags={"error_type": "ValueError", "path": request.url.path}
     )
-
     logging.getLogger("http").warning(
         "Service error",
         extra={
@@ -87,8 +68,6 @@ async def value_error_handler(request: Request, exc: ValueError):
         },
     )
     return JSONResponse(status_code=400, content={"detail": str(exc)})
-
-
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     logger = logging.getLogger("http")
@@ -97,12 +76,9 @@ async def request_logging_middleware(request: Request, call_next):
     )
     if not req_id:
         import uuid
-
         req_id = uuid.uuid4().hex
     token = REQUEST_ID.set(req_id)
     start = time.monotonic()
-
-    # Enhanced structured logging with more context
     logger.info(
         "Request start",
         extra={
@@ -116,11 +92,8 @@ async def request_logging_middleware(request: Request, call_next):
             "timestamp": datetime.now(UTC).isoformat(),
         },
     )
-
     response = await call_next(request)
     duration_ms = round((time.monotonic() - start) * 1000, 2)
-
-    # Record timing metrics
     await monitoring_service.record_timing(
         "http_request_duration",
         duration_ms,
@@ -130,8 +103,6 @@ async def request_logging_middleware(request: Request, call_next):
             "status": str(response.status_code),
         },
     )
-
-    # Enhanced response logging
     logger.info(
         "Request end",
         extra={
@@ -143,41 +114,29 @@ async def request_logging_middleware(request: Request, call_next):
             "timestamp": datetime.now(UTC).isoformat(),
         },
     )
-
-    # Expose request id to clients
     try:
         response.headers["x-request-id"] = req_id
     except Exception:
         pass
-    # Reset contextvar
     REQUEST_ID.reset(token)
     return response
-
-
 @app.get("/")
 async def root():
     return {"message": "OK", "service": "Trading Backtest API"}
-
-
 @app.get("/api/healthz")
 async def healthz():
     """Basic health check endpoint"""
     return {"status": "ok", "timestamp": datetime.now(UTC).isoformat()}
-
-
 @app.get("/api/health")
 async def health_comprehensive():
     """Comprehensive health check with system monitoring"""
     try:
         health_status = await monitoring_service.get_health_status()
-
-        # Determine HTTP status code based on overall health
         status_code = 200
         if health_status["overall_status"] == "unhealthy":
             status_code = 503
         elif health_status["overall_status"] == "warning":
-            status_code = 200  # Still operational but with warnings
-
+            status_code = 200
         return JSONResponse(status_code=status_code, content=health_status)
     except Exception as e:
         logging.getLogger("app").error(f"Health check failed: {str(e)}")
@@ -189,8 +148,6 @@ async def health_comprehensive():
                 "error": "Health check system unavailable",
             },
         )
-
-
 @app.get("/api/readyz")
 async def readyz():
     """Readiness check for database connectivity"""
@@ -213,15 +170,12 @@ async def readyz():
                 "error": str(e),
             },
         )
-
-
 @app.get("/api/metrics")
 async def metrics():
     """System metrics endpoint"""
     try:
         metrics_data = monitoring_service.get_metrics_summary()
         performance_data = monitoring_service.get_performance_summary()
-
         return {
             "timestamp": datetime.now(UTC).isoformat(),
             "metrics": metrics_data,
@@ -236,15 +190,11 @@ async def metrics():
                 "timestamp": datetime.now(UTC).isoformat(),
             },
         )
-
-
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    # Record error metric
     await monitoring_service.increment_counter(
         "http_errors", tags={"error_type": "Exception", "path": request.url.path}
     )
-
     logging.getLogger("http").exception(
         "Unhandled exception",
         extra={
@@ -257,9 +207,6 @@ async def generic_exception_handler(request: Request, exc: Exception):
         },
     )
     return JSONResponse(status_code=500, content={"detail": "internal server error"})
-
-
-# Add this endpoint for debugging
 @app.get("/routes")
 def list_routes():
     """List all available routes in the application."""
@@ -274,8 +221,6 @@ def list_routes():
                 {"path": route.path, "name": route.name, "methods": ["WEBSOCKET"]}
             )
     return routes
-
-
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")
 app.include_router(google_auth_router, prefix="/api/v1")

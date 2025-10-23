@@ -7,14 +7,10 @@ from dataclasses import dataclass
 import pandas as pd
 
 from domain.interfaces import PriceSeriesSource
-
-# Import des stratégies modernes
 from strategies.moving_average import MovingAverageParams, MovingAverageStrategy
 from strategies.rsi_reversion import RSIParams, RSIReversionStrategy
 
 logger = logging.getLogger("services.backtest")
-
-
 def _read_csv_to_series(
     file_obj: io.BytesIO | bytes, price_type: str = "close"
 ) -> pd.Series:
@@ -23,23 +19,16 @@ def _read_csv_to_series(
         df = pd.read_csv(buffer)
     else:
         df = pd.read_csv(file_obj)
-
     df.columns = [str(c).strip().lower() for c in df.columns]
-
-    # Determine which price column to use based on price_type
     if price_type == "adj_close":
         price_col = next(
             (c for c in ["adj close", "adj_close"] if c in df.columns), None
         )
         if not price_col:
-            # Fallback to close if adj_close not available
             price_col = next((c for c in ["close"] if c in df.columns), None)
     else:
-        # Default to close
         price_col = next((c for c in ["close"] if c in df.columns), None)
-
     if not price_col:
-        # Check if adj close is available when close is not
         adj_close_col = next(
             (c for c in ["adj close", "adj_close"] if c in df.columns), None
         )
@@ -47,25 +36,19 @@ def _read_csv_to_series(
             price_col = adj_close_col
         else:
             raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
-
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df.sort_values("date")
         series = df.set_index("date")[price_col].astype(float)
         series.index = pd.DatetimeIndex(series.index)
         return series
-
     return pd.Series(df[price_col].astype(float).values, dtype=float)
-
-
 class CsvBytesPriceSeriesSource(PriceSeriesSource):
     def __init__(self, data: bytes | io.BytesIO, price_type: str = "close"):
         self._data = data
         self._price_type = price_type
-
     def get_prices(self) -> pd.Series:
         return _read_csv_to_series(self._data, self._price_type)
-
     def to_dataframe(self) -> pd.DataFrame:
         """Convert CSV data to DataFrame for Monte Carlo processing."""
         if isinstance(self._data, (bytes, bytearray)):
@@ -73,58 +56,36 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
             df = pd.read_csv(buffer)
         else:
             df = pd.read_csv(self._data)
-
         df.columns = [str(c).strip().lower() for c in df.columns]
-
-        # Determine which price column to use based on price_type
         if self._price_type == "adj_close":
             price_col = next(
                 (c for c in ["adj close", "adj_close"] if c in df.columns), None
             )
             if not price_col:
-                # Fallback to close if adj_close not available
                 price_col = next((c for c in ["close"] if c in df.columns), None)
         else:
-            # Default to close
             price_col = next((c for c in ["close"] if c in df.columns), None)
-
         if not price_col:
             raise ValueError("CSV doit contenir une colonne 'close' ou 'adj close'")
-
-        # Handle date column if present
         if "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
             df = df.sort_values("date")
             df = df.set_index("date")
-
-        # Rename price column to 'close' for consistency
         if price_col != "close":
             df = df.rename(columns={price_col: "close"})
-
-        # Ensure close column is float
         df["close"] = df["close"].astype(float)
-
         return df
-
-
-# Stratégies supprimées - utiliser les implémentations modernes dans strategies/
-
-
 @dataclass
 class ServiceBacktestResult:
     equity: pd.Series
     pnl: float
     drawdown: float
     sharpe: float
-
-
 def _default_date_bounds():
     """Return sane date bounds to avoid pandas min/max nanosecond warnings."""
     start = pd.Timestamp("1970-01-01").to_pydatetime()
     end = pd.Timestamp("2100-01-01").to_pydatetime()
     return start, end
-
-
 def run_sma_crossover(
     source: PriceSeriesSource, sma_short: int, sma_long: int
 ) -> ServiceBacktestResult:
@@ -132,10 +93,7 @@ def run_sma_crossover(
     Fonction legacy pour compatibilité avec Monte Carlo.
     Utilise l'implémentation moderne MovingAverageStrategy.
     """
-    # Convertir les données en DataFrame
     df = source.to_dataframe()
-
-    # Créer les paramètres pour la stratégie moderne
     params = MovingAverageParams(
         short_window=sma_short,
         long_window=sma_long,
@@ -143,20 +101,14 @@ def run_sma_crossover(
         initial_capital=1.0,
         commission=0.0,
     )
-
-    # Exécuter la stratégie moderne
     strategy = MovingAverageStrategy()
     result = strategy.run(df, params)
-
-    # Convertir vers le format legacy
     return ServiceBacktestResult(
         equity=result.equity,
         pnl=result.pnl,
         drawdown=result.max_drawdown,
         sharpe=result.sharpe_ratio,
     )
-
-
 def sma_crossover_backtest(file_obj: io.BytesIO | bytes, sma_short: int, sma_long: int):
     source = CsvBytesPriceSeriesSource(file_obj)
     result = run_sma_crossover(source, sma_short, sma_long)
@@ -166,8 +118,6 @@ def sma_crossover_backtest(file_obj: io.BytesIO | bytes, sma_short: int, sma_lon
         float(result.drawdown),
         float(result.sharpe),
     )
-
-
 def run_rsi(
     source: PriceSeriesSource, period: int, overbought: float, oversold: float
 ) -> ServiceBacktestResult:
@@ -175,10 +125,7 @@ def run_rsi(
     Fonction legacy pour compatibilité avec Monte Carlo.
     Utilise l'implémentation moderne RSIReversionStrategy.
     """
-    # Convertir les données en DataFrame
     df = source.to_dataframe()
-
-    # Créer les paramètres pour la stratégie moderne
     params = RSIParams(
         window=period,
         rsi_low=oversold,
@@ -187,12 +134,8 @@ def run_rsi(
         initial_capital=1.0,
         commission=0.0,
     )
-
-    # Exécuter la stratégie moderne
     strategy = RSIReversionStrategy()
     result = strategy.run(df, params)
-
-    # Convertir vers le format legacy
     return ServiceBacktestResult(
         equity=result.equity,
         pnl=result.pnl,

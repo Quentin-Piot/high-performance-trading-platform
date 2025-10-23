@@ -1,7 +1,6 @@
 """
 Google OAuth authentication routes.
 """
-
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -19,10 +18,7 @@ from services.cognito_google_integration import (
 from services.google_oauth import GoogleOAuthService, get_google_oauth_service
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/auth/google", tags=["Google OAuth"])
-
-
 @router.get("/login")
 async def google_login(
     redirect_url: str = Query(
@@ -32,27 +28,21 @@ async def google_login(
 ):
     """
     Initiate Google OAuth login flow.
-
     Args:
         redirect_url: URL to redirect user after successful authentication
         google_service: Google OAuth service
-
     Returns:
         Redirect to Google OAuth authorization URL
     """
     try:
-        # Use redirect_url as state parameter for CSRF protection
         auth_url = google_service.get_authorization_url(state=redirect_url)
         return RedirectResponse(url=auth_url)
-
     except Exception as e:
         logger.error(f"Failed to initiate Google login: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to initiate Google authentication",
         ) from e
-
-
 @router.get("/callback")
 async def google_callback(
     code: str | None = Query(default=None, description="Authorization code from Google"),
@@ -66,7 +56,6 @@ async def google_callback(
 ):
     """
     Handle Google OAuth callback and integrate with Cognito.
-
     Args:
         code: Authorization code from Google
         state: State parameter containing redirect URL
@@ -74,41 +63,29 @@ async def google_callback(
         google_service: Google OAuth service
         cognito_google_service: Cognito Google integration service
         db: Database session
-
     Returns:
         Redirect to frontend with authentication result
     """
     if error:
         logger.error(f"Google OAuth error: {error}")
-        # Redirect to frontend with error
         return RedirectResponse(url=f"{state}?error=oauth_error&message={error}")
-
     if not code:
         logger.error("No authorization code received from Google")
         return RedirectResponse(url=f"{state}?error=missing_code")
-
     try:
-        # Exchange code for tokens
         logger.debug("Starting token exchange with Google")
         token_data = await google_service.exchange_code_for_tokens(code)
         logger.debug("Token exchange successful")
-
         user_info = token_data["user_info"]
         logger.debug(f"User info retrieved: {user_info}")
-
-        # Create or link federated user in Cognito
         logger.debug("Creating federated user in Cognito")
         cognito_user = await cognito_google_service.create_federated_user(user_info)
         logger.debug(f"Cognito user created: {cognito_user}")
-
         if not cognito_user:
             logger.error("Failed to create or link federated user")
             return RedirectResponse(url=f"{state}?error=federated_user_error")
-
-        # Sync user with local database
         logger.debug("Syncing user with local database")
         user_repo = UserRepository(db)
-
         try:
             db_user = await user_repo.get_or_create_from_cognito(cognito_user)
             logger.debug(f"Database user: {db_user}")
@@ -118,8 +95,6 @@ async def google_callback(
             return RedirectResponse(
                 url=f"{state}?error=database_sync_error&message=Failed to sync user with database"
             )
-
-        # Verify that db_user was created successfully
         if not db_user or not hasattr(db_user, "id") or db_user.id is None:
             logger.error(
                 f"Failed to create or retrieve user from database for cognito_user: {cognito_user}"
@@ -127,46 +102,28 @@ async def google_callback(
             return RedirectResponse(
                 url=f"{state}?error=database_error&message=User creation failed"
             )
-
-        # Get federated credentials for the user
         logger.debug("Getting federated credentials")
         federated_creds = await cognito_google_service.get_federated_credentials(
             token_data["id_token"]
         )
         logger.debug(f"Federated credentials: {federated_creds}")
-
-        # For now, redirect with success and user info
-        # Redirect to simulate by default, but allow custom redirect based on state parameter
         logger.debug("Preparing redirect URL")
-
-        # Use frontend URL for proper redirection
         if state == "/" or not state:
-            # Default redirect to simulate instead of dashboard
             redirect_url = f"{google_service.settings.frontend_url}/simulate"
         else:
-            # If state contains a full URL, use it as is, otherwise prepend frontend URL
             if state.startswith("http"):
                 redirect_url = state
             else:
                 redirect_url = f"{google_service.settings.frontend_url}{state}"
-
         logger.debug(f"Redirect URL: {redirect_url}")
-
-        # Generate JWT token for the authenticated user
         from core.security import create_access_token
-
         access_token = create_access_token(subject=str(db_user.id))
-
         query_params = f"auth=success&provider=google&email={user_info['email']}&user_id={db_user.id}&token={access_token}"
-
         if federated_creds:
             query_params += f"&identity_id={federated_creds['identity_id']}"
-
         final_url = f"{redirect_url}?{query_params}"
         logger.debug(f"Final redirect URL: {final_url}")
-
         return RedirectResponse(url=final_url)
-
     except Exception as e:
         logger.error(f"Google OAuth callback error: {e}", exc_info=True)
         logger.error(
@@ -181,18 +138,14 @@ async def google_callback(
         return RedirectResponse(
             url=f"{state}?error=callback_error&message=Authentication failed"
         )
-
-
 @router.get("/user-info")
 async def get_google_user_info(
     current_user: CognitoUser = Depends(get_current_user_optional),
 ):
     """
     Get current user information (requires authentication).
-
     Args:
         current_user: Current authenticated user
-
     Returns:
         User information
     """
@@ -200,7 +153,6 @@ async def get_google_user_info(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
-
     return {
         "sub": current_user.sub,
         "email": current_user.email,
@@ -208,8 +160,6 @@ async def get_google_user_info(
         "email_verified": current_user.email_verified,
         "provider": "google" if current_user.sub.startswith("google_") else "cognito",
     }
-
-
 @router.post("/link-account")
 async def link_google_account(
     current_user: CognitoUser = Depends(get_current_user_optional),
@@ -217,11 +167,9 @@ async def link_google_account(
 ):
     """
     Link Google account to existing Cognito user.
-
     Args:
         current_user: Current authenticated user
         db: Database session
-
     Returns:
         Success message
     """
@@ -229,18 +177,10 @@ async def link_google_account(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
-
-    # This would typically involve:
-    # 1. Initiating Google OAuth flow
-    # 2. Storing the association in database
-    # 3. Allowing user to login with either method
-
     return {
         "message": "Account linking not yet implemented",
         "current_user": current_user.email,
     }
-
-
 @router.delete("/unlink-account")
 async def unlink_google_account(
     current_user: CognitoUser = Depends(get_current_user_optional),
@@ -248,11 +188,9 @@ async def unlink_google_account(
 ):
     """
     Unlink Google account from current user.
-
     Args:
         current_user: Current authenticated user
         db: Database session
-
     Returns:
         Success message
     """
@@ -260,8 +198,6 @@ async def unlink_google_account(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
-
-    # Implementation would remove Google association
     return {
         "message": "Account unlinking not yet implemented",
         "current_user": current_user.email,

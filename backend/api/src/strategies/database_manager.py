@@ -1,6 +1,5 @@
 """
 Database management utilities for the trading platform.
-
 This module contains database connection, validation, and repair logic
 extracted from bootstrap.py to improve separation of concerns.
 """
@@ -14,7 +13,6 @@ import psycopg
 
 class DatabaseManager:
     """Handles database operations and validation."""
-
     @staticmethod
     def to_psycopg_dsn(dsn: str) -> str:
         """Convert SQLAlchemy DSN to psycopg-compatible DSN."""
@@ -23,7 +21,6 @@ class DatabaseManager:
                 "postgresql+asyncpg", "postgresql"
             )
         return dsn
-
     @staticmethod
     def table_exists(dsn: str, table_name: str, schema: str = "public") -> bool:
         """Check if a table exists in the database."""
@@ -44,7 +41,6 @@ class DatabaseManager:
                     return bool(row and row[0])
         except Exception:
             return False
-
     @staticmethod
     def get_alembic_version(dsn: str) -> str | None:
         """Get the current Alembic version from the database."""
@@ -68,19 +64,16 @@ class DatabaseManager:
                     return row[0] if row else None
         except Exception:
             return None
-
     @staticmethod
     def repair_jobs_table_if_corrupted(dsn: str) -> bool:
         """
         Detect and repair a corrupted 'jobs' table by dropping it.
-
         Returns True if the table was dropped (corrupted detected), False otherwise.
         """
         try:
             with psycopg.connect(DatabaseManager.to_psycopg_dsn(dsn)) as conn:
                 conn.autocommit = True
                 with conn.cursor() as cur:
-                    # Check if table exists
                     cur.execute(
                         """
                         SELECT EXISTS (
@@ -92,8 +85,6 @@ class DatabaseManager:
                     exists = bool(cur.fetchone()[0])
                     if not exists:
                         return False
-
-                    # Validate a minimal set of expected columns
                     cur.execute(
                         """
                         SELECT column_name FROM information_schema.columns
@@ -115,16 +106,12 @@ class DatabaseManager:
                         "created_at",
                         "updated_at",
                     }
-
-                    # If core columns are missing, table likely corrupted
                     if not expected_core.issubset(cols):
                         print(
                             "Detected corrupted 'jobs' table (missing core columns); dropping for clean migration..."
                         )
                         cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                         return True
-
-                    # Also check pg_attribute count which indicates catalog consistency
                     try:
                         cur.execute(
                             """
@@ -140,18 +127,15 @@ class DatabaseManager:
                             cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                             return True
                     except Exception:
-                        # If querying pg_attribute itself errors, err on the side of repair
                         print(
                             "pg_attribute query failed for 'jobs'; dropping table to recover..."
                         )
                         cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                         return True
-
                     return False
         except Exception as e:
             print(f"Failed to inspect/repair jobs table: {e}", file=sys.stderr)
             return False
-
     @staticmethod
     def parse_database_url(dsn: str) -> dict[str, str | int]:
         """Parse database URL into components."""

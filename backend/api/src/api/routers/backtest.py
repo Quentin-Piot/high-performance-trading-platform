@@ -27,12 +27,9 @@ from services.backtest_service import (
     run_sma_crossover,
 )
 
-router = APIRouter(tags=["backtest"])  # no internal prefix; main adds versioned prefix
-
-
+router = APIRouter(tags=["backtest"])
 @router.get("/backtest", response_model=BacktestResponse)
 async def backtest_get(
-    # Dataset parameters (required for GET)
     symbol: str = Query(
         ..., description="Symbol to use from local datasets (e.g., AAPL, AMZN)"
     ),
@@ -46,14 +43,11 @@ async def backtest_get(
         "sma_crossover",
         description="Strategy name (e.g., sma_crossover, rsi)",
     ),
-    # Price type selection
     price_type: str = Query(
         "close", description="Price type to use: 'close' or 'adj_close'"
     ),
-    # SMA parameters (optional, required only if strategy = sma_crossover/sma)
     sma_short: int | None = Query(None, gt=0, description="Short SMA window"),
     sma_long: int | None = Query(None, gt=0, description="Long SMA window"),
-    # RSI parameters (optional, required only if strategy = rsi/rsi_reversion)
     period: int | None = Query(None, gt=0, description="RSI period"),
     overbought: float | None = Query(
         None, ge=0, le=100, description="Overbought threshold (0-100)"
@@ -64,16 +58,12 @@ async def backtest_get(
     include_aggregated: bool = Query(
         False, description="Include aggregated metrics across all files"
     ),
-    # Monte Carlo parameters
-    # Monte Carlo parameters (removed from this endpoint)
 ):
     """
     Run backtest using local datasets with Monte Carlo simulation support.
-
     This endpoint allows running backtests on local datasets without file upload.
     Supports both regular backtests and Monte Carlo simulations.
     """
-    # Map symbol to dataset file
     symbol_to_file = {
         "aapl": "AAPL.csv",
         "amzn": "AMZN.csv",
@@ -83,80 +73,55 @@ async def backtest_get(
         "nflx": "NFLX.csv",
         "nvda": "NVDA.csv",
     }
-
     symbol_lower = symbol.lower()
     if symbol_lower not in symbol_to_file:
         raise HTTPException(
             status_code=400,
             detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
         )
-
-    # Load and filter dataset
-    # Use relative path that works in both dev and prod
     current_dir = os.path.dirname(
         os.path.dirname(os.path.dirname(__file__))
-    )  # Go up to src/
+    )
     datasets_path = os.path.join(current_dir, "datasets")
     csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
-
     if not os.path.exists(csv_file_path):
         raise HTTPException(
             status_code=404, detail=f"Dataset file not found for symbol {symbol}"
         )
-
-    # Read and filter data by date range
     df = pd.read_csv(csv_file_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
-
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
-        # Parse date parameters
         try:
             from datetime import datetime
-
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             end_dt = datetime.strptime(end_date, "%Y-%m-%d")
         except ValueError as e:
             raise HTTPException(
                 status_code=422, detail="Invalid date format. Use YYYY-MM-DD"
             ) from e
-
-        # Filter by date range
         mask = (df["date"] >= start_dt) & (df["date"] <= end_dt)
         df = df.loc[mask]
-
         if df.empty:
             raise HTTPException(
                 status_code=400,
                 detail=f"No data available for {symbol} in the specified date range",
             )
-
-    # Convert filtered DataFrame to CSV bytes and create mock UploadFile
     csv_buffer = BytesIO()
     df.to_csv(csv_buffer, index=False)
     csv_data = csv_buffer.getvalue()
-
-    # Create a mock UploadFile object
     class MockUploadFile:
         def __init__(self, content: bytes, filename: str):
             self.content = content
             self.filename = filename
             self._file = BytesIO(content)
-
         async def read(self) -> bytes:
             return self.content
-
         def seek(self, offset: int) -> None:
             self._file.seek(offset)
-
     mock_file = MockUploadFile(csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv")
     files = [mock_file]
-
-    # Normalize strategy aliases
     strat = strategy.strip().lower()
-
-    # Validate strategy parameters
     if strat in {"sma_crossover", "sma"}:
         if sma_short is None or sma_long is None:
             raise HTTPException(
@@ -171,8 +136,6 @@ async def backtest_get(
             )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
-
-    # Regular backtest mode (existing logic)
     return await run_regular_backtest(
         files=files,
         strategy=strat,
@@ -186,11 +149,8 @@ async def backtest_get(
         include_aggregated=include_aggregated,
         price_type=price_type,
     )
-
-
 @router.post("/backtest", response_model=BacktestResponse)
 async def backtest_post(
-    # Dataset parameters (alternative to CSV upload)
     symbol: str | None = Query(
         None, description="Symbol to use from local datasets (e.g., AAPL, AMZN)"
     ),
@@ -204,14 +164,11 @@ async def backtest_post(
         "sma_crossover",
         description="Strategy name (e.g., sma_crossover, rsi)",
     ),
-    # Price type selection
     price_type: str = Query(
         "close", description="Price type to use: 'close' or 'adj_close'"
     ),
-    # SMA parameters (optional, required only if strategy = sma_crossover/sma)
     sma_short: int | None = Query(None, gt=0, description="Short SMA window"),
     sma_long: int | None = Query(None, gt=0, description="Long SMA window"),
-    # RSI parameters (optional, required only if strategy = rsi/rsi_reversion)
     period: int | None = Query(None, gt=0, description="RSI period"),
     overbought: float | None = Query(
         None, ge=0, le=100, description="Overbought threshold (0-100)"
@@ -222,25 +179,17 @@ async def backtest_post(
     include_aggregated: bool = Query(
         False, description="Include aggregated metrics across all files"
     ),
-    # Monte Carlo parameters (removed from this endpoint)
-    # CSV upload (optional, alternative to symbol)
     csv: list[UploadFile] = File(default=[]),
-    # Authentication and database dependencies (optional for backtest, required only for history)
     current_user: SimpleUser | None = Depends(get_current_user_simple_optional),
     session: AsyncSession = Depends(get_session),
 ):
     """
     Run backtest with Monte Carlo simulation support.
-
     Supports both CSV file upload and local dataset usage.
     When using local datasets, provide symbol, start_date, and end_date parameters.
     """
-    # Handle dataset selection: either uploaded files or local dataset
     files = []
-
     if symbol and start_date and end_date:
-        # Use local dataset
-        # Map symbol to dataset file
         symbol_to_file = {
             "aapl": "AAPL.csv",
             "amzn": "AMZN.csv",
@@ -250,100 +199,69 @@ async def backtest_post(
             "nflx": "NFLX.csv",
             "nvda": "NVDA.csv",
         }
-
         symbol_lower = symbol.lower()
         if symbol_lower not in symbol_to_file:
             raise HTTPException(
                 status_code=400,
                 detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
             )
-
-        # Load and filter dataset
-        # Use relative path that works in both dev and prod
         import os
-
         current_dir = os.path.dirname(
             os.path.dirname(os.path.dirname(__file__))
-        )  # Go up to src/
+        )
         datasets_path = os.path.join(current_dir, "datasets")
         csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
-
         if not os.path.exists(csv_file_path):
             raise HTTPException(
                 status_code=404, detail=f"Dataset file not found for symbol {symbol}"
             )
-
-        # Read and filter data by date range
         df = pd.read_csv(csv_file_path)
         df.columns = [str(c).strip().lower() for c in df.columns]
-
         if "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
-            # Parse date parameters
             try:
                 from datetime import datetime
-
                 start_dt = datetime.strptime(start_date, "%Y-%m-%d")
                 end_dt = datetime.strptime(end_date, "%Y-%m-%d")
             except ValueError as e:
                 raise HTTPException(
                     status_code=422, detail="Invalid date format. Use YYYY-MM-DD"
                 ) from e
-
-            # Filter data by date range
             mask = (df["date"] >= start_dt) & (df["date"] <= end_dt)
             df = df.loc[mask]
-
             if df.empty:
                 raise HTTPException(
                     status_code=400,
                     detail=f"No data available for {symbol} in the specified date range",
                 )
-
-        # Convert filtered DataFrame to CSV bytes and create mock UploadFile
         csv_buffer = BytesIO()
         df.to_csv(csv_buffer, index=False)
         csv_data = csv_buffer.getvalue()
-
-        # Create a mock UploadFile object
         class MockUploadFile:
             def __init__(self, content: bytes, filename: str):
                 self.content = content
                 self.filename = filename
                 self._file = BytesIO(content)
-
             async def read(self) -> bytes:
                 return self.content
-
             def seek(self, offset: int) -> None:
                 self._file.seek(offset)
-
         mock_file = MockUploadFile(
             csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
         )
         files = [mock_file]
-
     elif csv:
-        # Use uploaded files - csv is now always a list
         files = csv
     else:
         raise HTTPException(
             status_code=422,
             detail="Either csv file(s) or symbol with start_date and end_date must be provided",
         )
-
-    # Validate file count
     if len(files) > 10:
         raise HTTPException(status_code=400, detail="Maximum of 10 CSV files allowed")
-
     if len(files) == 0:
         raise HTTPException(status_code=400, detail="At least one CSV file is required")
-
-    # Normalize strategy aliases
     strat = strategy.strip().lower()
-
-    # Validate strategy parameters
     if strat in {"sma_crossover", "sma"}:
         if sma_short is None or sma_long is None:
             raise HTTPException(
@@ -358,7 +276,6 @@ async def backtest_post(
             )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
-
     print("Calling run_regular_backtest")
     result = await run_regular_backtest(
         files=files,
@@ -373,19 +290,12 @@ async def backtest_post(
         include_aggregated=include_aggregated,
         price_type=price_type,
     )
-
-    # Save backtest to history if user is authenticated
     if current_user:
         try:
-            # Get user from database
             user_repo = UserRepository(session)
             user = await user_repo.get_by_id(current_user.id)
-
             if user:
-                # Create history repository
                 history_repo = BacktestHistoryRepository(session)
-
-                # Prepare datasets used list
                 datasets_used = []
                 if symbol:
                     datasets_used = [symbol.upper()]
@@ -393,25 +303,18 @@ async def backtest_post(
                     datasets_used = [
                         f.filename or f"file_{i + 1}.csv" for i, f in enumerate(csv)
                     ]
-
-                # Extract results for history
                 total_return = None
                 sharpe_ratio = None
                 max_drawdown = None
-
                 if hasattr(result, "pnl"):
-                    # Single backtest result
                     total_return = float(result.pnl)
                     sharpe_ratio = float(result.sharpe)
                     max_drawdown = float(result.drawdown)
                 elif hasattr(result, "results") and result.results:
-                    # Multiple backtest results - use first result or average
                     first_result = result.results[0]
                     total_return = float(first_result.pnl)
                     sharpe_ratio = float(first_result.sharpe)
                     max_drawdown = float(first_result.drawdown)
-
-                # Create history entry
                 history_entry = await history_repo.create_history_entry(
                     user_id=user.id,
                     strategy=strategy,
@@ -424,13 +327,11 @@ async def backtest_post(
                     },
                     start_date=start_date,
                     end_date=end_date,
-                    initial_capital=10000.0,  # Default value
-                    monte_carlo_runs=1,  # Regular backtest
+                    initial_capital=10000.0,
+                    monte_carlo_runs=1,
                     datasets_used=datasets_used,
                     price_type=price_type,
                 )
-
-                # Update results if we have them
                 if total_return is not None:
                     await history_repo.update_results(
                         history_id=history_entry.id,
@@ -439,14 +340,9 @@ async def backtest_post(
                         max_drawdown=max_drawdown,
                         status="completed",
                     )
-
         except Exception as e:
-            # Log error but don't fail the backtest
             print(f"Warning: Failed to save backtest to history: {str(e)}")
-
     return result
-
-
 async def run_regular_backtest(
     files: list[UploadFile],
     strategy: str,
@@ -455,13 +351,9 @@ async def run_regular_backtest(
     price_type: str = "close",
 ) -> BacktestResponse:
     results = []
-
-    # Process each CSV file
     for file in files:
         try:
             source = CsvBytesPriceSeriesSource(await file.read(), price_type)
-
-            # Run backtest based on strategy
             if strategy in {"sma_crossover", "sma"}:
                 result = run_sma_crossover(
                     source, strategy_params["sma_short"], strategy_params["sma_long"]
@@ -473,8 +365,6 @@ async def run_regular_backtest(
                     strategy_params["overbought"],
                     strategy_params["oversold"],
                 )
-
-            # Create single result
             single_result = SingleBacktestResult(
                 filename=file.filename or f"file_{len(results) + 1}.csv",
                 timestamps=list(map(str, result.equity.index.tolist())),
@@ -484,14 +374,11 @@ async def run_regular_backtest(
                 sharpe=float(result.sharpe),
             )
             results.append(single_result)
-
         except Exception as e:
             raise HTTPException(
                 status_code=400,
                 detail=f"Error processing file '{file.filename}': {str(e)}",
             ) from e
-
-    # Handle single file case for backward compatibility
     if len(results) == 1 and not include_aggregated:
         single = results[0]
         return SingleBacktestResponse(
@@ -501,21 +388,17 @@ async def run_regular_backtest(
             drawdown=single.drawdown,
             sharpe=single.sharpe,
         )
-
-    # Handle multiple files or aggregated metrics requested
     aggregated_metrics = None
     if include_aggregated and results:
         avg_pnl = sum(r.pnl for r in results) / len(results)
         avg_sharpe = sum(r.sharpe for r in results) / len(results)
         avg_drawdown = sum(r.drawdown for r in results) / len(results)
-
         aggregated_metrics = AggregatedMetrics(
             average_pnl=avg_pnl,
             average_sharpe=avg_sharpe,
             average_drawdown=avg_drawdown,
             total_files_processed=len(results),
         )
-
     return MultiBacktestResponse(
         results=results,
         aggregated_metrics=aggregated_metrics,

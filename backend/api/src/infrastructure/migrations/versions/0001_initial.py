@@ -1,19 +1,14 @@
 """
 Initial schema migration: users, strategies, backtests.
 """
-
 import sqlalchemy as sa
 from alembic import op
 
-# revision identifiers, used by Alembic.
 revision = "0001_initial"
 down_revision = None
 branch_labels = None
 depends_on = None
-
-
 def upgrade() -> None:
-    # users table
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -24,16 +19,12 @@ def upgrade() -> None:
         ),
     )
     op.create_index("ix_users_email", "users", ["email"], unique=True)
-
-    # strategies table
     op.create_table(
         "strategies",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("owner_id", sa.Integer(), sa.ForeignKey("users.id"), nullable=False),
     )
-
-    # backtests table
     op.create_table(
         "backtests",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -44,8 +35,6 @@ def upgrade() -> None:
             "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
         ),
     )
-
-
 def downgrade() -> None:
     op.drop_table("backtests")
     op.drop_table("strategies")
