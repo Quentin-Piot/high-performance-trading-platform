@@ -110,6 +110,12 @@ resource "aws_ecs_task_definition" "backend_task" {
         # Application configuration
         { name = "ENVIRONMENT", value = var.env },
         { name = "FRONTEND_URL", value = var.frontend_url },
+        { name = "JWT_SECRET", value = var.jwt },
+        { name = "JWT_ALGORITHM", value = "HS256" },
+        { name = "ACCESS_TOKEN_EXPIRE_MINUTES", value = "10080" },
+
+        # Database URL construction
+        { name = "DATABASE_URL", value = "postgresql+psycopg://postgres:postgres@localhost:5432/trading_db" },
 
         # Google OAuth configuration
         { name = "GOOGLE_CLIENT_ID", value = var.google_client_id },
