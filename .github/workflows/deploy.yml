@@ -1,51 +1,88 @@
-name: CI/CD - build & deploy
+name: 🚀 CI/CD - Trading Platform Deployment
 
 on:
   push:
     branches: [master]
 
-jobs:
-  build_and_deploy:
-    runs-on: ubuntu-latest
-    env:
-      AWS_REGION: eu-west-3
+env:
+  AWS_REGION: eu-west-3
 
+jobs:
+  # 🔧 Backend Build & Deploy Job
+  backend-deploy:
+    name: 🐍 Backend - Build & Deploy
+    runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: 🔐 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Ensure ECR repo exists
+      - name: 🏗️ Ensure ECR Repository Exists
         run: |
+          echo "🔍 Checking if ECR repository exists..."
           aws ecr describe-repositories --repository-names "trading-platform_backend" >/dev/null 2>&1 || \
-            aws ecr create-repository --repository-name "trading-platform_backend"
+            (echo "📦 Creating ECR repository..." && aws ecr create-repository --repository-name "trading-platform_backend")
 
-      - name: Login to ECR
+      - name: 🔑 Login to Amazon ECR
         run: |
+          echo "🔐 Logging into ECR..."
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
-      - name: Build & push backend image
+      - name: 🐳 Build & Push Backend Docker Image
         working-directory: ./backend/api
         run: |
+          echo "🔨 Building backend Docker image..."
           REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
           TIMESTAMP=$(date +%s)
+          
           docker build -t "$REPO:latest" .
           docker tag "$REPO:latest" "$REPO:$TIMESTAMP"
+          
+          echo "📤 Pushing images to ECR..."
           docker push "$REPO:latest"
           docker push "$REPO:$TIMESTAMP"
+          
+          echo "✅ Backend image pushed successfully!"
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: 🚀 Deploy Backend to ECS
+        run: |
+          echo "🔄 Forcing new ECS deployment..."
+          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER_NAME }} --service ${{ secrets.ECS_SERVICE_NAME }} --force-new-deployment
+          echo "✅ Backend deployment initiated!"
 
-      - name: Create production environment file for frontend
+  # 🎨 Frontend Build & Deploy Job
+  frontend-deploy:
+    name: 🌐 Frontend - Build & Deploy
+    runs-on: ubuntu-latest
+    needs: backend-deploy  # Wait for backend to complete first
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 📦 Install pnpm
+        run: |
+          echo "📦 Installing pnpm..."
+          npm install -g pnpm
+
+      - name: ⚙️ Create Production Environment File
         working-directory: ./web
         run: |
+          echo "⚙️ Creating production environment configuration..."
           cat > .env.production << EOF
           VITE_API_BASE_URL=/api/v1
           VITE_COGNITO_REGION=${{ secrets.COGNITO_REGION }}
@@ -54,27 +91,33 @@ jobs:
           VITE_COGNITO_IDENTITY_POOL_ID=${{ secrets.COGNITO_IDENTITY_POOL_ID }}
           VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           EOF
+          echo "✅ Environment file created!"
 
-      - name: Install frontend dependencies & build (Vite / Vue)
+      - name: 🔨 Install Dependencies & Build Frontend
         working-directory: ./web
         run: |
+          echo "📦 Installing frontend dependencies..."
           pnpm install --frozen-lockfile
+          
+          echo "🔨 Building Vue.js application..."
           pnpm run build
+          
+          echo "✅ Frontend build completed!"
 
-      - name: Sync frontend to S3
+      - name: ☁️ Deploy Frontend to S3
         run: |
+          echo "☁️ Syncing frontend files to S3..."
           aws s3 sync ./web/dist s3://${{ secrets.S3_BUCKET }} --delete
+          echo "✅ Frontend deployed to S3!"
 
-      - name: Invalidate CloudFront cache
+      - name: 🔄 Invalidate CloudFront Cache
         run: |
           if [ -n "${{ secrets.CLOUDFRONT_DIST_ID }}" ]; then
+            echo "🔄 Invalidating CloudFront cache..."
             aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
             --paths "/*"
+            echo "✅ CloudFront cache invalidated!"
           else
-             echo "CLOUDFRONT_DIST_ID not set. Skipping invalidation."
+             echo "⚠️ CLOUDFRONT_DIST_ID not set. Skipping cache invalidation."
           fi
-
-      - name: Force new deployment on ECS
-        run: |
-          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER_NAME }} --service ${{ secrets.ECS_SERVICE_NAME }} --force-new-deployment
