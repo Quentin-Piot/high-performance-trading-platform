@@ -55,6 +55,7 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 "src/api/routers/*.py" = ["B008"]
 "src/api/routes/*.py" = ["B008"]
+"src/core/*.py" = ["B008"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

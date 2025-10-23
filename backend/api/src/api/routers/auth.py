@@ -85,7 +85,7 @@ async def register(
         raise HTTPException(
             status_code=500,
             detail="Erreur interne lors de l'inscription"
-        )
+        ) from e
 
 @router.post("/login", response_model=Token)
 async def login(payload: UserCreate, db: AsyncSession = Depends(get_db)):

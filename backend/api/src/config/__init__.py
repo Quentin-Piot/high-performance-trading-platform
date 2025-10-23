@@ -1,31 +1,8 @@
 """
-Configuration module for the queue system.
+Configuration module.
 
-This module provides configuration classes and utilities for different environments.
+This module provides configuration utilities for the application.
 """
 
-from .queue_config import (
-    Environment,
-    JobConfig,
-    MonitoringConfig,
-    QueueSystemConfig,
-    SQSConfig,
-    WorkerConfig,
-    get_config,
-    get_development_config,
-    get_production_config,
-    get_testing_config,
-)
-
-__all__ = [
-    "QueueSystemConfig",
-    "SQSConfig",
-    "WorkerConfig",
-    "JobConfig",
-    "MonitoringConfig",
-    "Environment",
-    "get_config",
-    "get_development_config",
-    "get_testing_config",
-    "get_production_config"
-]
+# Configuration module is now empty as queue system has been removed
+__all__ = []

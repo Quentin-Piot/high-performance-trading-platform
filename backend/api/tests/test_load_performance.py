@@ -15,39 +15,7 @@ from fastapi.testclient import TestClient
 from api.main import app
 
 
-class TestCachePerformance:
-    """Test caching performance under load."""
 
-    @pytest.fixture
-    def mock_cache_manager(self):
-        """Mock cache manager with realistic response times."""
-        with patch('infrastructure.cache.cache_manager') as mock:
-            # Simulate cache hit (fast)
-            async def mock_get_hit(key):
-                await asyncio.sleep(0.001)  # 1ms for cache hit
-                return "result_test_1"
-
-            # Simulate cache miss (returns None)
-            async def mock_get_miss(key):
-                await asyncio.sleep(0.001)  # 1ms for cache miss
-                return None
-
-            # Simulate cache set
-            async def mock_set(key, value, ttl=None):
-                await asyncio.sleep(0.002)  # 2ms for cache set
-                return True
-
-            mock.get = AsyncMock(side_effect=mock_get_hit)
-            mock.set = AsyncMock(side_effect=mock_set)
-            mock.delete = AsyncMock(return_value=True)
-            mock.exists = AsyncMock(return_value=True)
-
-            yield mock
-
-    def test_cache_concurrent_access(self, mock_cache_manager):
-        """Test cache performance under concurrent access."""
-        # Skip test - infrastructure.cache module not implemented yet
-        pytest.skip("infrastructure.cache module not implemented")
 
 
 class TestDatabasePerformance:
@@ -72,14 +40,9 @@ class TestDatabasePerformance:
 
         return session
 
-    @patch('infrastructure.repositories.jobs.cache_manager')
-    def test_job_repository_performance(self, mock_cache, mock_session):
+    def test_job_repository_performance(self, mock_session):
         """Test job repository performance under load."""
         from infrastructure.repositories.jobs import JobRepository
-
-        # Mock cache miss to force database queries
-        mock_cache.get = AsyncMock(return_value=None)
-        mock_cache.set = AsyncMock(return_value=True)
 
         repo = JobRepository(mock_session)
 
@@ -150,10 +113,10 @@ class TestAPIPerformance:
 class TestMemoryUsage:
     """Test memory usage under load."""
 
-    def test_cache_memory_efficiency(self):
-        """Test that caching doesn't cause memory leaks."""
-        # Skip test - infrastructure.cache module not implemented yet
-        pytest.skip("infrastructure.cache module not implemented")
+    def test_memory_efficiency(self):
+        """Test that the application doesn't cause memory leaks."""
+        # Skip test - memory profiling not implemented yet
+        pytest.skip("Memory profiling not implemented")
 
 
 class TestConnectionPooling:

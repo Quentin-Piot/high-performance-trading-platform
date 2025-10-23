@@ -49,11 +49,6 @@ class JobRepository:
 
             results = await self._batch_manager.execute_batch()
 
-            # Invalidate caches for all updated jobs
-            for update_data in updates:
-                if "job_id" in update_data:
-                    await self._invalidate_job_caches(update_data["job_id"])
-
             logger.info("Batch job status update completed", extra={
                 "total_updates": len(updates),
                 "results": results
@@ -310,15 +305,6 @@ class JobRepository:
 
             await self.session.commit()
 
-            # Invalidate caches so progress reads are fresh for WebSockets/UI
-            try:
-                await self._invalidate_job_caches(job_id)
-            except Exception as e:
-                logger.warning("Failed to invalidate job caches after progress update", extra={
-                    "job_id": job_id,
-                    "error": str(e)
-                })
-
             return result.rowcount > 0
 
         except Exception:
@@ -389,9 +375,7 @@ class JobRepository:
                     operation_name="update_job_status"
                 )
 
-                # Invalidate caches after successful update
                 if success:
-                    await self._invalidate_job_caches(job_id)
                     logger.debug("Updated job status", extra={
                         "job_id": job_id,
                         "status": status,
@@ -416,10 +400,6 @@ class JobRepository:
                     "error": str(e)
                 })
                 raise DatabaseError(f"Failed to update job status: {str(e)}") from e
-
-    async def _invalidate_job_caches(self, job_id: str) -> None:
-        """Invalidate caches related to a specific job (no-op since cache is disabled)"""
-        logger.debug("Cache invalidation skipped (cache disabled)", extra={"job_id": job_id})
 
     async def increment_attempts(self, job_id: str) -> bool:
         """
