@@ -27,7 +27,6 @@ import {
     Menu,
     X,
     LogOut,
-    Settings,
     History,
 } from "lucide-vue-next";
 const { navigate } = useRouter();
@@ -241,14 +240,6 @@ async function handleLogout() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            class="w-full justify-start h-9 px-3 text-white/90 hover:bg-white/10 hover:text-white"
-                                        >
-                                            <Settings class="size-4 mr-3" />
-                                            Settings
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
                                             class="w-full justify-start h-9 px-3 text-white/90 hover:bg-red-500/10 hover:text-red-400"
                                             @click="handleLogout"
                                         >
@@ -405,14 +396,6 @@ async function handleLogout() {
                                 </div>
                             </div>
                         </div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            class="w-full justify-start h-11 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all"
-                        >
-                            <Settings class="size-5 mr-3" />
-                            <span class="font-medium">Settings</span>
-                        </Button>
                         <Button
                             variant="ghost"
                             size="sm"

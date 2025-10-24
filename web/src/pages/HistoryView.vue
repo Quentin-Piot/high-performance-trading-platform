@@ -46,7 +46,7 @@
     <section v-if="stats" class="animate-scale-in mb-6" style="animation-delay: 0.2s">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
-          <CardContent class="p-4 sm:p-6">
+          <CardContent class="p-3">
             <div class="flex items-center">
               <div class="rounded-xl bg-trading-blue/10 p-3 text-trading-blue">
                 <BarChart3 class="size-6 sm:size-7" />
@@ -59,7 +59,7 @@
           </CardContent>
         </Card>
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
-          <CardContent class="p-4 sm:p-6">
+          <CardContent class="p-3">
             <div class="flex items-center">
               <div class="rounded-xl bg-trading-green/10 p-3 text-trading-green">
                 <TrendingUp class="size-6 sm:size-7" />
@@ -74,7 +74,7 @@
           </CardContent>
         </Card>
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
-          <CardContent class="p-4 sm:p-6">
+          <CardContent class="p-3">
             <div class="flex items-center">
               <div class="rounded-xl bg-trading-purple/10 p-3 text-trading-purple">
                 <Activity class="size-6 sm:size-7" />
@@ -89,7 +89,7 @@
           </CardContent>
         </Card>
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
-          <CardContent class="p-4 sm:p-6">
+          <CardContent class="p-3">
             <div class="flex items-center">
               <div class="rounded-xl bg-trading-orange/10 p-3 text-trading-orange">
                 <Zap class="size-6 sm:size-7" />
