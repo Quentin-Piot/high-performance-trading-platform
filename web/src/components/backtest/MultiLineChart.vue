@@ -210,11 +210,11 @@ watch(
 );
 </script>
 <template>
-    <div class="relative group">
+    <div class="relative">
         <div class="flex items-center justify-between mb-4 px-2">
             <div class="flex items-center gap-3">
                 <div
-                    class="rounded-xl bg-trading-blue/10 p-2 text-trading-blue group-hover:bg-trading-blue/20 transition-smooth"
+                    class="rounded-xl bg-trading-blue/10 p-2 text-trading-blue"
                 >
                     <BarChart3 class="size-4" />
                 </div>
@@ -256,10 +256,10 @@ watch(
                     :key="series.id"
                     :class="[
                         'flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
-                        'border border-transparent hover:border-border/50',
+                        'border border-transparent',
                         series.visible
                             ? 'bg-card shadow-sm'
-                            : 'bg-muted/50 opacity-60 hover:opacity-80',
+                            : 'bg-muted/50 opacity-60',
                     ]"
                     @click="toggleSeriesVisibility(series.id)"
                 >
@@ -285,7 +285,7 @@ watch(
         </div>
         <div
             ref="el"
-            class="w-full h-[400px] rounded-lg bg-card/50 border border-border/20 shadow-inner"
+            class="w-full h-[400px] rounded-lg"
             :class="{ 'animate-pulse': !loaded }"
         />
         <div

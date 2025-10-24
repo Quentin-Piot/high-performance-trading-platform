@@ -65,6 +65,7 @@ onMounted(() => {
   })
   setSeries(props.series)
   loaded.value = true
+  
   ro = new ResizeObserver(() => {
     if (rootEl && chart) {
       const w = Math.max(320, rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600)
@@ -87,11 +88,10 @@ watchEffect(() => {
 })
 </script>
 <template>
-  <div class="relative group">
-    <!-- Chart Header avec indicateurs -->
+  <div class="relative">
     <div class="flex items-center justify-between mb-4 px-2">
       <div class="flex items-center gap-3">
-        <div class="rounded-xl bg-trading-blue/10 p-2 text-trading-blue group-hover:bg-trading-blue/20 transition-smooth">
+        <div class="rounded-xl bg-trading-blue/10 p-2 text-trading-blue">
           <BarChart3 class="size-4" />
         </div>
         <div>
@@ -99,9 +99,8 @@ watchEffect(() => {
           <p class="text-xs text-muted-foreground">{{ t('simulate.chart.subtitle') }}</p>
         </div>
       </div>
-      <!-- Indicateur de tendance -->
       <div v-if="hasData" class="flex items-center gap-2">
-        <div :class="['rounded-full p-1.5 transition-smooth', isPositiveTrend ? 'bg-trading-green/10 text-trading-green' : 'bg-trading-red/10 text-trading-red']">
+        <div :class="['rounded-full p-1.5', isPositiveTrend ? 'bg-trading-green/10 text-trading-green' : 'bg-trading-red/10 text-trading-red']">
           <TrendingUp v-if="isPositiveTrend" class="size-3" />
           <Activity v-else class="size-3" />
         </div>
@@ -110,21 +109,16 @@ watchEffect(() => {
         </span>
       </div>
     </div>
-    <!-- Chart Container avec effets visuels -->
-    <div class="relative overflow-hidden rounded-xl border-0 shadow-strong bg-gradient-to-br from-card via-card to-secondary/10">
-      <!-- Effet de brillance -->
-      <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-smooth -translate-x-full group-hover:translate-x-full duration-1000"></div>
-      <!-- Loading skeleton -->
+    <div class="relative overflow-hidden rounded-xl">
       <div v-if="!loaded" class="absolute inset-0 bg-gradient-to-r from-secondary/30 via-secondary/50 to-secondary/30 animate-pulse rounded-xl">
         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" style="animation-delay: 0.5s;"></div>
       </div>
-      <!-- Chart element -->
       <div
         ref="el"
         class="w-full h-[400px] rounded-xl transition-all duration-500 relative z-10"
         :class="loaded ? 'opacity-100' : 'opacity-0'"
+        :style="{ pointerEvents: hasData ? 'auto' : 'none' }"
       />
-      <!-- Overlay pour état vide -->
       <div v-if="loaded && !hasData" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary/20 to-accent/10 rounded-xl">
         <div class="text-center space-y-3">
           <div class="rounded-full bg-muted/20 p-4 mx-auto w-fit">
@@ -137,7 +131,6 @@ watchEffect(() => {
         </div>
       </div>
     </div>
-    <!-- Chart Info avec design moderne -->
     <div class="flex items-center justify-between mt-4 px-2">
       <div class="text-xs text-muted-foreground flex items-center gap-2">
         <div class="w-2 h-2 rounded-full bg-trading-blue"></div>

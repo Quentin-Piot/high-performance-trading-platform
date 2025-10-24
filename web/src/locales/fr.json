@@ -96,18 +96,22 @@
         "infra": {
           "title": "Infrastructure & Déploiement (IaC & DevOps)",
           "points": {
-            "0": "Provisionnement : Terraform sur AWS pour EC2, Security Group et Key Pair automatisés.",
-            "1": "Orchestration initiale : Docker Compose pour le déploiement multi-conteneurs sur une EC2 unique.",
-            "2": "CI/CD : deploy.sh pour build et démarrage ; pipeline GitHub Actions futur.",
-            "3": "Sécurité : SSH restreint à une IP spécifique ; ports DB non exposés."
+            "0": "Infrastructure-as-Code complète avec Terraform (VPC, ECS, Route 53, ACM, CloudFront).",
+            "1": "Automatisation CI/CD avec GitHub Actions et validation Pytest.",
+            "2": "Backend FastAPI haute performance avec workers Monte Carlo parallélisés.",
+            "3": "Déploiement frontend sécurisé sur CloudFront avec HTTPS et authentification Cognito.",
+            "4": "Surveillance et journalisation centralisées via CloudWatch.",
+            "5": "Modèle de sécurité robuste basé sur IAM, OAuth2 et JWT.",
+            "6": "Conçu pour la scalabilité, la maintenabilité et la résilience en production.",
+            "7": "VPC avec sous-réseaux privés pour une sécurité et un isolement renforcés."
           }
         },
         "data_cache": {
-          "title": "Base de Données & Caching",
+          "title": "Services Backend & Données",
           "points": {
-            "0": "Base de données : PostgreSQL 16 avec volume Docker pour la persistance des données.",
-            "1": "Évolution du cache : Redis en sidecar sur ECS Fargate en production.",
-            "2": "Détail Redis : maxmemory=256mb, éviction allkeys-lru pour backend haute performance."
+            "0": "Base de données : PostgreSQL 16 pour une persistance des données robuste.",
+            "1": "Suite de tests complète avec Pytest pour les API et les tests unitaires.",
+            "2": "Workers Monte Carlo asynchrones pour des simulations parallèles."
           }
         },
         "alignment": {
@@ -168,6 +172,49 @@
       }
     }
   },
+  "backtest": {
+    "steps": {
+      "data_selection": {
+        "title": "Sélection des Données",
+        "short_desc": "Choisissez vos données de marché",
+        "subtitle": "Importez un fichier CSV ou sélectionnez un jeu de données",
+        "description": "Sélectionnez les données de marché pour votre backtest. Vous pouvez importer un fichier CSV ou choisir parmi nos jeux de données pré-chargés.",
+        "help": "Sélectionnez un fichier CSV avec les colonnes Date, Open, High, Low, Close, Volume ou choisissez un jeu de données pré-chargé."
+      },
+      "strategy": {
+        "title": "Configuration Stratégie",
+        "short_desc": "Définissez votre stratégie de trading",
+        "subtitle": "Choisissez et configurez votre stratégie",
+        "description": "Sélectionnez une stratégie de trading et configurez ses paramètres.",
+        "help": "Choisissez une stratégie (SMA Crossover ou RSI) et ajustez les paramètres selon vos besoins."
+      },
+      "advanced": {
+        "title": "Paramètres Avancés",
+        "short_desc": "Options avancées et Monte Carlo",
+        "subtitle": "Configuration avancée du backtest",
+        "description": "Configurez les paramètres avancés comme la période d'analyse et les simulations Monte Carlo.",
+        "help": "Définissez la période d'analyse et configurez les simulations Monte Carlo pour une analyse plus robuste."
+      },
+      "review": {
+        "title": "Révision et Lancement",
+        "short_desc": "Vérifiez et lancez le backtest",
+        "subtitle": "Vérifiez vos paramètres",
+        "description": "Vérifiez tous vos paramètres avant de lancer le backtest.",
+        "help": "Vérifiez que tous les paramètres sont corrects avant de lancer le backtest."
+      }
+    },
+    "help": {
+      "data_selection": "Sélectionnez un fichier CSV avec les colonnes Date, Open, High, Low, Close, Volume ou choisissez un jeu de données pré-chargé.",
+      "strategy_config": "Choisissez une stratégie (SMA Crossover ou RSI) et ajustez les paramètres selon vos besoins.",
+      "advanced_config": "Définissez la période d'analyse et configurez les simulations Monte Carlo pour une analyse plus robuste.",
+      "review_launch": "Vérifiez que tous les paramètres sont corrects avant de lancer le backtest."
+    },
+    "success": {
+      "data_selected": "Données sélectionnées avec succès",
+      "strategy_configured": "Stratégie configurée avec succès",
+      "advanced_configured": "Paramètres avancés configurés avec succès"
+    }
+  },
   "simulate": {
     "header": {
       "title": "Simulation de Backtest",
@@ -175,6 +222,15 @@
     },
     "form": {
       "title": "Formulaire de Stratégie",
+      "step": "Étape",
+      "of": "sur",
+      "required": "Obligatoire",
+      "or": "OU",
+      "data_source": {
+        "title": "Source de Données",
+        "description": "Choisissez un jeu de données OU importez un fichier CSV",
+        "dataset_selected": "{count} jeu de données sélectionné | {count} jeux de données sélectionnés"
+      },
       "labels": {
         "csv_file": "Fichier CSV",
         "strategy": "Stratégie",

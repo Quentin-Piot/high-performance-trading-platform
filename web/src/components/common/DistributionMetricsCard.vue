@@ -50,13 +50,9 @@ const volatility = computed(() => {
 </script>
 <template>
   <div class="group relative overflow-hidden rounded-xl border-0 p-6 shadow-medium hover-lift transition-smooth bg-gradient-to-br from-card via-card to-secondary/20 animate-fade-in">
-    <!-- Effet de brillance au survol -->
     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-smooth -translate-x-full group-hover:translate-x-full duration-1000"></div>
-    <!-- Indicateur de tendance décoratif -->
     <div :class="['absolute top-0 right-0 w-16 h-16 rounded-full -translate-y-8 translate-x-8 transition-smooth', `bg-gradient-to-br ${bgGradient}`]"></div>
-    <!-- Contenu principal -->
     <div class="relative z-10 space-y-4">
-      <!-- Header avec label et icône -->
       <div class="flex items-center justify-between">
         <div class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           {{ props.label }}
@@ -65,7 +61,6 @@ const volatility = computed(() => {
           <component :is="trendIcon" :class="['size-3 transition-smooth', colorClasses]" />
         </div>
       </div>
-      <!-- Valeur médiane principale -->
       <div class="space-y-2">
         <div class="flex items-baseline gap-2">
           <div :class="['text-2xl font-bold tabular-nums transition-smooth group-hover:scale-105', colorClasses]">
@@ -75,7 +70,6 @@ const volatility = computed(() => {
             median
           </div>
         </div>
-        <!-- Barre de progression avec gradient -->
         <div class="h-1.5 w-full bg-muted/20 rounded-full overflow-hidden">
           <div 
             :class="['h-full rounded-full transition-all duration-1000 ease-out', isNeutral ? 'bg-muted/40' : isPositive ? 'bg-gradient-to-r from-trading-green/40 to-trading-green/60' : 'bg-gradient-to-r from-trading-red/40 to-trading-red/60']"
@@ -83,19 +77,15 @@ const volatility = computed(() => {
           ></div>
         </div>
       </div>
-      <!-- Distribution Statistics -->
       <div v-if="hasData && distribution" class="space-y-3 pt-2 border-t border-border/30">
-        <!-- Confidence Range (25th-75th percentile) -->
         <div class="flex items-center justify-between text-xs">
           <span class="text-muted-foreground font-medium">50% Range:</span>
           <span class="font-mono text-foreground">{{ confidenceRange }}</span>
         </div>
-        <!-- Volatility (Standard Deviation) -->
         <div class="flex items-center justify-between text-xs">
           <span class="text-muted-foreground font-medium">Volatility:</span>
           <span class="font-mono text-foreground">{{ volatility }}</span>
         </div>
-        <!-- Extreme Values -->
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="space-y-1">
             <div class="text-muted-foreground font-medium">5th %ile</div>
@@ -107,7 +97,6 @@ const volatility = computed(() => {
           </div>
         </div>
       </div>
-      <!-- Empty State -->
       <div v-else class="flex items-center justify-center py-4 text-muted-foreground">
         <div class="text-center space-y-2">
           <BarChart3 class="size-6 mx-auto opacity-50" />
@@ -115,7 +104,6 @@ const volatility = computed(() => {
         </div>
       </div>
     </div>
-    <!-- Effet de pulse pour les valeurs importantes -->
     <div 
       v-if="hasData && !isNeutral && Math.abs(medianValue ?? 0) > (props.percentage ? 0.1 : 1000)"
       :class="['absolute inset-0 rounded-xl opacity-20 animate-pulse-glow', isPositive ? 'bg-trading-green/20' : 'bg-trading-red/20']"

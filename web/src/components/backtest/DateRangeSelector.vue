@@ -7,7 +7,6 @@
             {{ t("simulate.form.labels.date_range") }}
         </Label>
         <div class="flex flex-col gap-4">
-            <!-- Date de début -->
             <div class="space-y-2">
                 <Label class="text-xs text-muted-foreground">{{
                     t("simulate.form.labels.start_date")
@@ -42,7 +41,6 @@
                     </PopoverContent>
                 </Popover>
             </div>
-            <!-- Date de fin -->
             <div class="space-y-2">
                 <Label class="text-xs text-muted-foreground">{{
                     t("simulate.form.labels.end_date")

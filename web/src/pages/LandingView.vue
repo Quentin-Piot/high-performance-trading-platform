@@ -1,29 +1,87 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 import { TrendingUp, BarChart3, Zap, Shield } from "lucide-vue-next";
 import { useRouter } from "@/router";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
-import {
-    Dialog,
-    DialogTrigger,
-    DialogScrollContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/components/ui/dialog";
+import ArchitectureDialog from "@/components/landing/ArchitectureDialog.vue";
 const { t } = useI18n();
 const { navigate } = useRouter();
 function goToSimulate() {
     navigate("/simulate");
 }
+const architectureCards = [
+    {
+        id: "frontend",
+        icon: Zap,
+        gradient: "from-green-400 to-emerald-600",
+        glowColor: "rgba(16, 185, 129, 0.6)",
+        sections: [
+            {
+                icon: Zap,
+                titleKey: "landing.architecture.sections.stack.title",
+                points: [
+                    "landing.architecture.sections.stack.points.0",
+                    "landing.architecture.sections.stack.points.1",
+                    "landing.architecture.sections.stack.points.2",
+                ],
+            },
+            {
+                icon: TrendingUp,
+                title: "Expérience Utilisateur",
+                points: ["landing.architecture.frontend.experience"],
+            },
+        ],
+    },
+    {
+        id: "backend",
+        icon: BarChart3,
+        gradient: "from-purple-400 to-purple-600",
+        glowColor: "rgba(168, 85, 247, 0.6)",
+        sections: [
+            {
+                icon: BarChart3,
+                titleKey: "landing.architecture.sections.data_cache.title",
+                points: [
+                    "landing.architecture.sections.data_cache.points.0",
+                    "landing.architecture.sections.data_cache.points.1",
+                    "landing.architecture.sections.data_cache.points.2",
+                ],
+            },
+            {
+                icon: TrendingUp,
+                titleKey: "landing.architecture.sections.alignment.title",
+                points: [
+                    "landing.architecture.sections.alignment.points.0",
+                    "landing.architecture.sections.alignment.points.1",
+                    "landing.architecture.sections.alignment.points.2",
+                ],
+            },
+        ],
+    },
+    {
+        id: "infrastructure",
+        icon: Shield,
+        gradient: "from-orange-400 to-red-600",
+        glowColor: "rgba(249, 115, 22, 0.6)",
+        sections: [
+            {
+                icon: Shield,
+                titleKey: "landing.architecture.sections.infra.title",
+                points: [
+                    "landing.architecture.sections.infra.points.0",
+                    "landing.architecture.sections.infra.points.1",
+                    "landing.architecture.sections.infra.points.2",
+                    "landing.architecture.sections.infra.points.3",
+                    "landing.architecture.sections.infra.points.4",
+                    "landing.architecture.sections.infra.points.5",
+                    "landing.architecture.sections.infra.points.6",
+                    "landing.architecture.sections.infra.points.7",
+                ],
+            },
+        ],
+    },
+];
 </script>
 <template>
     <div
@@ -59,7 +117,7 @@ function goToSimulate() {
                         >
                             <Button
                                 size="lg"
-                                class="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                class="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                                 @click="goToSimulate"
                             >
                                 <TrendingUp class="mr-2 h-5 w-5" />
@@ -69,412 +127,30 @@ function goToSimulate() {
                     </div>
                 </div>
             </section>
-            <section class="py-16 px-4 sm:px-6 lg:px-8">
+            <section class="py-20 px-4 sm:px-6 lg:px-8">
                 <div class="max-w-7xl mx-auto">
-                    <div class="text-center mb-12">
+                    <div class="text-center mb-16">
                         <h2
-                            class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4"
+                            class="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent mb-6"
                         >
                             {{ t("landing.project.title") }}
                         </h2>
                         <p
-                            class="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+                            class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed"
                         >
                             {{ t("landing.project.description") }}
                         </p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                        <Dialog>
-                            <DialogTrigger as-child>
-                                <Card
-                                    class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg cursor-pointer"
-                                >
-                                    <CardHeader class="text-center pb-4">
-                                        <div
-                                            class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                                        >
-                                            <Zap class="h-8 w-8 text-white" />
-                                        </div>
-                                        <CardTitle
-                                            class="text-xl font-bold text-gray-900 dark:text-white"
-                                        >
-                                            {{
-                                                t(
-                                                    "landing.project.frontend.title",
-                                                )
-                                            }}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <CardDescription
-                                            class="text-gray-600 dark:text-gray-300 text-center"
-                                        >
-                                            {{
-                                                t(
-                                                    "landing.project.frontend.description",
-                                                )
-                                            }}
-                                            <span
-                                                class="block mt-2 text-sm font-semibold text-blue-600 dark:text-blue-400"
-                                            >
-                                                {{
-                                                    t(
-                                                        "landing.project.frontend.click_to_architecture",
-                                                    )
-                                                }}
-                                            </span>
-                                        </CardDescription>
-                                    </CardContent>
-                                </Card>
-                            </DialogTrigger>
-                            <DialogScrollContent class="sm:max-w-[600px]">
-                                <DialogHeader>
-                                    <DialogTitle
-                                        class="text-blue-600 dark:text-blue-400"
-                                    >
-                                        {{
-                                            t(
-                                                "landing.architecture.frontend.title",
-                                            )
-                                        }}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        {{
-                                            t(
-                                                "landing.architecture.frontend.description",
-                                            )
-                                        }}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div class="py-4 space-y-4">
-                                    <!-- Stack Applicative -->
-                                    <div class="mt-6">
-                                        <h4
-                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
-                                        >
-                                            <Zap
-                                                class="h-5 w-5 mr-2 text-blue-500"
-                                            />
-                                            {{
-                                                t(
-                                                    "landing.architecture.sections.stack.title",
-                                                )
-                                            }}
-                                        </h4>
-                                        <ul
-                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
-                                        >
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.stack.points.0",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.stack.points.1",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.stack.points.2",
-                                                    )
-                                                }}
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <!-- Expérience Utilisateur -->
-                                    <div class="mt-6">
-                                        <h4
-                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
-                                        >
-                                            <TrendingUp
-                                                class="h-5 w-5 mr-2 text-blue-500"
-                                            />
-                                            Expérience Utilisateur
-                                        </h4>
-                                        <ul
-                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
-                                        >
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.frontend.experience",
-                                                    )
-                                                }}
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </DialogScrollContent>
-                        </Dialog>
-                        <Dialog>
-                            <DialogTrigger as-child>
-                                <Card
-                                    class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg cursor-pointer"
-                                >
-                                    <CardHeader class="text-center pb-4">
-                                        <div
-                                            class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                                        >
-                                            <BarChart3
-                                                class="h-8 w-8 text-white"
-                                            />
-                                        </div>
-                                        <CardTitle
-                                            class="text-xl font-bold text-gray-900 dark:text-white"
-                                        >
-                                            {{
-                                                t(
-                                                    "landing.project.backend.title",
-                                                )
-                                            }}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <CardDescription
-                                            class="text-gray-600 dark:text-gray-300 text-center"
-                                        >
-                                            {{
-                                                t(
-                                                    "landing.project.backend.description",
-                                                )
-                                            }}
-                                            <span
-                                                class="block mt-2 text-sm font-semibold text-purple-600 dark:text-purple-400"
-                                            >
-                                                {{
-                                                    t(
-                                                        "landing.project.backend.click_to_system_design",
-                                                    )
-                                                }}
-                                            </span>
-                                        </CardDescription>
-                                    </CardContent>
-                                </Card>
-                            </DialogTrigger>
-                            <DialogScrollContent class="sm:max-w-[600px]">
-                                <DialogHeader>
-                                    <DialogTitle
-                                        class="text-blue-600 dark:text-blue-400"
-                                    >
-                                        {{
-                                            t(
-                                                "landing.architecture.backend.title",
-                                            )
-                                        }}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        {{
-                                            t(
-                                                "landing.architecture.backend.description",
-                                            )
-                                        }}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div class="py-4 space-y-4">
-                                    <!-- Base de Données & Caching -->
-                                    <div class="mt-6">
-                                        <h4
-                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
-                                        >
-                                            <BarChart3
-                                                class="h-5 w-5 mr-2 text-blue-500"
-                                            />
-                                            {{
-                                                t(
-                                                    "landing.architecture.sections.data_cache.title",
-                                                )
-                                            }}
-                                        </h4>
-                                        <ul
-                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
-                                        >
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.data_cache.points.0",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.data_cache.points.1",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.data_cache.points.2",
-                                                    )
-                                                }}
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <!-- Alignement Rôle Architecte/Lead -->
-                                    <div class="mt-6">
-                                        <h4
-                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
-                                        >
-                                            <TrendingUp
-                                                class="h-5 w-5 mr-2 text-blue-500"
-                                            />
-                                            {{
-                                                t(
-                                                    "landing.architecture.sections.alignment.title",
-                                                )
-                                            }}
-                                        </h4>
-                                        <ul
-                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
-                                        >
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.alignment.points.0",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.alignment.points.1",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.alignment.points.2",
-                                                    )
-                                                }}
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </DialogScrollContent>
-                        </Dialog>
-                        <Dialog>
-                            <DialogTrigger as-child>
-                                <Card
-                                    class="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg cursor-pointer"
-                                >
-                                    <CardHeader class="text-center pb-4">
-                                        <div
-                                            class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                                        >
-                                            <Shield
-                                                class="h-8 w-8 text-white"
-                                            />
-                                        </div>
-                                        <CardTitle
-                                            class="text-xl font-bold text-gray-900 dark:text-white"
-                                        >
-                                            {{
-                                                t(
-                                                    "landing.project.infrastructure.title",
-                                                )
-                                            }}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <CardDescription
-                                            class="text-gray-600 dark:text-gray-300 text-center"
-                                        >
-                                            {{
-                                                t(
-                                                    "landing.project.infrastructure.description",
-                                                )
-                                            }}
-                                            <span
-                                                class="block mt-2 text-sm font-semibold text-red-600 dark:text-red-400"
-                                            >
-                                                {{
-                                                    t(
-                                                        "landing.project.infrastructure.click_to_iac_cloud",
-                                                    )
-                                                }}
-                                            </span>
-                                        </CardDescription>
-                                    </CardContent>
-                                </Card>
-                            </DialogTrigger>
-                            <DialogScrollContent class="sm:max-w-[600px]">
-                                <DialogHeader>
-                                    <DialogTitle
-                                        class="text-blue-600 dark:text-blue-400"
-                                    >
-                                        {{
-                                            t(
-                                                "landing.architecture.infra_dialog.title",
-                                            )
-                                        }}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        {{
-                                            t(
-                                                "landing.architecture.infra_dialog.description",
-                                            )
-                                        }}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div class="py-4 space-y-4">
-                                    <!-- Infrastructure & Déploiement -->
-                                    <div class="mt-6">
-                                        <h4
-                                            class="text-lg font-bold mb-3 flex items-center text-blue-600 dark:text-blue-400"
-                                        >
-                                            <Shield
-                                                class="h-5 w-5 mr-2 text-blue-500"
-                                            />
-                                            {{
-                                                t(
-                                                    "landing.architecture.sections.infra.title",
-                                                )
-                                            }}
-                                        </h4>
-                                        <ul
-                                            class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300"
-                                        >
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.infra.points.0",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.infra.points.1",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.infra.points.2",
-                                                    )
-                                                }}
-                                            </li>
-                                            <li>
-                                                {{
-                                                    t(
-                                                        "landing.architecture.sections.infra.points.3",
-                                                    )
-                                                }}
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </DialogScrollContent>
-                        </Dialog>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                        <ArchitectureDialog
+                            v-for="card in architectureCards"
+                            :key="card.id"
+                            :card-id="card.id"
+                            :icon="card.icon"
+                            :gradient="card.gradient"
+                            :glow-color="card.glowColor"
+                            :sections="card.sections"
+                        />
                     </div>
                 </div>
             </section>
@@ -521,13 +197,13 @@ function goToSimulate() {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 600%; 
-    height: 600%; 
+    width: 600%;
+    height: 600%;
     background: radial-gradient(
         circle closest-corner at 50% 50%,
         rgba(255, 255, 255, 0.1) 0%,
         rgba(255, 255, 255, 0.05) 5%,
-         transparent 15%
+        transparent 15%
     );
     transform: translate(-50%, -50%) scale(0);
     border-radius: 50%;
@@ -540,7 +216,7 @@ function goToSimulate() {
 }
 .liquid-glass-hero:hover::before {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1); 
+    transform: translate(-50%, -50%) scale(1);
 }
 .liquid-glass-bg {
     position: absolute;

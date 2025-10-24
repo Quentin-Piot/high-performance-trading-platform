@@ -1,6 +1,7 @@
 import axios from "axios";
+import { BASE_URL } from "./apiClient";
 export const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: BASE_URL,
   timeout: 10000,
 });
 export type PriceTick = { time: number; price: number };
@@ -18,9 +19,9 @@ export type Trade = {
 };
 export type Position = { symbol: string; qty: number; avgPrice: number };
 export const endpoints = {
-  prices: "/prices", 
-  trades: "/trades", 
-  triggerTrade: "/trade", 
+  prices: "/prices",
+  trades: "/trades",
+  triggerTrade: "/trade",
 };
 export async function fetchPrices(): Promise<PriceTick[]> {
   return [];

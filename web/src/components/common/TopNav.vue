@@ -62,7 +62,6 @@ async function handleLogout() {
 </script>
 <template>
     <nav class="relative">
-        <!-- Liquid glass hero background -->
         <div class="liquid-glass-hero">
             <div class="liquid-glass-bg"></div>
             <div class="liquid-glass-overlay"></div>
@@ -70,12 +69,10 @@ async function handleLogout() {
             <div class="liquid-glass-shimmer"></div>
             <div class="liquid-glass-noise"></div>
         </div>
-        <!-- Navigation content -->
         <div class="relative z-10 mx-auto max-w-7xl">
             <div
                 class="flex items-center justify-between py-4 px-4 sm:px-6 lg:px-8"
             >
-                <!-- Logo section -->
                 <div
                     class="flex items-end gap-2 sm:gap-3 cursor-pointer group transition-all duration-300 hover-scale"
                     @click="goHome"
@@ -103,9 +100,7 @@ async function handleLogout() {
                         </span>
                     </div>
                 </div>
-                <!-- Desktop Navigation -->
                 <div class="hidden lg:flex items-center gap-3">
-                    <!-- Navigation Links -->
                     <div class="flex items-center gap-2 mr-4">
                         <Button
                             variant="ghost"
@@ -140,9 +135,7 @@ async function handleLogout() {
                             }}</span>
                         </Button>
                     </div>
-                    <!-- Right side actions -->
                     <div class="flex items-center gap-2">
-                        <!-- Language selector -->
                         <Select v-model="selectedLocale">
                             <SelectTrigger
                                 size="sm"
@@ -176,9 +169,7 @@ async function handleLogout() {
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-                        <!-- Divider -->
                         <div class="w-px h-6 bg-white/20 mx-1"></div>
-                        <!-- Authentication Section -->
                         <div v-if="isAuthenticated" class="flex items-center">
                             <Popover>
                                 <PopoverTrigger as-child>
@@ -270,7 +261,6 @@ async function handleLogout() {
                                 </PopoverContent>
                             </Popover>
                         </div>
-                        <!-- Auth buttons for non-authenticated users -->
                         <div v-else class="flex items-center gap-2">
                             <Button
                                 variant="ghost"
@@ -294,9 +284,7 @@ async function handleLogout() {
                         </div>
                     </div>
                 </div>
-                <!-- Mobile/Tablet Navigation -->
                 <div class="flex lg:hidden items-center gap-3">
-                    <!-- Language selector mobile -->
                     <Select v-model="selectedLocale">
                         <SelectTrigger
                             size="sm"
@@ -326,7 +314,6 @@ async function handleLogout() {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <!-- Menu hamburger -->
                     <Button
                         variant="ghost"
                         size="sm"
@@ -339,7 +326,6 @@ async function handleLogout() {
                 </div>
             </div>
         </div>
-        <!-- Mobile menu overlay -->
         <Transition name="mobile-menu">
             <div
                 v-if="mobileMenuOpen"
@@ -348,7 +334,6 @@ async function handleLogout() {
                 <div
                     class="bg-[#1a1f2e]/98 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
                 >
-                    <!-- Navigation Links -->
                     <div class="p-3 space-y-1">
                         <Button
                             variant="ghost"
@@ -383,11 +368,8 @@ async function handleLogout() {
                             }}</span>
                         </Button>
                     </div>
-                    <!-- Divider -->
                     <div class="h-px bg-white/10"></div>
-                    <!-- Auth Section -->
                     <div v-if="isAuthenticated" class="p-3 space-y-2">
-                        <!-- User Info Card -->
                         <div
                             class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10"
                         >
@@ -440,7 +422,6 @@ async function handleLogout() {
                             <span class="font-medium">Logout</span>
                         </Button>
                     </div>
-                    <!-- Auth buttons for non-authenticated users -->
                     <div v-else class="p-3 space-y-2">
                         <Button
                             variant="ghost"

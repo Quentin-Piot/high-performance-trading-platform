@@ -1,6 +1,5 @@
 <template>
   <BaseLayout>
-    <!-- Header avec design moderne -->
     <section class="animate-scale-in" style="animation-delay: 0.1s">
       <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/20 mb-6">
         <CardHeader class="pb-3 sm:pb-4 p-4 sm:p-6">
@@ -15,7 +14,6 @@
               <p class="text-muted-foreground text-sm sm:text-base">{{ t('history.description') }}</p>
             </div>
             <div class="flex items-center gap-3 w-full sm:w-auto">
-              <!-- Strategy Filter -->
               <Select v-model="selectedStrategy">
                 <SelectTrigger class="w-full sm:w-48 border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft">
                   <SelectValue :placeholder="t('history.filter_by_strategy')" />
@@ -31,7 +29,6 @@
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <!-- Refresh Button -->
               <Button 
                 :disabled="loading" 
                 variant="ghost" 
@@ -46,7 +43,6 @@
         </CardHeader>
       </Card>
     </section>
-    <!-- Stats Cards avec design moderne -->
     <section v-if="stats" class="animate-scale-in mb-6" style="animation-delay: 0.2s">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10 hover:shadow-strong transition-all duration-300 hover-scale">
@@ -107,7 +103,6 @@
         </Card>
       </div>
     </section>
-    <!-- History Table avec design moderne -->
     <section class="animate-scale-in" style="animation-delay: 0.3s">
       <Card class="border-0 shadow-strong bg-gradient-to-br from-card via-card to-secondary/10 overflow-hidden">
         <CardHeader class="pb-3 sm:pb-4 p-4 sm:p-6">
@@ -152,7 +147,6 @@
             </div>
           </div>
         <div v-else class="space-y-4">
-          <!-- History Items -->
           <div v-for="item in history" :key="item.id" class="border-0 rounded-xl p-4 sm:p-6 bg-gradient-to-br from-secondary/30 via-secondary/20 to-secondary/10 hover:shadow-medium transition-all duration-300 hover-scale shadow-soft">
             <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
               <div class="flex-1 w-full">
@@ -193,12 +187,10 @@
                     <p class="font-semibold text-foreground">{{ formatDate(item.created_at) }}</p>
                   </div>
                 </div>
-                <!-- Strategy Parameters -->
                 <div class="mt-3 p-3 rounded-lg bg-secondary/30 text-xs">
                   <span class="font-semibold text-trading-blue">{{ t('history.parameters') }}:</span>
                   <span class="text-muted-foreground ml-2">{{ formatStrategyParams(item.strategy_params) }}</span>
                 </div>
-                <!-- Datasets Used -->
                 <div v-if="item.datasets_used && item.datasets_used.length" class="mt-2 p-3 rounded-lg bg-secondary/30 text-xs">
                   <span class="font-semibold text-trading-cyan">{{ t('history.datasets') }}:</span>
                   <span class="text-muted-foreground ml-2">{{ item.datasets_used.join(', ') }}</span>
@@ -219,7 +211,6 @@
               </div>
             </div>
           </div>
-          <!-- Pagination -->
           <div v-if="pagination.total > pagination.per_page" class="pt-6">
             <Card class="border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/10">
               <CardContent class="p-4 sm:p-6">

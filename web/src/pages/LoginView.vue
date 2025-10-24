@@ -41,11 +41,8 @@ onMounted(async () => {
 </script>
 <template>
   <div class="min-h-screen flex">
-    <!-- Left side - Auth Form -->
     <div class="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 bg-background relative">
-      <!-- Top controls -->
       <div class="absolute top-6 left-6 right-6 flex items-center justify-between">
-        <!-- Home button -->
         <Button
           variant="ghost"
           size="sm"
@@ -55,7 +52,6 @@ onMounted(async () => {
           <Home class="size-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
           {{ t('auth.login.backToHome') }}
         </Button>
-        <!-- Language selector -->
         <div class="relative">
           <Select v-model="selectedLocale">
             <SelectTrigger
@@ -88,15 +84,11 @@ onMounted(async () => {
         <AuthForm mode="login" />
       </div>
     </div>
-    <!-- Right side - Gradient Background -->
     <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#161c2b] via-[#1c162e] to-[#23183a]">
-      <!-- Animated gradient overlay -->
       <div class="absolute inset-0 bg-gradient-to-tr from-blue-500/15 via-purple-500/10 to-cyan-500/15"></div>
-      <!-- Decorative elements -->
       <div class="absolute top-20 right-20 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
       <div class="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
       <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-cyan-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-      <!-- Content -->
       <div class="relative z-10 flex flex-col items-start justify-center p-16 text-white">
         <div class="space-y-6">
           <h1 class="text-5xl font-bold tracking-tight">
@@ -105,7 +97,6 @@ onMounted(async () => {
           <p class="text-xl text-white/80 max-w-md leading-relaxed">
             {{ t('auth.login.description') }}
           </p>
-          <!-- Feature highlights -->
           <div class="mt-12 space-y-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
@@ -134,7 +125,6 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <!-- Bottom decorative line -->
       <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
     </div>
   </div>
