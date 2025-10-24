@@ -197,17 +197,41 @@
                 </div>
               </div>
               <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                <Button variant="outline" size="sm" class="rounded-lg border-0 bg-trading-blue/10 hover:bg-trading-blue/20 text-trading-blue hover:text-trading-blue transition-smooth shadow-soft hover-scale" @click="viewDetails(item)">
-                  <Eye class="size-4 mr-2" />
-                  {{ t('history.view_details') }}
-                </Button>
                 <Button variant="outline" size="sm" class="rounded-lg border-0 bg-trading-green/10 hover:bg-trading-green/20 text-trading-green hover:text-trading-green transition-smooth shadow-soft hover-scale" @click="rerunBacktest(item)">
                   <Play class="size-4 mr-2" />
                   {{ t('history.rerun') }}
                 </Button>
-                <Button variant="destructive" size="sm" class="rounded-lg border-0 bg-trading-red/10 hover:bg-trading-red/20 text-trading-red hover:text-trading-red transition-smooth shadow-soft hover-scale" @click="deleteBacktest(item)">
-                  <Trash2 class="size-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger as-child>
+                    <Button variant="destructive" size="sm" class="rounded-lg border-0 bg-trading-red/10 hover:bg-trading-red/20 text-trading-red hover:text-trading-red transition-smooth shadow-soft hover-scale">
+                      <Trash2 class="size-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent class="border-0 shadow-strong bg-gradient-to-br from-card via-card to-secondary/10">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle class="flex items-center gap-3 text-trading-red">
+                        <div class="rounded-full bg-trading-red/10 p-2">
+                          <Trash2 class="size-5" />
+                        </div>
+                        {{ t('history.confirm_delete_title') }}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription class="text-muted-foreground">
+                        {{ t('history.confirm_delete_description') }}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel class="rounded-lg border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft">
+                        {{ t('common.cancel') }}
+                      </AlertDialogCancel>
+                      <AlertDialogAction 
+                        class="rounded-lg border-0 bg-trading-red hover:bg-trading-red/90 text-white transition-smooth shadow-soft hover-scale"
+                        @click="confirmDelete(item.id)"
+                      >
+                        {{ t('common.delete') }}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </div>
@@ -266,7 +290,6 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
-  Eye,
   Play,
   Trash2,
   ChevronLeft,
@@ -277,6 +300,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog'
 import { fetchJson } from '@/services/apiClient'
 const { t } = useI18n()
 const { navigate } = useRouter()
@@ -368,9 +402,6 @@ const formatStrategyParams = (params: any) => {
     .map(([key, value]) => `${key}: ${value}`)
     .join(', ')
 }
-const viewDetails = (item: any) => {
-  navigate(`/history/${item.id}`)
-}
 const rerunBacktest = (item: any) => {
   const queryParams: Record<string, string | number | undefined> = {
     strategy: item.strategy,
@@ -383,6 +414,7 @@ const rerunBacktest = (item: any) => {
     priceType: item.price_type,
     datasets: item.datasets_used && item.datasets_used.length > 0 ? item.datasets_used.join(',') : undefined
   };
+
   const strategyConfig = BACKTEST_STRATEGIES[item.strategy];
   if (strategyConfig && item.strategy_params) {
     for (const p of strategyConfig.params) {
@@ -391,16 +423,18 @@ const rerunBacktest = (item: any) => {
       }
     }
   }
+
   const filteredQueryParams = Object.fromEntries(
     Object.entries(queryParams).filter(([, value]) => value !== null && value !== undefined && value !== '')
   );
+
   const queryString = new URLSearchParams(
     Object.entries(filteredQueryParams).map(([key, value]) => [key, String(value)])
   ).toString();
+
   navigate(`/simulate?${queryString}`);
 }
-const deleteBacktest = async (id: string) => {
-  if (!confirm(t('history.confirm_delete'))) return
+const confirmDelete = async (id: string) => {
   try {
     await fetchJson(`/history/${id}`, { method: 'DELETE' })
     await loadHistory()
