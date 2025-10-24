@@ -11,30 +11,23 @@ export default defineConfig({
     },
   },
   build: {
-    // Optimisation pour CloudFront/S3
     rollupOptions: {
       output: {
-        // Chunking strategy optimisée
         manualChunks: {
-          // Vendor chunk pour les dépendances externes
           vendor: [
             'vue',
             'pinia',
             'vue-i18n'
           ],
-          // UI components chunk
           ui: [
             'lucide-vue-next',
             'reka-ui',
             'embla-carousel-vue'
           ],
-          // Charts chunk (plus lourd)
           charts: [
             'lightweight-charts',
             'echarts',
-            'vue-echarts'
           ],
-          // Utils chunk
           utils: [
             'axios',
             'decimal.js',
@@ -43,7 +36,6 @@ export default defineConfig({
             'class-variance-authority'
           ]
         },
-        // Nommage des chunks pour cache busting
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
@@ -63,16 +55,11 @@ export default defineConfig({
         }
       }
     },
-    // Optimisations générales
     target: 'es2015',
     minify: 'terser',
-    // Taille des chunks
     chunkSizeWarningLimit: 1000,
-    // Source maps pour debugging en prod
     sourcemap: false
   },
-  // Configuration pour CloudFront
   base: '/',
-  // Optimisation des assets
   assetsInclude: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif']
 })
