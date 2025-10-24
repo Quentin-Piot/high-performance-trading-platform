@@ -62,8 +62,6 @@ function updateSeries() {
   if (medianSeries) medianSeries.setData(medianData)
   if (p75Series) p75Series.setData(p75Data)
   if (p95Series) p95Series.setData(p95Data)
-  
-  // Fit content after data update to ensure maximum zoom out
   if (hasData.value) {
     (chart as any).timeScale().fitContent()
   }
@@ -115,12 +113,9 @@ onMounted(() => {
     lineWidth: 1
   })
   updateSeries()
-  
-  // Fit content to show all data with maximum zoom out
   if (hasData.value) {
     (chart as any).timeScale().fitContent()
   }
-  
   ro = new ResizeObserver(() => {
     if (rootEl && chart) {
       const w = Math.max(320, rootEl.clientWidth || 600)

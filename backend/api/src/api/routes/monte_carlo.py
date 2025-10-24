@@ -113,7 +113,7 @@ async def run_monte_carlo_sync(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="End date must be after start date",
             )
-        
+
         # Priority: use local datasets if symbol is provided, otherwise use uploaded file
         if file:
             contents = await file.read()

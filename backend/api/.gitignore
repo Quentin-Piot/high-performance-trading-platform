@@ -1,6 +1,7 @@
 # Byte-code files
 *.pyc
 __pycache__/
+.ruff_cache
 
 # Virtual environment
 .venv/
