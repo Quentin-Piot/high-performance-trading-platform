@@ -12,10 +12,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from starlette.routing import Route, WebSocketRoute
 
-from api.routers.auth import router as auth_router
-from api.routers.backtest import router as backtest_router
-from api.routers.google_auth import router as google_auth_router
-from api.routers.history import router as history_router
+from api.routes.auth import router as auth_router
+from api.routes.backtest import router as backtest_router
+from api.routes.google_auth import router as google_auth_router
+from api.routes.history import router as history_router
 from api.routes.monte_carlo import router as monte_carlo_router
 from api.routes.performance import router as performance_router
 from core.logging import REQUEST_ID, setup_logging

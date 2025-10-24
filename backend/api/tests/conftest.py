@@ -138,8 +138,8 @@ def mock_google_user_info():
 def mock_database_dependencies():
     """Mock automatique des dépendances de base de données."""
     with (
-        patch("api.routers.history.get_user_repo") as mock_user_repo,
-        patch("api.routers.history.get_history_repo") as mock_history_repo,
+        patch("api.routes.history.get_user_repo") as mock_user_repo,
+        patch("api.routes.history.get_history_repo") as mock_history_repo,
     ):
         # Mock user repository
         mock_user_repo_instance = Mock()
