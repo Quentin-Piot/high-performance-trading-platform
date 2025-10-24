@@ -1,5 +1,4 @@
 <script setup lang="ts">
-//push
 import { computed, ref, watch } from "vue";
 import { useRouter } from "@/router";
 import { useI18n } from "vue-i18n";

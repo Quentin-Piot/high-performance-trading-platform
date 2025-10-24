@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/stores/authStore";
-export type AuthResponse = { 
-  access_token: string; 
+export type AuthResponse = {
+  access_token: string;
   token_type: string;
   sub?: string;
   email_verified?: boolean;
@@ -52,7 +52,7 @@ export async function postFormData<T>(
   formData: FormData,
 ): Promise<T> {
   const url = `${BASE_URL}${path}`;
-  const headers: HeadersInit = { ...authHeader() }; 
+  const headers: HeadersInit = { ...authHeader() };
   const res = await fetch(url, { method: "POST", headers, body: formData });
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
