@@ -69,7 +69,9 @@ The cloud infrastructure is provisioned on AWS using Terraform, designed with co
 - **ECR**: Amazon Elastic Container Registry for storing Docker images of the backend.
 - **IAM**: Manages roles and policies for secure access.
 - **CloudWatch**: For logging and monitoring.
-- **SQS**: Amazon Simple Queue Service for handling Monte Carlo job queues.
+- **Monte Carlo Worker System**: Asynchronous job processing with concurrent execution capabilities:
+  - **In-process Worker**: `SimpleMonteCarloWorker` supporting up to 2 simultaneous jobs with ThreadPoolExecutor
+  - **Concurrent Processing**: Multi-threaded execution for parallel Monte Carlo simulations
 - **Cognito**: For user authentication and authorization.
 
 **Note on Cost-Saving Choices**:
