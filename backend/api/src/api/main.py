@@ -29,7 +29,6 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logging.getLogger("app").info("Startup")
     await init_db()
     def db_health_check() -> tuple[str, str, dict[str, Any]]:
-        """Check database connectivity"""
         try:
             return "healthy", "Database connection available", {}
         except Exception as e:
