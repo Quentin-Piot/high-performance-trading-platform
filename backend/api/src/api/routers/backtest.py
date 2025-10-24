@@ -189,6 +189,7 @@ async def backtest_post(
     When using local datasets, provide symbol, start_date, and end_date parameters.
     """
     files = []
+    # Priority: use local datasets if symbol is provided, otherwise use uploaded files
     if symbol and start_date and end_date:
         symbol_to_file = {
             "aapl": "AAPL.csv",
@@ -250,7 +251,7 @@ async def backtest_post(
             csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
         )
         files = [mock_file]
-    elif csv:
+    elif csv and len(csv) > 0:
         files = csv
     else:
         raise HTTPException(
