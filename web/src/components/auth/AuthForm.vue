@@ -145,8 +145,8 @@ function togglePasswordVisibility() {
           <Input v-model="password" :type="showPassword ? 'text' : 'password'" :placeholder="t('auth.placeholders.password', 'Enter your password')" />
           <button
             type="button"
-            @click="togglePasswordVisibility"
             class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            @click="togglePasswordVisibility"
           >
             <Eye v-if="!showPassword" class="h-4 w-4" />
             <EyeOff v-else class="h-4 w-4" />
