@@ -7,7 +7,6 @@ import LoginView from "@/pages/LoginView.vue";
 import RegisterView from "@/pages/RegisterView.vue";
 import SimulateView from "@/pages/SimulateView.vue";
 import HistoryView from "@/pages/HistoryView.vue";
-import Dashboard from "@/pages/Dashboard.vue";
 import LandingView from "@/pages/LandingView.vue";
 import Sonner from "@/components/ui/sonner/Sonner.vue";
 const { currentPath } = useRouter();
@@ -22,10 +21,6 @@ const View = computed(() => {
     switch (currentPath.value) {
         case "/":
             return LandingView;
-        case "/legacy":
-            return Dashboard;
-        case "/dashboard":
-            return Dashboard;
         case "/login":
             return LoginView;
         case "/register":

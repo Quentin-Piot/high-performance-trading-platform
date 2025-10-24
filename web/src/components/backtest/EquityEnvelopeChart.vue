@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { createChart, ColorType } from 'lightweight-charts'
-import { BarChart3 } from 'lucide-vue-next'
+import { BarChart3, Clock } from 'lucide-vue-next'
+import { formatProcessingTime } from '@/utils/timeFormatter'
+import { useI18n } from 'vue-i18n'
 interface EquityEnvelope {
   timestamps: string[]
   p5: number[]
@@ -13,7 +15,10 @@ interface EquityEnvelope {
 const props = defineProps<{
   equityEnvelope?: EquityEnvelope
   activeRange?: "1W" | "1M" | "YTD" | "All"
+  processingTime?: string | null
 }>()
+
+const { t } = useI18n()
 const el = ref<HTMLDivElement | null>(null)
 let chart: any = null
 let p5Series: any = null
@@ -139,51 +144,72 @@ watch(() => props.activeRange, updateSeries)
 </script>
 <template>
   <div class="w-full">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-2">
-        <BarChart3 class="h-5 w-5 text-primary" />
-        <h3 class="text-lg font-semibold">Monte Carlo Equity Envelope</h3>
+    <div class="flex items-center justify-between mb-4 px-2">
+      <div class="flex items-center gap-3">
+        <div class="rounded-xl bg-trading-blue/10 p-2 text-trading-blue">
+          <BarChart3 class="size-4" />
+        </div>
+        <div>
+          <h3 class="font-semibold text-sm">{{ t('simulate.chart.monte_carlo.title') }}</h3>
+          <p class="text-xs text-muted-foreground">{{ t('simulate.chart.monte_carlo.description') }}</p>
+        </div>
       </div>
-      <div v-if="hasData" class="text-sm text-muted-foreground">
-        {{ pointCount }} data points
+      <div v-if="hasData" class="flex items-center gap-2">
+        <div v-if="processingTime" class="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full border border-blue-500/20">
+          <Clock class="size-3 text-blue-400" />
+          <span class="text-xs font-medium text-blue-400 tabular-nums">
+            {{ formatProcessingTime(processingTime) }}
+          </span>
+        </div>
       </div>
     </div>
-    <div class="relative">
+    <div class="relative overflow-hidden rounded-xl">
       <div 
         ref="el" 
-        class="w-full h-[400px] rounded-lg"
+        class="w-full h-[400px] rounded-xl transition-all duration-500 relative z-10"
         :class="{ 'opacity-50': !hasData }"
       />
       <div 
         v-if="!hasData" 
-        class="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg"
+        class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary/20 to-accent/10 rounded-xl"
       >
         <div class="text-center text-muted-foreground">
           <BarChart3 class="h-12 w-12 mx-auto mb-2 opacity-50" />
-          <p class="text-sm">No Monte Carlo data available</p>
+          <p class="text-sm">{{ t('simulate.chart.monte_carlo.no_data') }}</p>
         </div>
       </div>
     </div>
     <div v-if="hasData" class="mt-4 flex flex-wrap gap-4 text-xs">
       <div class="flex items-center gap-2">
         <div class="w-3 h-0.5 bg-red-400 opacity-60"></div>
-        <span>5th Percentile</span>
+        <span>{{ t('simulate.chart.monte_carlo.percentiles.5th') }}</span>
       </div>
       <div class="flex items-center gap-2">
         <div class="w-3 h-0.5 bg-orange-400 opacity-80"></div>
-        <span>25th Percentile</span>
+        <span>{{ t('simulate.chart.monte_carlo.percentiles.25th') }}</span>
       </div>
       <div class="flex items-center gap-2">
         <div class="w-3 h-0.5 bg-green-500"></div>
-        <span>Median</span>
+        <span>{{ t('simulate.chart.monte_carlo.percentiles.median') }}</span>
       </div>
       <div class="flex items-center gap-2">
         <div class="w-3 h-0.5 bg-green-400 opacity-80"></div>
-        <span>75th Percentile</span>
+        <span>{{ t('simulate.chart.monte_carlo.percentiles.75th') }}</span>
       </div>
       <div class="flex items-center gap-2">
         <div class="w-3 h-0.5 bg-green-400 opacity-60"></div>
-        <span>95th Percentile</span>
+        <span>{{ t('simulate.chart.monte_carlo.percentiles.95th') }}</span>
+      </div>
+    </div>
+    <div class="flex items-center justify-between mt-4 px-2">
+      <div class="text-xs text-muted-foreground flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-trading-blue"></div>
+        {{ t('simulate.chart.monte_carlo.simulation') }}
+      </div>
+      <div class="flex items-center gap-3">
+        <div v-if="hasData" class="text-xs text-muted-foreground">
+          {{ pointCount }} {{ t('simulate.chart.monte_carlo.data_points') }}
+        </div>
       </div>
     </div>
   </div>

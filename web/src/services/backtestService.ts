@@ -39,6 +39,7 @@ export interface MonteCarloResult {
     drawdown: MetricsDistribution
   }
   equity_envelope: EquityEnvelope
+  processing_time?: string
 }
 export interface MonteCarloResponse {
   results: MonteCarloResult[]
@@ -48,8 +49,16 @@ export interface MonteCarloResponse {
     average_drawdown: number
     total_files_processed: number
   }
+  processing_time?: string
 }
-export type BacktestResponse = { timestamps: string[]; equity_curve: number[]; pnl: number; drawdown: number; sharpe: number }
+export type BacktestResponse = { 
+  timestamps: string[]; 
+  equity_curve: number[]; 
+  pnl: number; 
+  drawdown: number; 
+  sharpe: number;
+  processing_time?: string;
+}
 export type BacktestResult = {
   filename: string
   timestamps: string[]
@@ -57,6 +66,7 @@ export type BacktestResult = {
   pnl: number
   drawdown: number
   sharpe: number
+  processing_time?: string
 }
 export type AggregatedMetrics = {
   average_pnl: number
@@ -155,6 +165,7 @@ type RawBacktestResponse = {
   metrics?: unknown
   signals?: unknown
   trades?: unknown
+  processing_time?: string
 }
 type RawMultipleBacktestResponse = {
   results: Array<{
@@ -188,6 +199,7 @@ function normalizeResponse(resp: RawBacktestResponse): BacktestResponse {
       pnl: resp.pnl,
       drawdown: asNegativeDrawdown(resp.drawdown ?? resp.max_drawdown ?? 0),
       sharpe: (resp.sharpe ?? resp.sharpe_ratio ?? 0),
+      processing_time: resp.processing_time,
     }
   }
   if ('dates' in resp && 'equity' in resp && resp.dates && resp.equity) {
@@ -197,6 +209,7 @@ function normalizeResponse(resp: RawBacktestResponse): BacktestResponse {
       pnl: resp.pnl,
       drawdown: asNegativeDrawdown(resp.drawdown ?? resp.max_drawdown ?? 0),
       sharpe: (resp.sharpe ?? resp.sharpe_ratio ?? 0),
+      processing_time: resp.processing_time,
     }
   }
   return {
@@ -205,6 +218,7 @@ function normalizeResponse(resp: RawBacktestResponse): BacktestResponse {
     pnl: resp.pnl,
     drawdown: asNegativeDrawdown(resp.drawdown ?? resp.max_drawdown ?? 0),
     sharpe: (resp.sharpe ?? resp.sharpe_ratio ?? 0),
+    processing_time: resp.processing_time,
   }
 }
 function normalizeMultipleResponse(resp: RawMultipleBacktestResponse): MultipleBacktestResponse {
@@ -267,8 +281,6 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
     if (req.sample_fraction) params.set('sample_fraction', req.sample_fraction.toString())
     if (req.gaussian_scale) params.set('gaussian_scale', req.gaussian_scale.toString())
     if (req.price_type) params.set('price_type', req.price_type)
-    
-    // Only send files if no preloaded dataset is selected
     const formData = new FormData()
     if (files.length > 0 && (!selectedDatasets || selectedDatasets.length === 0)) {
       validateCsvFiles(files)
@@ -276,7 +288,6 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
         formData.append('file', file)
       })
     }
-    
     const url = `/monte-carlo/run?${params.toString()}`
     const response = await fetch(`${BASE_URL}${url}`, {
       method: 'POST',
@@ -289,10 +300,7 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
     const rawResponse = await response.json()
     return rawResponse as MonteCarloResponse
   }
-  
-  // For regular backtests, check if we're using preloaded datasets
   if (selectedDatasets && selectedDatasets.length > 0) {
-    // Use the POST endpoint with symbol parameters instead of files
     const params = new URLSearchParams()
     params.set('symbol', selectedDatasets[0]!)
     if (req.dates?.startDate) {
@@ -306,11 +314,9 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
       params.set(key, value.toString())
     })
     if (req.price_type) params.set('price_type', req.price_type)
-    
     if (selectedDatasets.length > 1) {
       params.set('include_aggregated', 'true')
     }
-    
     const url = `/backtest?${params.toString()}`
     const response = await fetch(`${BASE_URL}${url}`, {
       method: 'POST',
@@ -320,15 +326,12 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
       throw new Error(`HTTP ${response.status}: ${errorData.detail || 'Request failed'}`)
     }
     const rawResponse = await response.json()
-    
     if (selectedDatasets.length > 1) {
       return normalizeMultipleResponse(rawResponse)
     } else {
       return normalizeResponse(rawResponse)
     }
   }
-  
-  // Original logic for uploaded files
   if (files.length === 1) {
     const file = files[0]
     if (!file) throw new BacktestValidationError('error.invalid_csv', 'No file provided')

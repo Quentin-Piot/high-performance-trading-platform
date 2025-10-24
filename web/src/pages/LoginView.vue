@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AuthForm from '@/components/auth/AuthForm.vue'
 import { useAuthStore } from '@/stores/authStore'
@@ -14,15 +14,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Globe, Home } from 'lucide-vue-next'
+import { useLocale } from "@/composables/useLocale";
 const auth = useAuthStore()
 const { navigate } = useRouter()
 const { t } = useI18n()
-const i18n = useI18n()
-const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } }).locale
-const selectedLocale = ref<"en" | "fr">(localeRef?.value ?? "en")
-watch(selectedLocale, (val) => {
-  if (localeRef) localeRef.value = val
-})
+const { selectedLocale, setLocale } = useLocale();
 function goHome() {
   navigate('/')
 }
@@ -53,7 +49,10 @@ onMounted(async () => {
           {{ t('auth.login.backToHome') }}
         </Button>
         <div class="relative">
-          <Select v-model="selectedLocale">
+          <Select
+            :model-value="selectedLocale"
+            @update:model-value="setLocale"
+          >
             <SelectTrigger
               size="sm"
               class="h-9 w-36 border-border/20 text-muted-foreground hover:border-trading-cyan hover:bg-trading-cyan/10 transition-all duration-300 hover-scale group justify-start"

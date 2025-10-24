@@ -16,7 +16,8 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { useI18n } from "vue-i18n";
-import { ref, watch, computed } from "vue";
+import { ref, computed } from "vue";
+import { useLocale } from "@/composables/useLocale";
 import {
     Home,
     BarChart3,
@@ -31,18 +32,12 @@ import {
 } from "lucide-vue-next";
 const { navigate } = useRouter();
 const { t } = useI18n();
-const i18n = useI18n();
 const auth = useAuthStore();
-const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } })
-    .locale;
-const selectedLocale = ref<"en" | "fr">(localeRef?.value ?? "en");
+const { selectedLocale, setLocale } = useLocale();
 const mobileMenuOpen = ref(false);
 const isAuthenticated = computed(() => auth.isAuthenticated);
 const userName = computed(() => auth.userName || auth.userEmail || "User");
 const userProvider = computed(() => auth.user?.provider || "cognito");
-watch(selectedLocale, (val) => {
-    if (localeRef) localeRef.value = val;
-});
 function go(path: string) {
     navigate(path);
     mobileMenuOpen.value = false;
@@ -101,14 +96,14 @@ async function handleLogout() {
                     </div>
                 </div>
                 <div class="hidden lg:flex items-center gap-3">
-                    <div class="flex items-center gap-2 mr-4">
+                    <div class="flex items-center gap-1 mr-4">
                         <Button
                             variant="ghost"
                             size="sm"
                             class="h-9 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
                             @click="go('/')"
                         >
-                            <Home class="size-4 mr-2" />
+                            <Home class="size-4 mr-1" />
                             <span class="font-medium">{{ t("nav.home") }}</span>
                         </Button>
                         <Button
@@ -117,7 +112,7 @@ async function handleLogout() {
                             class="h-9 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
                             @click="go('/simulate')"
                         >
-                            <BarChart3 class="size-4 mr-2" />
+                            <BarChart3 class="size-4 mr-1" />
                             <span class="font-medium">{{
                                 t("nav.simulate")
                             }}</span>
@@ -129,19 +124,22 @@ async function handleLogout() {
                             class="h-9 px-4 text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
                             @click="go('/history')"
                         >
-                            <History class="size-4 mr-2" />
+                            <History class="size-4 mr-1" />
                             <span class="font-medium">{{
                                 t("nav.history")
                             }}</span>
                         </Button>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Select v-model="selectedLocale">
+                        <Select
+                            :model-value="selectedLocale"
+                            @update:model-value="setLocale"
+                        >
                             <SelectTrigger
                                 size="sm"
                                 class="h-9 w-32 border-white/20 bg-white/5 text-white/90 hover:bg-white/10 hover:border-white/30 transition-all duration-300"
                             >
-                                <Globe class="size-4 mr-2 text-blue-400" />
+                                <Globe class="size-4 text-blue-400" />
                                 <SelectValue
                                     :placeholder="
                                         selectedLocale === 'fr'
@@ -285,7 +283,10 @@ async function handleLogout() {
                     </div>
                 </div>
                 <div class="flex lg:hidden items-center gap-3">
-                    <Select v-model="selectedLocale">
+                    <Select
+                        :model-value="selectedLocale"
+                        @update:model-value="setLocale"
+                    >
                         <SelectTrigger
                             size="sm"
                             class="h-9 w-20 border-white/20 bg-white/5 text-white/90 hover:bg-white/10"

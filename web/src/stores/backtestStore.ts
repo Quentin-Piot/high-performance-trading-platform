@@ -41,6 +41,7 @@ export const useBacktestStore = defineStore("backtest", {
       drawdown: MetricsDistribution;
     } | null,
     equityEnvelope: null as EquityEnvelope | null,
+    processingTime: null as string | null,
   }),
   getters: {
     equitySeries(state) {
@@ -58,9 +59,6 @@ export const useBacktestStore = defineStore("backtest", {
       this.sharpe = null;
       this.errorCode = null;
       this.errorMessage = null;
-      this.lastFile = null;
-      this.lastFiles = [];
-      this.lastRequest = null;
       this.results = [];
       this.aggregatedMetrics = null;
       this.isMultipleResults = false;
@@ -68,6 +66,7 @@ export const useBacktestStore = defineStore("backtest", {
       this.monteCarloResults = [];
       this.metricsDistribution = null;
       this.equityEnvelope = null;
+      this.processingTime = null;
     },
     async runBacktest(file: File, req: BacktestRequest) {
       this.status = "loading";
@@ -83,6 +82,7 @@ export const useBacktestStore = defineStore("backtest", {
         this.pnl = resp.pnl;
         this.drawdown = resp.drawdown;
         this.sharpe = resp.sharpe;
+        this.processingTime = resp.processing_time || null;
         this.lastFile = file;
         this.lastRequest = req;
         this.status = "success";
@@ -125,12 +125,14 @@ export const useBacktestStore = defineStore("backtest", {
             this.pnl = firstResult.pnl;
             this.drawdown = firstResult.drawdown;
             this.sharpe = firstResult.sharpe;
+            this.processingTime = firstResult.processing_time || null;
           }
         } else if (isMonteCarloResponse(resp)) {
           this.monteCarloResults = resp.results;
           this.aggregatedMetrics = resp.aggregated_metrics;
           this.isMonteCarloResults = true;
           this.isMultipleResults = false;
+          this.processingTime = resp.processing_time || null;
           if (resp.results.length > 0) {
             const firstResult = resp.results[0]!;
             this.metricsDistribution = firstResult.metrics_distribution;
@@ -150,6 +152,7 @@ export const useBacktestStore = defineStore("backtest", {
           this.pnl = resp.pnl;
           this.drawdown = resp.drawdown;
           this.sharpe = resp.sharpe;
+          this.processingTime = resp.processing_time || null;
           this.isMultipleResults = false;
           this.isMonteCarloResults = false;
           this.results = [];

@@ -164,18 +164,9 @@ onMounted(async () => {
         urlParams.get("auth") === "success" &&
         urlParams.get("provider") === "google"
     ) {
-        console.log("Google OAuth callback detected on /simulate");
         await auth.handleGoogleCallback();
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
-        console.log("Authentication state after callback:", {
-            isAuthenticated: auth.isAuthenticated,
-            user: auth.user,
-            token: auth.token ? "present" : "missing",
-        });
-    }
-    if (urlParams.size > 0) {
-        console.log("URL parameters detected, BacktestForm will auto-run");
     }
 });
 </script>
@@ -346,6 +337,7 @@ onMounted(async () => {
                                         store.equityEnvelope || undefined
                                     "
                                     :active-range="activeRange"
+                                    :processing-time="store.processingTime"
                                 />
                             </div>
                             <MultiLineChart
@@ -354,7 +346,7 @@ onMounted(async () => {
                                 :aggregated-data="aggregatedData"
                                 :active-range="activeRange"
                             />
-                            <BacktestChart v-else :series="chartSeries" />
+                            <BacktestChart v-else :series="chartSeries" :processing-time="store.processingTime" />
                         </template>
                     </CardContent>
                 </Card>
@@ -362,10 +354,10 @@ onMounted(async () => {
                     <div v-if="hasMonteCarloResults" class="col-span-full mb-4">
                         <div class="text-center mb-4">
                             <h3 class="text-lg font-semibold text-foreground">
-                                Distribution Statistics
+                                {{ t('simulate.distributions.statistics') }}
                             </h3>
                             <p class="text-sm text-muted-foreground">
-                                Showing median values with distribution ranges
+                                {{ t('simulate.distributions.showing_median') }}
                             </p>
                         </div>
                         <div
