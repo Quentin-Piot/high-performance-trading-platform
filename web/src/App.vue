@@ -2,21 +2,32 @@
 import { computed, ref, watch } from "vue";
 import { useRouter } from "@/router";
 import { useI18n } from "vue-i18n";
+import { useAuthStore } from "@/stores/authStore";
 import LoginView from "@/pages/LoginView.vue";
 import RegisterView from "@/pages/RegisterView.vue";
 import SimulateView from "@/pages/SimulateView.vue";
 import HistoryView from "@/pages/HistoryView.vue";
 import LandingView from "@/pages/LandingView.vue";
 import Sonner from "@/components/ui/sonner/Sonner.vue";
-const { currentPath } = useRouter();
+
+const { currentPath, navigate } = useRouter();
 const i18n = useI18n();
+const authStore = useAuthStore();
+
 const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } })
     .locale;
 const selectedLocale = ref<"en" | "fr">("en");
+
 watch(selectedLocale, (val) => {
     if (localeRef) localeRef.value = val;
 });
+
 const View = computed(() => {
+    if (currentPath.value === "/history" && !authStore.isAuthenticated) {
+        navigate("/login");
+        return LoginView;
+    }
+
     switch (currentPath.value) {
         case "/":
             return LandingView;
@@ -36,7 +47,6 @@ const View = computed(() => {
 
 <template>
     <component :is="View" />
-    <!-- Toaster global pour les notifications -->
     <Sonner position="top-right" rich-colors close-button :duration="4000" />
 </template>
 

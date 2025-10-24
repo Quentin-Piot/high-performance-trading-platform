@@ -197,9 +197,15 @@
                 </div>
               </div>
               <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                <Button variant="outline" size="sm" class="rounded-lg border-0 bg-trading-green/10 hover:bg-trading-green/20 text-trading-green hover:text-trading-green transition-smooth shadow-soft hover-scale" @click="rerunBacktest(item)">
-                  <Play class="size-4 mr-2" />
-                  {{ t('history.rerun') }}
+                <Button 
+                  size="sm" 
+                  class="h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold shadow-lg shadow-blue-500/25 transition-all duration-300 border-0"
+                  @click="rerunBacktest(item)"
+                >
+                  <div class="flex items-center gap-2">
+                    <Play class="size-4" />
+                    {{ t('history.rerun') }}
+                  </div>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger as-child>
