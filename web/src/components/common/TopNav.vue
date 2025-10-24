@@ -136,6 +136,7 @@ async function handleLogout() {
                         >
                             <SelectTrigger
                                 size="sm"
+                                :aria-label="t('common.select_language')"
                                 class="h-9 w-32 border-white/20 bg-white/5 text-white/90 hover:bg-white/10 hover:border-white/30 transition-all duration-300"
                             >
                                 <Globe class="size-4 text-blue-400" />
