@@ -3,6 +3,7 @@ Monte Carlo simulation API endpoints.
 """
 import asyncio
 import logging
+import time
 from datetime import datetime
 from typing import Any
 
@@ -33,14 +34,20 @@ from utils.date_validation import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/monte-carlo", tags=["monte-carlo"])
+
+
 class SymbolDateRangeResponse(BaseModel):
     """Response model for symbol date range information"""
     symbol: str
     min_date: datetime
     max_date: datetime
+
+
 class AllSymbolsDateRangesResponse(BaseModel):
     """Response model for all symbols date ranges"""
     symbols: list[SymbolDateRangeResponse]
+
+
 @router.post("/run")
 async def run_monte_carlo_sync(
     symbol: str = Query(
@@ -79,6 +86,8 @@ async def run_monte_carlo_sync(
     Supports both CSV file upload and local dataset usage.
     When using local datasets, provide symbol, start_date, and end_date parameters.
     """
+    start_time = time.time()
+
     try:
         import os
         from io import BytesIO
@@ -186,9 +195,14 @@ async def run_monte_carlo_sync(
             metrics_distribution=result.metrics_distribution,
             equity_envelope=result.equity_envelope,
         )
+
+        # Calculer le temps de traitement
+        elapsed_time = time.time() - start_time
+
         response = MonteCarloResponse(
             results=[monte_carlo_result],
             aggregated_metrics=None,
+            processing_time=f"{elapsed_time:.2f}s",
         )
         if current_user:
             try:
@@ -253,6 +267,8 @@ async def run_monte_carlo_sync(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Simulation failed: {str(e)}",
         ) from e
+
+
 @router.post("/async")
 async def submit_async_job(
     symbol: str = Query(
@@ -399,6 +415,8 @@ async def submit_async_job(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to submit job: {str(e)}",
         ) from e
+
+
 @router.get("/async/{job_id}")
 async def get_async_job_status(job_id: str) -> dict[str, Any]:
     """Get status of an asynchronous job."""
@@ -421,6 +439,8 @@ async def get_async_job_status(job_id: str) -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get job status: {str(e)}",
         ) from e
+
+
 @router.delete("/async/{job_id}")
 async def cancel_async_job(job_id: str) -> dict[str, Any]:
     """Cancel an asynchronous job."""
@@ -446,6 +466,8 @@ async def cancel_async_job(job_id: str) -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel job: {str(e)}",
         ) from e
+
+
 @router.get("/async")
 async def list_async_jobs() -> dict[str, Any]:
     """List all asynchronous jobs."""
@@ -460,6 +482,8 @@ async def list_async_jobs() -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list jobs: {str(e)}",
         ) from e
+
+
 @router.get("/symbols/date-ranges", response_model=AllSymbolsDateRangesResponse)
 async def get_symbols_date_ranges() -> AllSymbolsDateRangesResponse:
     """
@@ -484,6 +508,8 @@ async def get_symbols_date_ranges() -> AllSymbolsDateRangesResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get date ranges: {str(e)}",
         ) from e
+
+
 @router.websocket("/ws/{job_id}")
 async def websocket_job_progress(websocket: WebSocket, job_id: str):
     """

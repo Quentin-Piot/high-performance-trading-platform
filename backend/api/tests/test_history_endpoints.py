@@ -5,7 +5,7 @@ Tests for backtest history endpoints.
 from unittest.mock import AsyncMock, Mock
 
 from api.main import app
-from api.routers.history import get_history_repo, get_user_repo
+from api.routes.history import get_history_repo, get_user_repo
 from core.simple_auth import SimpleUser, get_current_user_simple
 from infrastructure.db import get_session
 

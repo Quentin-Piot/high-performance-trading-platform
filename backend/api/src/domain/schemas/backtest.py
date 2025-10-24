@@ -47,12 +47,19 @@ class SingleBacktestResponse(BaseModel):
     pnl: float
     drawdown: float
     sharpe: float
+    processing_time: str | None = None
+
+
 class MultiBacktestResponse(BaseModel):
     """Response for multiple CSV backtest"""
     results: list[SingleBacktestResult]
     aggregated_metrics: AggregatedMetrics | None = None
+    processing_time: str | None = None
+
+
 class MonteCarloResponse(BaseModel):
     """Response for Monte Carlo backtest"""
     results: list[MonteCarloBacktestResult]
     aggregated_metrics: AggregatedMetrics | None = None
+    processing_time: str | None = None
 BacktestResponse = SingleBacktestResponse | MultiBacktestResponse | MonteCarloResponse
