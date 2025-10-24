@@ -21,28 +21,13 @@ This project is a high-performance trading platform, featuring a Vue.js frontend
 
 The platform provides:
 - **Frontend (Vue.js)**: A user interface for configuring and running backtests and Monte Carlo simulations, visualizing results, and managing data.
-  - **Performance Optimized**: Achieves perfect 4×100 scores on Google PageSpeed Insights
-  - **Fast Loading**: Optimized assets with advanced compression and caching strategies
-  - **Accessible**: WCAG compliant with proper ARIA attributes and semantic HTML
-  - **SEO Ready**: Comprehensive meta tags, structured data, and multilingual support
 - **Backend (FastAPI)**: A Python API that handles business logic, data processing, backtesting algorithms, Monte Carlo simulations, and interacts with a PostgreSQL database and Redis cache.
 - **Data Management**: Supports uploading custom CSV datasets and utilizing pre-loaded datasets for simulations.
 - **Infrastructure as Code (Terraform)**: Defines the AWS cloud infrastructure for deploying the application.
 
 ## Frontend Performance
 
-**Perfect PageSpeed Insights Scores**: The frontend achieves exceptional performance with **4×100 scores** across all Google PageSpeed Insights metrics:
-
-![PageSpeed Insights Results](git/speed_insights.png)
-
-| Metric | Score | Description |
-|--------|-------|-------------|
-| **Performance** | **100/100** | Optimized loading times, efficient resource delivery |
-| **Accessibility** | **100/100** | WCAG compliant, screen reader friendly, proper ARIA attributes |
-| **Best Practices** | **100/100** | Modern web standards, security best practices |
-| **SEO** | **100/100** | Search engine optimized, structured data, meta tags |
-
-### Optimization Techniques Applied
+![PageSpeed Insights Results](docs/speed_insights.png)
 
 - **Asset Optimization**: Advanced Vite configuration with Terser compression, tree-shaking, and code splitting
 - **Compression**: Gzip/Brotli compression with optimized bundle sizes
