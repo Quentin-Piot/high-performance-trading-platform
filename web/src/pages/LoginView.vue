@@ -55,6 +55,7 @@ onMounted(async () => {
           >
             <SelectTrigger
               size="sm"
+              :aria-label="t('common.select_language')"
               class="h-9 w-36 border-border/20 text-muted-foreground hover:border-trading-cyan hover:bg-trading-cyan/10 transition-all duration-300 hover-scale group justify-start"
             >
               <Globe class="size-4 mr-2 text-trading-cyan group-hover:rotate-180 transition-transform duration-500" />

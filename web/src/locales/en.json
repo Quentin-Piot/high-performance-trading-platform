@@ -74,7 +74,8 @@
     },
     "common": {
       "language": "Language",
-      "selectLanguage": "Select language"
+      "selectLanguage": "Select language",
+      "select_language": "Select language"
     },
     "password": {
       "requirements": "Password requirements:",

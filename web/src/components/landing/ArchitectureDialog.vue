@@ -37,8 +37,10 @@ const getCtaColor = () => {
 <template>
     <Dialog>
         <DialogTrigger as-child>
-            <div
-                class="group cursor-pointer h-full transition-transform duration-500 ease-out hover:-translate-y-2"
+            <button
+                type="button"
+                :aria-label="t(`landing.project.${cardId}.title`) + ' - ' + t(`landing.project.${cardId}.click_to_${cardId === 'frontend' ? 'architecture' : cardId === 'backend' ? 'system_design' : 'iac_cloud'}`)"
+                class="group cursor-pointer h-full transition-transform duration-500 ease-out hover:-translate-y-2 w-full border-0 bg-transparent p-0"
             >
                 <div
                     class="arch-card relative h-full rounded-3xl overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-xl transition-all duration-500"
@@ -96,7 +98,7 @@ const getCtaColor = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </button>
         </DialogTrigger>
         <DialogScrollContent
             class="modal-glass sm:max-w-4xl p-0 border-0 overflow-hidden"

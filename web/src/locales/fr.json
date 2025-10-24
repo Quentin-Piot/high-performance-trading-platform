@@ -467,7 +467,8 @@
     "refresh": "Actualiser",
     "retry": "Réessayer",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "select_language": "Sélectionner la langue"
   },
   "history": {
     "title": "Historique des Backtests",
