@@ -76,6 +76,8 @@ async def run_monte_carlo_sync(
     Run Monte Carlo simulation synchronously.
     This endpoint executes the simulation immediately and returns results.
     For large simulations, consider using the /async endpoint.
+    Supports both CSV file upload and local dataset usage.
+    When using local datasets, provide symbol, start_date, and end_date parameters.
     """
     try:
         import os
@@ -111,11 +113,14 @@ async def run_monte_carlo_sync(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="End date must be after start date",
             )
+        
+        # Priority: use local datasets if symbol is provided, otherwise use uploaded file
         if file:
             contents = await file.read()
             df = pd.read_csv(BytesIO(contents))
             validate_date_range_for_csv_bytes(contents, start_date, end_date)
         else:
+            # Use local dataset based on symbol
             validate_date_range_for_symbol(symbol, start_date, end_date)
             symbol_to_file = {
                 "aapl": "AAPL.csv",

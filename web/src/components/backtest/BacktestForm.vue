@@ -372,7 +372,7 @@ function onReset() {
                 </div>
                 <div
                     v-else
-                    class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                    class="p-4 mt-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
                 >
                     <div
                         class="flex items-center gap-2 text-green-700 dark:text-green-300"
