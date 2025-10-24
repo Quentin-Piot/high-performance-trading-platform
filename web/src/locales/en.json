@@ -10,6 +10,38 @@
     "register": "Register"
   },
   "auth": {
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember me",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signUp": "Sign up",
+    "signIn": "Sign in",
+    "createAccount": "Create Account",
+    "loginWithGoogle": "Login with Google",
+    "registerWithGoogle": "Register with Google",
+    "titles": {
+      "login": "Login",
+      "register": "Register"
+    },
+    "buttons": {
+      "googleLogin": "Continue with Google",
+      "loading": "Loading...",
+      "login": "Login",
+      "register": "Register"
+    },
+    "labels": {
+      "orContinueWithEmail": "Or continue with email",
+      "email": "Email",
+      "password": "Password"
+    },
+    "placeholders": {
+      "email": "Enter your email",
+      "password": "Enter your password"
+    },
     "login": {
       "title": "Login to your account",
       "subtitle": "Access your high-performance trading platform",
@@ -45,13 +77,21 @@
       "selectLanguage": "Select language"
     },
     "password": {
+      "requirements": "Password requirements:",
+      "minLength": "At least 8 characters",
+      "hasUppercase": "One uppercase letter",
+      "hasLowercase": "One lowercase letter",
+      "hasNumber": "One number",
+      "hasSymbol": "One symbol",
+      "strength": "Password strength:",
+      "minCharacters": "Minimum 6 characters.",
       "validation": {
         "title": "Password requirements",
-        "minLength": "At least 8 characters",
-        "hasUppercase": "At least one uppercase letter (A-Z)",
-        "hasLowercase": "At least one lowercase letter (a-z)",
-        "hasNumber": "At least one number (0-9)",
-        "hasSymbol": "At least one symbol (!@#$%^&*)"
+        "minLength": "Password must be at least 8 characters long",
+        "hasUppercase": "Password must contain at least one uppercase letter",
+        "hasLowercase": "Password must contain at least one lowercase letter",
+        "hasNumber": "Password must contain at least one number",
+        "hasSymbol": "Password must contain at least one symbol"
       },
       "strength": {
         "weak": "Weak",
@@ -59,6 +99,12 @@
         "good": "Good",
         "strong": "Strong"
       }
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "invalidPassword": "Please meet all password requirements",
+      "authFailed": "Authentication failed",
+      "googleAuthFailed": "Google authentication failed"
     },
     "links": {
       "createAccount": "Create an account",

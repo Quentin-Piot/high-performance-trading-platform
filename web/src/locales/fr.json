@@ -11,52 +11,84 @@
   },
   "auth": {
     "login": {
-      "title": "Connexion à votre compte",
-      "subtitle": "Accédez à votre plateforme de trading haute performance",
-      "welcome": "Bienvenue sur HPTP",
-      "description": "Connectez-vous pour accéder à vos backtests, stratégies et analyses de marché avancées.",
+      "backToHome": "Retour à l'accueil",
+      "welcome": "Bon retour",
+      "description": "Connectez-vous à votre compte pour accéder aux fonctionnalités de trading avancées",
       "features": {
-        "secure": "Sécurisé et fiable",
-        "fast": "Rapide et performant", 
-        "customizable": "Personnalisable",
-        "realtime": "Données en temps réel",
-        "advanced": "Analyses avancées",
-        "portfolio": "Gestion de portefeuille"
-      },
-      "backToHome": "Retour à l'accueil"
+        "secure": "Authentification Sécurisée",
+        "fast": "Performance Rapide",
+        "advanced": "Analyses Avancées"
+      }
     },
     "register": {
-      "title": "Créez votre compte trading",
-      "subtitle": "Rejoignez la plateforme de trading haute performance",
-      "welcome": "Rejoignez HPTP",
-      "description": "Créez votre compte et découvrez une plateforme de trading moderne avec des outils d'analyse avancés.",
+      "backToHome": "Retour à l'accueil",
+      "welcome": "Créez votre compte",
+      "description": "Rejoignez notre plateforme pour commencer à backtester vos stratégies de trading",
       "features": {
-        "encrypted": "Données cryptées et protégées",
-        "support": "Support client réactif",
-        "free": "Gratuit pour commencer",
-        "backtesting": "Backtesting avancé",
-        "strategies": "Stratégies personnalisées",
-        "analytics": "Analyses détaillées"
-      },
-      "backToHome": "Retour à l'accueil"
+        "encrypted": "Chiffrement de bout en bout",
+        "backtesting": "Backtesting Avancé",
+        "free": "Gratuit pour commencer"
+      }
     },
-    "common": {
-      "language": "Langue",
-      "selectLanguage": "Sélectionner la langue"
+    "logout": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "rememberMe": "Se souvenir de moi",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "signUp": "S'inscrire",
+    "signIn": "Se connecter",
+    "createAccount": "Créer un compte",
+    "loginWithGoogle": "Se connecter avec Google",
+    "registerWithGoogle": "S'inscrire avec Google",
+    "titles": {
+      "login": "Connexion",
+      "register": "Inscription"
+    },
+    "buttons": {
+      "googleLogin": "Continuer avec Google",
+      "loading": "Chargement...",
+      "login": "Se connecter",
+      "register": "S'inscrire"
+    },
+    "labels": {
+      "orContinueWithEmail": "Ou continuer avec l'email",
+      "email": "Email",
+      "password": "Mot de passe"
+    },
+    "placeholders": {
+      "email": "Entrez votre email",
+      "password": "Entrez votre mot de passe"
     },
     "password": {
       "requirements": "Exigences du mot de passe :",
       "minLength": "Au moins 8 caractères",
-      "hasUppercase": "Au moins une lettre majuscule (A-Z)",
-      "hasLowercase": "Au moins une lettre minuscule (a-z)",
-      "hasNumber": "Au moins un chiffre (0-9)",
-      "hasSymbol": "Au moins un symbole (!@#$%^&*)",
+      "hasUppercase": "Une lettre majuscule",
+      "hasLowercase": "Une lettre minuscule",
+      "hasNumber": "Un chiffre",
+      "hasSymbol": "Un symbole",
       "strength": {
         "weak": "Faible",
         "fair": "Correct",
         "good": "Bon",
         "strong": "Fort"
+      },
+      "minCharacters": "Minimum 6 caractères.",
+      "validation": {
+        "minLength": "Le mot de passe doit contenir au moins 8 caractères",
+        "hasUppercase": "Le mot de passe doit contenir au moins une lettre majuscule",
+        "hasLowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
+        "hasNumber": "Le mot de passe doit contenir au moins un chiffre",
+        "hasSymbol": "Le mot de passe doit contenir au moins un symbole"
       }
+    },
+    "errors": {
+      "invalidCredentials": "Email ou mot de passe invalide",
+      "invalidPassword": "Veuillez respecter toutes les exigences du mot de passe",
+      "authFailed": "Échec de l'authentification",
+      "googleAuthFailed": "Échec de l'authentification Google"
     },
     "links": {
       "createAccount": "Créer un compte",
