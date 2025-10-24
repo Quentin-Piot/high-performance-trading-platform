@@ -96,18 +96,22 @@
         "infra": {
           "title": "Infrastructure & Deployment (IaC & DevOps)",
           "points": {
-            "0": "Provisioning: Terraform on AWS for automated EC2, Security Group, Key Pair.",
-            "1": "Initial Orchestration: Docker Compose for multi-container deployment on single EC2.",
-            "2": "CI/CD: deploy.sh for build and start; future GitHub Actions pipeline.",
-            "3": "Security: Restrict SSH to a specific IP; do not expose DB ports."
+            "0": "Full Infrastructure-as-Code with Terraform (VPC, ECS, Route 53, ACM, CloudFront).",
+            "1": "CI/CD automation with GitHub Actions and Pytest validation.",
+            "2": "High-performance FastAPI backend with parallel Monte Carlo workers.",
+            "3": "Secure frontend deployment on CloudFront with HTTPS and Cognito Auth.",
+            "4": "Centralized monitoring and logging via CloudWatch.",
+            "5": "Robust IAM, OAuth2, and JWT-based security model.",
+            "6": "Designed for scalability, maintainability, and production resilience.",
+            "7": "VPC with private subnets for enhanced security and isolation."
           }
         },
         "data_cache": {
-          "title": "Database & Caching",
+          "title": "Backend Services & Data",
           "points": {
-            "0": "Database: PostgreSQL 16 with Docker volume for data persistence.",
-            "1": "Cache Evolution: Redis sidecar on ECS Fargate in production.",
-            "2": "Redis Detail: maxmemory=256mb, allkeys-lru eviction for high-performance backend."
+            "0": "Database: PostgreSQL 16 for robust data persistence.",
+            "1": "Comprehensive testing suite with Pytest for API and unit tests.",
+            "2": "Asynchronous Monte Carlo workers for parallel simulations."
           }
         },
         "alignment": {
@@ -168,6 +172,49 @@
       }
     }
   },
+  "backtest": {
+    "steps": {
+      "data_selection": {
+        "title": "Data Selection",
+        "short_desc": "Choose your market data",
+        "subtitle": "Import a CSV file or select a dataset",
+        "description": "Select market data for your backtest. You can import a CSV file or choose from our pre-loaded datasets.",
+        "help": "Select a CSV file with Date, Open, High, Low, Close, Volume columns or choose a pre-loaded dataset."
+      },
+      "strategy": {
+        "title": "Strategy Configuration",
+        "short_desc": "Define your trading strategy",
+        "subtitle": "Choose and configure your strategy",
+        "description": "Select a trading strategy and configure its parameters.",
+        "help": "Choose a strategy (SMA Crossover or RSI) and adjust parameters according to your needs."
+      },
+      "advanced": {
+        "title": "Advanced Settings",
+        "short_desc": "Advanced options and Monte Carlo",
+        "subtitle": "Advanced backtest configuration",
+        "description": "Configure advanced parameters like analysis period and Monte Carlo simulations.",
+        "help": "Define the analysis period and configure Monte Carlo simulations for more robust analysis."
+      },
+      "review": {
+        "title": "Review and Launch",
+        "short_desc": "Review and launch the backtest",
+        "subtitle": "Review your settings",
+        "description": "Review all your parameters before launching the backtest.",
+        "help": "Make sure all parameters are correct before launching the backtest."
+      }
+    },
+    "help": {
+      "data_selection": "Select a CSV file with Date, Open, High, Low, Close, Volume columns or choose a pre-loaded dataset.",
+      "strategy_config": "Choose a strategy (SMA Crossover or RSI) and adjust parameters according to your needs.",
+      "advanced_config": "Define the analysis period and configure Monte Carlo simulations for more robust analysis.",
+      "review_launch": "Make sure all parameters are correct before launching the backtest."
+    },
+    "success": {
+      "data_selected": "Data selected successfully",
+      "strategy_configured": "Strategy configured successfully",
+      "advanced_configured": "Advanced settings configured successfully"
+    }
+  },
   "simulate": {
     "header": {
       "title": "Backtest Simulation",
@@ -175,6 +222,15 @@
     },
     "form": {
       "title": "Strategy Form",
+      "step": "Step",
+      "of": "of",
+      "required": "Required",
+      "or": "OR",
+      "data_source": {
+        "title": "Data Source",
+        "description": "Choose a dataset OR upload a CSV file",
+        "dataset_selected": "{count} dataset selected | {count} datasets selected"
+      },
       "labels": {
         "csv_file": "CSV File",
         "strategy": "Strategy",

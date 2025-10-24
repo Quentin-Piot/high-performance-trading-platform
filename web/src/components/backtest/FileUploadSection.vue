@@ -20,7 +20,6 @@
       @dragleave="onDragLeave"
       @drop="onDrop"
     >
-      <!-- Animated background effect -->
       <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
       <input ref="inputEl" type="file" accept=".csv" class="hidden" @change="onFileChange" />
       <div class="relative z-10 flex flex-col items-center gap-3">

@@ -11,14 +11,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { computed, ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { buildEquityPoints } from "@/composables/useEquitySeries";
@@ -168,30 +160,31 @@ function downloadCsv() {
 onMounted(async () => {
     await auth.rehydrate();
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('auth') === 'success' && urlParams.get('provider') === 'google') {
-        console.log('Google OAuth callback detected on /simulate');
+    if (
+        urlParams.get("auth") === "success" &&
+        urlParams.get("provider") === "google"
+    ) {
+        console.log("Google OAuth callback detected on /simulate");
         await auth.handleGoogleCallback();
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
-        console.log('Authentication state after callback:', {
+        console.log("Authentication state after callback:", {
             isAuthenticated: auth.isAuthenticated,
             user: auth.user,
-            token: auth.token ? 'present' : 'missing'
+            token: auth.token ? "present" : "missing",
         });
     }
     if (urlParams.size > 0) {
-        console.log('URL parameters detected, BacktestForm will auto-run');
+        console.log("URL parameters detected, BacktestForm will auto-run");
     }
 });
 </script>
 <template>
     <BaseLayout>
-        <!-- Layout: mobile empilé, desktop côte à côte -->
         <section
-            class="flex flex-col lg:grid lg:grid-cols-3 gap-2 sm:gap-8 animate-scale-in"
+            class="flex flex-col lg:grid lg:grid-cols-3 gap-2 sm:gap-4"
             style="animation-delay: 0.2s"
         >
-            <!-- Form panel avec design moderne - responsive -->
             <Card
                 class="lg:col-span-1 order-1 lg:order-1 border-0 shadow-medium bg-gradient-to-br from-card via-card to-secondary/20"
             >
@@ -213,11 +206,9 @@ onMounted(async () => {
                     <BacktestForm />
                 </CardContent>
             </Card>
-            <!-- Chart panel avec interface TradingView - responsive -->
             <div
                 class="lg:col-span-2 order-2 lg:order-2 space-y-4 sm:space-y-6"
             >
-                <!-- Error banner avec style moderne -->
                 <div
                     v-if="store.status === 'error'"
                     class="rounded-lg sm:rounded-xl border border-trading-red/20 bg-trading-red/5 text-trading-red p-3 sm:p-4 shadow-soft animate-slide-up"
@@ -233,7 +224,6 @@ onMounted(async () => {
                         }}</span>
                     </div>
                 </div>
-                <!-- Chart card avec toolbar TradingView style - responsive -->
                 <Card
                     class="border-0 shadow-strong bg-gradient-to-br from-card via-card to-secondary/10 overflow-hidden"
                 >
@@ -253,74 +243,10 @@ onMounted(async () => {
                                     t("simulate.results.title")
                                 }}</span>
                             </CardTitle>
-                            <p
-                                class="text-xs sm:text-sm text-muted-foreground hidden sm:block"
-                            >
-                                {{ t("simulate.header.subtitle") }}
-                            </p>
                         </div>
-                        <!-- Toolbar type TradingView avec design premium - mobile optimisé -->
                         <div
                             class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto"
                         >
-                            <!-- Sélecteur de résolution avec style moderne -->
-                            <div class="flex items-center gap-2">
-                                <Select v-model="selectedResolution">
-                                    <SelectTrigger
-                                        class="w-full sm:w-32 h-9 border-0 bg-secondary/50 hover:bg-secondary/70 transition-smooth shadow-soft text-sm"
-                                    >
-                                        <SelectValue
-                                            :placeholder="
-                                                t(
-                                                    'simulate.chart.resolution.' +
-                                                        selectedResolution,
-                                                )
-                                            "
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent
-                                        class="border-0 shadow-strong"
-                                    >
-                                        <SelectItem
-                                            value="1m"
-                                            class="hover:bg-trading-blue/10 text-sm"
-                                            >{{
-                                                t(
-                                                    "simulate.chart.resolution.1m",
-                                                )
-                                            }}</SelectItem
-                                        >
-                                        <SelectItem
-                                            value="5m"
-                                            class="hover:bg-trading-blue/10 text-sm"
-                                            >{{
-                                                t(
-                                                    "simulate.chart.resolution.5m",
-                                                )
-                                            }}</SelectItem
-                                        >
-                                        <SelectItem
-                                            value="1h"
-                                            class="hover:bg-trading-blue/10 text-sm"
-                                            >{{
-                                                t(
-                                                    "simulate.chart.resolution.1h",
-                                                )
-                                            }}</SelectItem
-                                        >
-                                        <SelectItem
-                                            value="1d"
-                                            class="hover:bg-trading-blue/10 text-sm"
-                                            >{{
-                                                t(
-                                                    "simulate.chart.resolution.1d",
-                                                )
-                                            }}</SelectItem
-                                        >
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <!-- Boutons de plage temporelle avec style TradingView - mobile adapté -->
                             <div
                                 class="flex items-center gap-1 bg-secondary/30 rounded-lg p-1"
                             >
@@ -377,7 +303,6 @@ onMounted(async () => {
                                     {{ t("simulate.chart.range.All") }}
                                 </Button>
                             </div>
-                            <!-- Actions avec effets visuels - mobile optimisé -->
                             <div class="flex items-center gap-1 sm:gap-2">
                                 <Button
                                     size="sm"
@@ -403,7 +328,6 @@ onMounted(async () => {
                             <div
                                 class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center"
                             >
-                                <!-- Spinner moderne -->
                                 <div class="flex flex-col items-center gap-3">
                                     <Spinner
                                         class="h-8 w-8 text-trading-blue"
@@ -416,7 +340,6 @@ onMounted(async () => {
                             </div>
                         </template>
                         <template v-else>
-                            <!-- Monte Carlo Results with Equity Envelope -->
                             <div v-if="hasMonteCarloResults" class="space-y-4">
                                 <EquityEnvelopeChart
                                     :equity-envelope="
@@ -431,14 +354,11 @@ onMounted(async () => {
                                 :aggregated-data="aggregatedData"
                                 :active-range="activeRange"
                             />
-                            <!-- Graphique simple pour un seul résultat -->
                             <BacktestChart v-else :series="chartSeries" />
                         </template>
                     </CardContent>
                 </Card>
-                <!-- KPI grid avec design premium - mobile responsive -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <!-- Monte Carlo Metrics Display -->
                     <div v-if="hasMonteCarloResults" class="col-span-full mb-4">
                         <div class="text-center mb-4">
                             <h3 class="text-lg font-semibold text-foreground">
@@ -473,7 +393,6 @@ onMounted(async () => {
                             />
                         </div>
                     </div>
-                    <!-- Regular Metrics Display -->
                     <div
                         v-if="!hasMonteCarloResults"
                         class="relative overflow-hidden rounded-lg sm:rounded-xl border-0 shadow-medium bg-gradient-to-br from-card to-trading-green/5"

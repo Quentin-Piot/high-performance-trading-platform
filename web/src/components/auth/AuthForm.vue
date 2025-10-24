@@ -43,7 +43,6 @@ async function onGoogleLogin() {
 <template>
   <div class="max-w-sm w-full mx-auto p-4 rounded-md border">
     <h2 class="text-lg font-semibold mb-3">{{ props.mode === 'login' ? 'Login' : 'Register' }}</h2>
-    <!-- Google OAuth Button -->
     <div class="mb-4">
       <Button 
         variant="outline" 
@@ -60,7 +59,6 @@ async function onGoogleLogin() {
         Continue with Google
       </Button>
     </div>
-    <!-- Divider -->
     <div class="relative mb-4">
       <div class="absolute inset-0 flex items-center">
         <span class="w-full border-t" />
@@ -69,7 +67,6 @@ async function onGoogleLogin() {
         <span class="bg-background px-2 text-muted-foreground">Or continue with email</span>
       </div>
     </div>
-    <!-- Email/Password Form -->
     <div class="space-y-3">
       <div>
         <Label class="mb-1">Email</Label>

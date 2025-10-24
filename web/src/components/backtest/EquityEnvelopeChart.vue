@@ -133,7 +133,6 @@ watch(() => props.activeRange, updateSeries)
 </script>
 <template>
   <div class="w-full">
-    <!-- Header with chart info -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
         <BarChart3 class="h-5 w-5 text-primary" />
@@ -143,14 +142,12 @@ watch(() => props.activeRange, updateSeries)
         {{ pointCount }} data points
       </div>
     </div>
-    <!-- Chart container -->
     <div class="relative">
       <div 
         ref="el" 
-        class="w-full h-[400px] rounded-lg border bg-card"
+        class="w-full h-[400px] rounded-lg"
         :class="{ 'opacity-50': !hasData }"
       />
-      <!-- No data overlay -->
       <div 
         v-if="!hasData" 
         class="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg"
@@ -161,7 +158,6 @@ watch(() => props.activeRange, updateSeries)
         </div>
       </div>
     </div>
-    <!-- Legend -->
     <div v-if="hasData" class="mt-4 flex flex-wrap gap-4 text-xs">
       <div class="flex items-center gap-2">
         <div class="w-3 h-0.5 bg-red-400 opacity-60"></div>

@@ -21,7 +21,6 @@ const props = withDefaults(defineProps<Props>(), {
     ]"
   >
     <TopNav />
-    <!-- Slot pour le contenu spécifique de chaque page -->
     <slot />
   </main>
 </template>

@@ -59,7 +59,6 @@
         <p>{{ t('todo.empty') }}</p>
       </div>
     </div>
-    <!-- Add Todo Dialog -->
     <Dialog v-model:open="showAddDialog">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
