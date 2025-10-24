@@ -29,8 +29,6 @@ from services.backtest_service import (
 )
 
 router = APIRouter(tags=["backtest"])
-
-
 @router.get("/backtest", response_model=BacktestResponse)
 async def backtest_get(
     symbol: str = Query(
@@ -68,7 +66,6 @@ async def backtest_get(
     Supports both regular backtests and Monte Carlo simulations.
     """
     start_time = time.time()
-
     symbol_to_file = {
         "aapl": "AAPL.csv",
         "amzn": "AMZN.csv",
@@ -115,7 +112,6 @@ async def backtest_get(
     csv_buffer = BytesIO()
     df.to_csv(csv_buffer, index=False)
     csv_data = csv_buffer.getvalue()
-
     class MockUploadFile:
         def __init__(self, content: bytes, filename: str):
             self.content = content
@@ -125,7 +121,6 @@ async def backtest_get(
             return self.content
         def seek(self, offset: int) -> None:
             self._file.seek(offset)
-
     mock_file = MockUploadFile(csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv")
     files = [mock_file]
     strat = strategy.strip().lower()
@@ -143,7 +138,6 @@ async def backtest_get(
             )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
-
     result = await run_regular_backtest(
         files=files,
         strategy=strat,
@@ -157,14 +151,9 @@ async def backtest_get(
         include_aggregated=include_aggregated,
         price_type=price_type,
     )
-
-    # Ajouter le temps de traitement
     elapsed_time = time.time() - start_time
     result.processing_time = f"{elapsed_time:.2f}s"
-
     return result
-
-
 @router.post("/backtest", response_model=BacktestResponse)
 async def backtest_post(
     symbol: str | None = Query(
@@ -205,9 +194,7 @@ async def backtest_post(
     When using local datasets, provide symbol, start_date, and end_date parameters.
     """
     start_time = time.time()
-
     files = []
-    # Priority: use local datasets if symbol is provided, otherwise use uploaded files
     if symbol and start_date and end_date:
         symbol_to_file = {
             "aapl": "AAPL.csv",
@@ -256,7 +243,6 @@ async def backtest_post(
         csv_buffer = BytesIO()
         df.to_csv(csv_buffer, index=False)
         csv_data = csv_buffer.getvalue()
-
         class MockUploadFile:
             def __init__(self, content: bytes, filename: str):
                 self.content = content
@@ -266,7 +252,6 @@ async def backtest_post(
                 return self.content
             def seek(self, offset: int) -> None:
                 self._file.seek(offset)
-
         mock_file = MockUploadFile(
             csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
         )
@@ -297,7 +282,6 @@ async def backtest_post(
             )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
-
     print("Calling run_regular_backtest")
     result = await run_regular_backtest(
         files=files,
@@ -312,11 +296,8 @@ async def backtest_post(
         include_aggregated=include_aggregated,
         price_type=price_type,
     )
-
-    # Ajouter le temps de traitement
     elapsed_time = time.time() - start_time
     result.processing_time = f"{elapsed_time:.2f}s"
-
     if current_user:
         try:
             user_repo = UserRepository(session)
@@ -370,8 +351,6 @@ async def backtest_post(
         except Exception as e:
             print(f"Warning: Failed to save backtest to history: {str(e)}")
     return result
-
-
 async def run_regular_backtest(
     files: list[UploadFile],
     strategy: str,
