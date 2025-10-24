@@ -301,10 +301,8 @@ const loadHistory = async (page = 1) => {
       per_page: pagination.value.per_page.toString()
     })
     if (selectedStrategy.value && selectedStrategy.value !== 'all') {
-      console.log('Adding strategy filter:', selectedStrategy.value)
       params.append('strategy', selectedStrategy.value)
     }
-    console.log('Loading history with params:', params.toString())
     const response = await fetchJson<any>(`/history/?${params}`)
     history.value = response.items || []
     pagination.value = {
@@ -414,8 +412,7 @@ const deleteBacktest = async (id: string) => {
 const navigateToSimulate = () => {
   navigate('/simulate')
 }
-watch(selectedStrategy, (newValue, oldValue) => {
-  console.log('Strategy filter changed:', { from: oldValue, to: newValue })
+watch(selectedStrategy, () => {
   pagination.value.page = 1
   loadHistory()
 })

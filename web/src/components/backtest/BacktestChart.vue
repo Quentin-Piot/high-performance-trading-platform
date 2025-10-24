@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, watchEffect } from 'vue'
 import { createChart, ColorType } from 'lightweight-charts'
-import { TrendingUp, Activity, BarChart3 } from 'lucide-vue-next'
+import { TrendingUp, Activity, BarChart3, Clock } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { formatProcessingTime } from '@/utils/timeFormatter'
 const { t } = useI18n()
 type LinePoint = { time: number; value: number }
-const props = defineProps<{ series?: LinePoint[] }>()
+const props = defineProps<{ 
+  series?: LinePoint[]
+  processingTime?: string | null
+}>()
 const el = ref<HTMLDivElement | null>(null)
 type LineSeriesApi = { setData: (data: LinePoint[]) => void }
 type ChartApi = {
@@ -112,6 +116,12 @@ watchEffect(() => {
         <span :class="['text-xs font-medium', isPositiveTrend ? 'text-trading-green' : 'text-trading-red']">
           {{ isPositiveTrend ? t('simulate.chart.trend.positive') : t('simulate.chart.trend.negative') }}
         </span>
+        <div v-if="processingTime" class="flex items-center gap-1.5 ml-3 px-2 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full border border-blue-500/20">
+          <Clock class="size-3 text-blue-400" />
+          <span class="text-xs font-medium text-blue-400 tabular-nums">
+            {{ formatProcessingTime(processingTime) }}
+          </span>
+        </div>
       </div>
     </div>
     <div class="relative overflow-hidden rounded-xl">

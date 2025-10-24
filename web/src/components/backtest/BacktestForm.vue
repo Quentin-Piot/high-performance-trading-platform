@@ -122,10 +122,6 @@ watch(strategy, () => initParams());
 onMounted(async () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.size > 0) {
-        console.log(
-            "Loading parameters from URL:",
-            Object.fromEntries(urlParams.entries()),
-        );
         const urlStrategy = urlParams.get("strategy");
         if (urlStrategy && urlStrategy in BACKTEST_STRATEGIES) {
             strategy.value = urlStrategy as StrategyId;
@@ -191,7 +187,6 @@ onMounted(async () => {
         }
         setTimeout(async () => {
             if (canSubmit.value) {
-                console.log("Auto-running backtest with URL parameters");
                 await onSubmit();
             } else {
                 console.warn("Cannot auto-run backtest: validation failed", {

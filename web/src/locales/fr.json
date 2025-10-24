@@ -43,6 +43,24 @@
     "common": {
       "language": "Langue",
       "selectLanguage": "Sélectionner la langue"
+    },
+    "password": {
+      "requirements": "Exigences du mot de passe :",
+      "minLength": "Au moins 8 caractères",
+      "hasUppercase": "Au moins une lettre majuscule (A-Z)",
+      "hasLowercase": "Au moins une lettre minuscule (a-z)",
+      "hasNumber": "Au moins un chiffre (0-9)",
+      "hasSymbol": "Au moins un symbole (!@#$%^&*)",
+      "strength": {
+        "weak": "Faible",
+        "fair": "Correct",
+        "good": "Bon",
+        "strong": "Fort"
+      }
+    },
+    "links": {
+      "createAccount": "Créer un compte",
+      "alreadyHaveAccount": "Vous avez déjà un compte ?"
     }
   },
   "landing": {
@@ -242,7 +260,8 @@
         "analysis_period": "Période d'analyse",
         "date_range": "Plage de Dates",
         "start_date": "Date de Début",
-        "end_date": "Date de Fin"
+        "end_date": "Date de Fin",
+        "available_date_range": "Plage de Dates Disponible"
       },
       "price_type": {
         "label": "Type de Prix",
@@ -353,6 +372,20 @@
         "1M": "1 mois",
         "YTD": "YTD",
         "All": "Tout"
+      },
+      "monte_carlo": {
+        "title": "Enveloppe d'Équité Monte Carlo",
+        "description": "Résultats de distribution de simulation",
+        "no_data": "Aucune donnée Monte Carlo disponible",
+        "simulation": "Simulation Monte Carlo",
+        "data_points": "points de données",
+        "percentiles": {
+          "5th": "5e Percentile",
+          "25th": "25e Percentile", 
+          "median": "Médiane",
+          "75th": "75e Percentile",
+          "95th": "95e Percentile"
+        }
       }
     }
   },
@@ -368,7 +401,15 @@
     "auth_register_failed": "Échec de l'inscription",
     "network_error": "Erreur réseau",
     "request_timeout": "Délai de la requête dépassé",
-    "retrying": "Nouvelle tentative…"
+    "retrying": "Nouvelle tentative…",
+    "date_validation": {
+      "start_date_invalid": "La date de début est invalide",
+      "end_date_invalid": "La date de fin est invalide",
+      "end_before_start": "La date de fin ne peut pas être antérieure à la date de début",
+      "date_outside_range": "La date sélectionnée est en dehors de la plage disponible",
+      "available_range": "Plage disponible : {minDate} à {maxDate}",
+      "invalid_date_range": "Plage de dates invalide"
+    }
   },
   "todo": {
     "title": "Liste des Tâches",
