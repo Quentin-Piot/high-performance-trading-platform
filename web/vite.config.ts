@@ -55,11 +55,35 @@ export default defineConfig({
         }
       }
     },
-    target: 'es2015',
+    target: 'es2020',
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+      },
+      mangle: {
+        safari10: true
+      },
+      format: {
+        comments: false
+      }
+    },
     chunkSizeWarningLimit: 1000,
-    sourcemap: false
+    sourcemap: false,
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096,
+    reportCompressedSize: false
   },
   base: '/',
-  assetsInclude: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif']
+  assetsInclude: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif'],
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
+  server: {
+    hmr: {
+      overlay: false
+    }
+  }
 })
