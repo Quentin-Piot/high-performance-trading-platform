@@ -16,6 +16,7 @@ This project is a high-performance trading platform, featuring a Vue.js frontend
   - [Backend Setup](#backend-setup)
   - [Frontend Setup](#frontend-setup)
 - [Deployment](#deployment)
+- [Future Enhancements](#future-enhancements)
 
 ## Project Overview
 
@@ -186,3 +187,24 @@ The project's cloud infrastructure is defined using Terraform. To deploy the app
     ```
 
 This will provision all the necessary AWS resources and deploy the application.
+
+## Future Enhancements
+
+The following features and improvements are planned for future releases to enhance scalability, performance, and user experience:
+
+### Infrastructure & Scalability
+- **Distributed Queue System**: Implement AWS SQS for job distribution across multiple worker instances
+- **Redis Cache Layer**: Add Redis for caching frequently accessed data, session management, and real-time features
+- **Horizontal Worker Scaling**: Auto-scaling worker instances based on queue depth and system load
+- **Database Optimization**: Migrate to Amazon RDS with read replicas for improved performance and reliability
+
+### Real-time Features
+- **Enhanced WebSocket Support**: Real-time portfolio updates, live market data streaming, and collaborative features
+- **Push Notifications**: Browser and mobile notifications for job completion, alerts, and market events
+
+### Security & Compliance
+- **Multi-Factor Authentication**: Enhanced security with TOTP, SMS, and biometric authentication
+
+### Performance Optimizations
+- **Microservices Architecture**: Service decomposition for better scalability and maintainability
+- **API Rate Limiting**: Advanced throttling and quota management for API endpoints
