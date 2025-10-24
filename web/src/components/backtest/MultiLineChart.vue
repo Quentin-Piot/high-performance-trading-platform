@@ -170,12 +170,9 @@ onMounted(() => {
     });
     if (!chart) return;
     updateChartSeries();
-    
-    // Fit content to show all data with maximum zoom out
     if (chartSeries.value.length > 0 && chartSeries.value.some(s => s.data.length > 0)) {
         (chart as any).timeScale().fitContent();
     }
-    
     loaded.value = true;
     ro = new ResizeObserver(() => {
         if (rootEl && chart) {
@@ -201,7 +198,6 @@ watch(
     () => {
         if (chart && loaded.value) {
             updateChartSeries();
-            // Fit content after data update to ensure maximum zoom out
             if (chartSeries.value.length > 0 && chartSeries.value.some(s => s.data.length > 0)) {
                 (chart as any).timeScale().fitContent();
             }
@@ -214,7 +210,6 @@ watch(
     () => {
         if (chart && loaded.value) {
             updateChartSeries();
-            // Fit content after visibility change to ensure maximum zoom out
             if (chartSeries.value.length > 0 && chartSeries.value.some(s => s.data.length > 0 && s.visible)) {
                 (chart as any).timeScale().fitContent();
             }

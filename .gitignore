@@ -1,6 +1,7 @@
 # --- IDE ---
 .idea/
 .vscode/
+.zed/
 
 
 # Logs ou fichiers temporaires

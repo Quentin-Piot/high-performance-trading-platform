@@ -64,14 +64,10 @@ onMounted(() => {
     lineWidth: 3
   })
   setSeries(props.series)
-  
-  // Fit content to show all data with maximum zoom out
   if (props.series && props.series.length > 0) {
     (chart as any).timeScale().fitContent()
   }
-  
   loaded.value = true
-  
   ro = new ResizeObserver(() => {
     if (rootEl && chart) {
       const w = Math.max(320, rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600)
@@ -90,7 +86,6 @@ watch(() => props.series, (data: LinePoint[] | undefined) => setSeries(data), { 
 watchEffect(() => {
   if (lineSeries && props.series && props.series.length) {
     lineSeries.setData(props.series)
-    // Fit content after data update to ensure maximum zoom out
     if (chart && props.series.length > 0) {
       (chart as any).timeScale().fitContent()
     }
