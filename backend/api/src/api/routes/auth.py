@@ -62,6 +62,12 @@ async def register(
         return Token(access_token=token)
     except HTTPException:
         raise
+    except ValueError as e:
+        logger.warning(f"Password validation failed for {payload.email}: {str(e)}")
+        raise HTTPException(
+            status_code=422,
+            detail=str(e)
+        ) from e
     except Exception as e:
         logger.error(f"Registration failed for {payload.email}: {str(e)}")
         raise HTTPException(
