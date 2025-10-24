@@ -27,7 +27,7 @@ The platform provides:
 
 ## Frontend Performance
 
-![PageSpeed Insights Results](docs/speed_insights.png)
+![PageSpeed Insights Results](./docs/speed_insights.png)
 
 - **Asset Optimization**: Advanced Vite configuration with Terser compression, tree-shaking, and code splitting
 - **Compression**: Gzip/Brotli compression with optimized bundle sizes
