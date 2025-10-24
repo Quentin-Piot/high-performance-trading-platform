@@ -8,6 +8,42 @@ env:
   AWS_REGION: eu-west-3
 
 jobs:
+  # ✅ Validation Job
+  validate:
+    name: ✅ Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚡ Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: ⚡ Cache Poetry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: poetry-${{ runner.os }}-
+
+      - name: 🧹 Lint Frontend
+        working-directory: ./web
+        run: |
+          npm install -g pnpm
+          pnpm install --frozen-lockfile
+          pnpm exec eslint "src/**/*.{ts,vue}" --max-warnings=0
+
+      - name: 🧪 Run Backend Tests
+        working-directory: ./backend/api
+        run: |
+          pip install poetry
+          poetry install --no-interaction --no-root
+          poetry run pytest tests/ -v --tb=short --maxfail=1 --disable-warnings --cov=app --cov-report=term-missing
+
   # 🔍 Detect Changes Job
   detect-changes:
     name: 🔍 Detect File Changes
@@ -20,7 +56,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
-
       - name: 🔍 Detect Changes
         uses: dorny/paths-filter@v2
         id: changes
@@ -35,50 +70,43 @@ jobs:
   backend-build:
     name: 🐍 Backend - Build
     runs-on: ubuntu-latest
-    needs: detect-changes
+    needs: [validate, detect-changes]
     if: needs.detect-changes.outputs.backend-changed == 'true'
     outputs:
       image-tag: ${{ steps.build.outputs.image-tag }}
-    
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
-
       - name: 🔐 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: 🏗️ Ensure ECR Repository Exists
         run: |
-          echo "🔍 Checking if ECR repository exists..."
+          echo "🔍 Checking ECR repository..."
           aws ecr describe-repositories --repository-names "trading-platform_backend" >/dev/null 2>&1 || \
-            (echo "📦 Creating ECR repository..." && aws ecr create-repository --repository-name "trading-platform_backend")
-
+            (echo "📦 Creating repository..." && aws ecr create-repository --repository-name "trading-platform_backend")
       - name: 🔑 Login to Amazon ECR
         run: |
           echo "🔐 Logging into ECR..."
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
-
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
       - name: 🐳 Build & Push Backend Docker Image
         id: build
         working-directory: ./backend/api
         run: |
-          echo "🔨 Building backend Docker image..."
+          echo "🔨 Building Docker image..."
           REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
-          TIMESTAMP=$(date +%s)
-          
+          TAG=${GITHUB_SHA::8}
           docker build -t "$REPO:latest" .
-          docker tag "$REPO:latest" "$REPO:$TIMESTAMP"
-          
-          echo "📤 Pushing images to ECR..."
+          docker tag "$REPO:latest" "$REPO:$TAG"
+          echo "📤 Pushing image..."
           docker push "$REPO:latest"
-          docker push "$REPO:$TIMESTAMP"
-          
-          echo "image-tag=$TIMESTAMP" >> $GITHUB_OUTPUT
-          echo "✅ Backend image pushed successfully with tag: $TIMESTAMP"
+          docker push "$REPO:$TAG"
+          echo "image-tag=$TAG" >> $GITHUB_OUTPUT
+          echo "✅ Pushed successfully: $TAG"
 
   # 🚀 Backend Deploy Job
   backend-deploy:
@@ -86,7 +114,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect-changes, backend-build]
     if: needs.detect-changes.outputs.backend-changed == 'true' && needs.backend-build.result == 'success'
-    
     steps:
       - name: 🔐 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -94,33 +121,31 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: 🚀 Deploy Backend to ECS
         run: |
-          echo "🔄 Forcing new ECS deployment with image tag: ${{ needs.backend-build.outputs.image-tag }}..."
-          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER_NAME }} --service ${{ secrets.ECS_SERVICE_NAME }} --force-new-deployment
-          echo "✅ Backend deployment initiated!"
+          echo "🔄 Forcing new ECS deployment with tag: ${{ needs.backend-build.outputs.image-tag }}"
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --service ${{ secrets.ECS_SERVICE_NAME }} \
+            --force-new-deployment
+          echo "✅ Backend deployment triggered"
 
   # 🎨 Frontend Build Job
   frontend-build:
     name: 🌐 Frontend - Build
     runs-on: ubuntu-latest
-    needs: detect-changes
+    needs: [validate, detect-changes]
     if: needs.detect-changes.outputs.frontend-changed == 'true'
-    
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
-
       - name: 📦 Install pnpm
         run: |
-          echo "📦 Installing pnpm..."
           npm install -g pnpm
-
       - name: ⚙️ Create Production Environment File
         working-directory: ./web
         run: |
-          echo "⚙️ Creating production environment configuration..."
+          echo "⚙️ Creating .env.production..."
           cat > .env.production << EOF
           VITE_API_BASE_URL=/api/v1
           VITE_COGNITO_REGION=${{ secrets.COGNITO_REGION }}
@@ -130,18 +155,14 @@ jobs:
           VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           EOF
           echo "✅ Environment file created!"
-
       - name: 🔨 Install Dependencies & Build Frontend
         working-directory: ./web
         run: |
-          echo "📦 Installing frontend dependencies..."
+          echo "📦 Installing dependencies..."
           pnpm install --frozen-lockfile
-          
-          echo "🔨 Building Vue.js application..."
+          echo "🔨 Building Vue.js app..."
           pnpm run build
-          
-          echo "✅ Frontend build completed!"
-
+          echo "✅ Build completed!"
       - name: 📦 Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -155,7 +176,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect-changes, frontend-build]
     if: needs.detect-changes.outputs.frontend-changed == 'true' && needs.frontend-build.result == 'success'
-    
     steps:
       - name: 🔐 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -163,27 +183,24 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: 📥 Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: web/dist/
-
       - name: ☁️ Deploy Frontend to S3
         run: |
-          echo "☁️ Syncing frontend files to S3..."
+          echo "☁️ Syncing files to S3..."
           aws s3 sync ./web/dist s3://${{ secrets.S3_BUCKET }} --delete
           echo "✅ Frontend deployed to S3!"
-
       - name: 🔄 Invalidate CloudFront Cache
         run: |
           if [ -n "${{ secrets.CLOUDFRONT_DIST_ID }}" ]; then
             echo "🔄 Invalidating CloudFront cache..."
             aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
-            --paths "/*"
+              --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
+              --paths "/*"
             echo "✅ CloudFront cache invalidated!"
           else
-             echo "⚠️ CLOUDFRONT_DIST_ID not set. Skipping cache invalidation."
+            echo "⚠️ CLOUDFRONT_DIST_ID not set. Skipping cache invalidation."
           fi
