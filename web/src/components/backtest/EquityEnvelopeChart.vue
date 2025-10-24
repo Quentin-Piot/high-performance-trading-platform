@@ -17,7 +17,6 @@ const props = defineProps<{
   activeRange?: "1W" | "1M" | "YTD" | "All"
   processingTime?: string | null
 }>()
-
 const { t } = useI18n()
 const el = ref<HTMLDivElement | null>(null)
 let chart: any = null

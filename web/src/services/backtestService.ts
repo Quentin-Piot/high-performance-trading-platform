@@ -281,6 +281,8 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
     if (req.sample_fraction) params.set('sample_fraction', req.sample_fraction.toString())
     if (req.gaussian_scale) params.set('gaussian_scale', req.gaussian_scale.toString())
     if (req.price_type) params.set('price_type', req.price_type)
+    
+    // Only send files if no preloaded dataset is selected
     const formData = new FormData()
     if (files.length > 0 && (!selectedDatasets || selectedDatasets.length === 0)) {
       validateCsvFiles(files)
@@ -288,6 +290,7 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
         formData.append('file', file)
       })
     }
+    
     const url = `/monte-carlo/run?${params.toString()}`
     const response = await fetch(`${BASE_URL}${url}`, {
       method: 'POST',
@@ -300,7 +303,10 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
     const rawResponse = await response.json()
     return rawResponse as MonteCarloResponse
   }
+  
+  // For regular backtests, check if we're using preloaded datasets
   if (selectedDatasets && selectedDatasets.length > 0) {
+    // Use the POST endpoint with symbol parameters instead of files
     const params = new URLSearchParams()
     params.set('symbol', selectedDatasets[0]!)
     if (req.dates?.startDate) {
@@ -314,9 +320,11 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
       params.set(key, value.toString())
     })
     if (req.price_type) params.set('price_type', req.price_type)
+    
     if (selectedDatasets.length > 1) {
       params.set('include_aggregated', 'true')
     }
+    
     const url = `/backtest?${params.toString()}`
     const response = await fetch(`${BASE_URL}${url}`, {
       method: 'POST',
@@ -326,12 +334,15 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
       throw new Error(`HTTP ${response.status}: ${errorData.detail || 'Request failed'}`)
     }
     const rawResponse = await response.json()
+    
     if (selectedDatasets.length > 1) {
       return normalizeMultipleResponse(rawResponse)
     } else {
       return normalizeResponse(rawResponse)
     }
   }
+  
+  // Original logic for uploaded files
   if (files.length === 1) {
     const file = files[0]
     if (!file) throw new BacktestValidationError('error.invalid_csv', 'No file provided')
