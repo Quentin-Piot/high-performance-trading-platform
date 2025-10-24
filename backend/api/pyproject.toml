@@ -6,7 +6,7 @@ authors = ["quentinpiot <qkpiot@gmail.com>"]
 packages = [{ include = "api", from = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.13"
+python = ">=3.12"
 fastapi = ">=0.118.0,<0.119.0"
 uvicorn = { version = ">=0.37.0,<0.38.0", extras = ["standard"] }
 websockets = ">=15.0.0,<16.0.0"
