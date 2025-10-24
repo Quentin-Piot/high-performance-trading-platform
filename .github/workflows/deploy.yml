@@ -37,10 +37,20 @@ jobs:
     if: needs.detect-changes.outputs.frontend-changed == 'true'
     steps:
       - uses: actions/checkout@v4
+
+      - name: ⚡ Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
       - run: npm install -g pnpm
+
       - name: 📦 Install Dependencies
         working-directory: ./web
         run: pnpm install --frozen-lockfile
+
       - name: 🧹 Lint
         working-directory: ./web
         run: pnpm exec eslint "src/**/*.{ts,vue}" --max-warnings=0
@@ -52,13 +62,24 @@ jobs:
     if: needs.detect-changes.outputs.frontend-changed == 'true'
     steps:
       - uses: actions/checkout@v4
+
+      - name: ⚡ Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
       - run: npm install -g pnpm
+
       - name: 📦 Install Dependencies
         working-directory: ./web
         run: pnpm install --frozen-lockfile
+
       - name: ⚙️ Create Env
         working-directory: ./web
         run: |
+          echo "⚙️ Creating .env.production..."
           cat > .env.production << EOF
           VITE_API_BASE_URL=/api/v1
           VITE_COGNITO_REGION=${{ secrets.COGNITO_REGION }}
@@ -67,10 +88,13 @@ jobs:
           VITE_COGNITO_IDENTITY_POOL_ID=${{ secrets.COGNITO_IDENTITY_POOL_ID }}
           VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           EOF
+
       - name: 🔨 Build
         working-directory: ./web
         run: pnpm run build
-      - uses: actions/upload-artifact@v4
+
+      - name: 📦 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: web/dist/
@@ -82,22 +106,35 @@ jobs:
     needs: [detect-changes, frontend-build]
     if: needs.detect-changes.outputs.frontend-changed == 'true' && needs.frontend-build.result == 'success'
     steps:
-      - uses: actions/download-artifact@v4
+      - name: 📥 Download Build Artifacts
+        uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: web/dist/
-      - uses: aws-actions/configure-aws-credentials@v2
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - run: |
+
+      - name: ☁️ Deploy Frontend to S3
+        run: |
+          echo "☁️ Syncing frontend files to S3..."
           aws s3 sync ./web/dist s3://${{ secrets.S3_BUCKET }} --delete
-      - run: |
+          echo "✅ Frontend deployed to S3!"
+
+      - name: 🔄 Invalidate CloudFront Cache
+        run: |
           if [ -n "${{ secrets.CLOUDFRONT_DIST_ID }}" ]; then
+            echo "🔄 Invalidating CloudFront cache..."
             aws cloudfront create-invalidation \
               --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
               --paths "/*"
+            echo "✅ CloudFront cache invalidated!"
+          else
+            echo "⚠️ CLOUDFRONT_DIST_ID not set. Skipping cache invalidation."
           fi
 
   # ===== BACKEND PIPELINE =====
@@ -109,17 +146,20 @@ jobs:
     if: needs.detect-changes.outputs.backend-changed == 'true'
     steps:
       - uses: actions/checkout@v4
+
       - name: ⚡ Cache Poetry
         uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
           restore-keys: poetry-${{ runner.os }}-
+
       - name: 🧪 Run Tests
         working-directory: ./backend/api
         run: |
           pip install poetry
           poetry install --no-interaction --no-root
+          poetry run pip install pytest-cov
           poetry run pytest tests/ -v --tb=short --maxfail=1 --disable-warnings
 
   backend-build:
@@ -131,21 +171,44 @@ jobs:
       image-tag: ${{ steps.build.outputs.image-tag }}
     steps:
       - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v2
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - id: build
+
+      - name: 🏗️ Ensure ECR Repository Exists
+        run: |
+          echo "🔍 Checking if ECR repository exists..."
+          aws ecr describe-repositories --repository-names "trading-platform_backend" >/dev/null 2>&1 || \
+            (echo "📦 Creating ECR repository..." && aws ecr create-repository --repository-name "trading-platform_backend")
+
+      - name: 🔑 Login to Amazon ECR
+        run: |
+          echo "🔐 Logging into ECR..."
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+          docker login --username AWS --password-stdin \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+      - name: 🐳 Build & Push Backend Docker Image
+        id: build
         working-directory: ./backend/api
         run: |
+          echo "🔨 Building backend Docker image..."
           REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
           TAG=${GITHUB_SHA::8}
+
           docker build -t "$REPO:latest" .
           docker tag "$REPO:latest" "$REPO:$TAG"
+
+          echo "📤 Pushing images to ECR..."
           docker push "$REPO:latest"
           docker push "$REPO:$TAG"
+
           echo "image-tag=$TAG" >> $GITHUB_OUTPUT
+          echo "✅ Backend image pushed successfully with tag: $TAG"
 
   backend-deploy:
     name: 🚀 Backend - Deploy
@@ -153,13 +216,18 @@ jobs:
     needs: [detect-changes, backend-build]
     if: needs.detect-changes.outputs.backend-changed == 'true' && needs.backend-build.result == 'success'
     steps:
-      - uses: aws-actions/configure-aws-credentials@v2
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - run: |
+
+      - name: 🚀 Deploy Backend to ECS
+        run: |
+          echo "🔄 Forcing new ECS deployment with image tag: ${{ needs.backend-build.outputs.image-tag }}..."
           aws ecs update-service \
             --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
             --service ${{ secrets.ECS_SERVICE_NAME }} \
             --force-new-deployment
+          echo "✅ Backend deployment initiated!"
