@@ -15,13 +15,16 @@ import {
 } from '@/components/ui/select'
 import { Globe, Home } from 'lucide-vue-next'
 import { useLocale } from "@/composables/useLocale";
+
 const auth = useAuthStore();
 const { navigate } = useRouter();
 const { t } = useI18n()
 const { selectedLocale, setLocale } = useLocale();
+
 function goHome() {
   navigate('/')
 }
+
 onMounted(async () => {
     auth.rehydrate();
     const urlParams = new URLSearchParams(window.location.search);
