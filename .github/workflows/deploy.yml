@@ -15,6 +15,7 @@ jobs:
     outputs:
       backend-changed: ${{ steps.changes.outputs.backend }}
       frontend-changed: ${{ steps.changes.outputs.frontend }}
+      workflow-changed: ${{ steps.changes.outputs.workflow }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +28,8 @@ jobs:
               - 'backend/**'
             frontend:
               - 'web/**'
+            workflow:
+              - '.github/workflows/**'
 
   # ===== FRONTEND PIPELINE =====
 
@@ -34,7 +37,7 @@ jobs:
     name: 🧹 Frontend - Lint
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.frontend-changed == 'true'
+    if: needs.detect-changes.outputs.frontend-changed == 'true' || needs.detect-changes.outputs.workflow-changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -59,7 +62,7 @@ jobs:
     name: 🌐 Frontend - Build
     runs-on: ubuntu-latest
     needs: [detect-changes, frontend-lint]
-    if: needs.detect-changes.outputs.frontend-changed == 'true'
+    if: needs.detect-changes.outputs.frontend-changed == 'true' || needs.detect-changes.outputs.workflow-changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -104,7 +107,7 @@ jobs:
     name: ☁️ Frontend - Deploy
     runs-on: ubuntu-latest
     needs: [detect-changes, frontend-build]
-    if: needs.detect-changes.outputs.frontend-changed == 'true' && needs.frontend-build.result == 'success'
+    if: (needs.detect-changes.outputs.frontend-changed == 'true' || needs.detect-changes.outputs.workflow-changed == 'true') && needs.frontend-build.result == 'success'
     steps:
       - name: 📥 Download Build Artifacts
         uses: actions/download-artifact@v4
@@ -121,14 +124,12 @@ jobs:
 
       - name: ☁️ Deploy Frontend to S3
         run: |
-          echo "☁️ Syncing frontend files to S3..."
           aws s3 sync ./web/dist s3://${{ secrets.S3_BUCKET }} --delete
           echo "✅ Frontend deployed to S3!"
 
       - name: 🔄 Invalidate CloudFront Cache
         run: |
           if [ -n "${{ secrets.CLOUDFRONT_DIST_ID }}" ]; then
-            echo "🔄 Invalidating CloudFront cache..."
             aws cloudfront create-invalidation \
               --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
               --paths "/*"
@@ -143,7 +144,7 @@ jobs:
     name: 🧪 Backend - Tests
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.backend-changed == 'true'
+    if: needs.detect-changes.outputs.backend-changed == 'true' || needs.detect-changes.outputs.workflow-changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -159,14 +160,13 @@ jobs:
         run: |
           pip install poetry
           poetry install --no-interaction --no-root
-          poetry run pip install pytest-cov
           poetry run pytest tests/ -v --tb=short --maxfail=1 --disable-warnings
 
   backend-build:
     name: 🐍 Backend - Build
     runs-on: ubuntu-latest
     needs: [detect-changes, backend-test]
-    if: needs.detect-changes.outputs.backend-changed == 'true' && needs.backend-test.result == 'success'
+    if: (needs.detect-changes.outputs.backend-changed == 'true' || needs.detect-changes.outputs.workflow-changed == 'true') && needs.backend-test.result == 'success'
     outputs:
       image-tag: ${{ steps.build.outputs.image-tag }}
     steps:
@@ -181,13 +181,11 @@ jobs:
 
       - name: 🏗️ Ensure ECR Repository Exists
         run: |
-          echo "🔍 Checking if ECR repository exists..."
           aws ecr describe-repositories --repository-names "trading-platform_backend" >/dev/null 2>&1 || \
-            (echo "📦 Creating ECR repository..." && aws ecr create-repository --repository-name "trading-platform_backend")
+            aws ecr create-repository --repository-name "trading-platform_backend"
 
       - name: 🔑 Login to Amazon ECR
         run: |
-          echo "🔐 Logging into ECR..."
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
           docker login --username AWS --password-stdin \
           ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
@@ -196,14 +194,12 @@ jobs:
         id: build
         working-directory: ./backend/api
         run: |
-          echo "🔨 Building backend Docker image..."
           REPO="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/trading-platform_backend"
           TAG=${GITHUB_SHA::8}
 
           docker build -t "$REPO:latest" .
           docker tag "$REPO:latest" "$REPO:$TAG"
 
-          echo "📤 Pushing images to ECR..."
           docker push "$REPO:latest"
           docker push "$REPO:$TAG"
 
@@ -214,7 +210,7 @@ jobs:
     name: 🚀 Backend - Deploy
     runs-on: ubuntu-latest
     needs: [detect-changes, backend-build]
-    if: needs.detect-changes.outputs.backend-changed == 'true' && needs.backend-build.result == 'success'
+    if: (needs.detect-changes.outputs.backend-changed == 'true' || needs.detect-changes.outputs.workflow-changed == 'true') && needs.backend-build.result == 'success'
     steps:
       - name: 🔐 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -225,7 +221,6 @@ jobs:
 
       - name: 🚀 Deploy Backend to ECS
         run: |
-          echo "🔄 Forcing new ECS deployment with image tag: ${{ needs.backend-build.outputs.image-tag }}..."
           aws ecs update-service \
             --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
             --service ${{ secrets.ECS_SERVICE_NAME }} \
