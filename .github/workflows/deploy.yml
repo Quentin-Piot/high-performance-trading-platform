@@ -120,7 +120,7 @@ jobs:
         run: |
           pip install poetry
           poetry install --no-interaction --no-root
-          poetry run pytest tests/ -v --tb=short --maxfail=1 --disable-warnings --cov=app --cov-report=term-missing
+          poetry run pytest tests/ -v --tb=short --maxfail=1 --disable-warnings
 
   backend-build:
     name: 🐍 Backend - Build
