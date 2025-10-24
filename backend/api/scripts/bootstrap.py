@@ -10,7 +10,6 @@ import psycopg
 from dotenv import load_dotenv
 
 
-# --- Alembic stamping helpers ---
 def _to_psycopg_dsn(dsn: str) -> str:
     """Convert SQLAlchemy DSN to psycopg-compatible DSN."""
     if dsn.startswith("postgresql+"):
@@ -18,8 +17,6 @@ def _to_psycopg_dsn(dsn: str) -> str:
             "postgresql+asyncpg", "postgresql"
         )
     return dsn
-
-
 def _table_exists(dsn: str, table_name: str, schema: str = "public") -> bool:
     try:
         with psycopg.connect(_to_psycopg_dsn(dsn)) as conn:
@@ -38,8 +35,6 @@ def _table_exists(dsn: str, table_name: str, schema: str = "public") -> bool:
                 return bool(row and row[0])
     except Exception:
         return False
-
-
 def _alembic_version(dsn: str) -> str | None:
     try:
         with psycopg.connect(_to_psycopg_dsn(dsn)) as conn:
@@ -61,18 +56,14 @@ def _alembic_version(dsn: str) -> str | None:
                 return row[0] if row else None
     except Exception:
         return None
-
-
 def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
     """Detect and repair a corrupted 'jobs' table by dropping it.
-
     Returns True if the table was dropped (corrupted detected), False otherwise.
     """
     try:
         with psycopg.connect(_to_psycopg_dsn(dsn)) as conn:
             conn.autocommit = True
             with conn.cursor() as cur:
-                # Check if table exists
                 cur.execute(
                     """
                     SELECT EXISTS (
@@ -84,8 +75,6 @@ def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
                 exists = bool(cur.fetchone()[0])
                 if not exists:
                     return False
-
-                # Validate a minimal set of expected columns
                 cur.execute(
                     """
                     SELECT column_name FROM information_schema.columns
@@ -107,16 +96,12 @@ def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
                     "created_at",
                     "updated_at",
                 }
-
-                # If core columns are missing, table likely corrupted
                 if not expected_core.issubset(cols):
                     print(
                         "Detected corrupted 'jobs' table (missing core columns); dropping for clean migration..."
                     )
                     cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                     return True
-
-                # Also check pg_attribute count which indicates catalog consistency
                 try:
                     cur.execute(
                         """
@@ -132,43 +117,30 @@ def _repair_jobs_table_if_corrupted(dsn: str) -> bool:
                         cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                         return True
                 except Exception:
-                    # If querying pg_attribute itself errors, err on the side of repair
                     print(
                         "pg_attribute query failed for 'jobs'; dropping table to recover..."
                     )
                     cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                     return True
-
                 return False
     except Exception as e:
         print(f"Failed to inspect/repair jobs table: {e}", file=sys.stderr)
         return False
-
-
-# Load environment variables from .env file
 load_dotenv()
-
-
 def _normalize_dsn(url: str) -> str:
-    # Keep explicit driver markers; only normalize async driver for Alembic compatibility.
     if url.startswith("postgresql+"):
         url = url.replace("postgresql+asyncpg", "postgresql+psycopg")
     return url
-
-
 def ensure_database_exists(dsn: str) -> None:
     parsed = urlparse(dsn)
     if not parsed.scheme.startswith("postgresql"):
-        # No-op for SQLite or other drivers
         return
     dbname = (parsed.path or "/").lstrip("/") or "postgres"
     host = parsed.hostname or "localhost"
     port = parsed.port or 5432
     user = parsed.username or "postgres"
     password = parsed.password or "postgres"
-
     admin_dsn = f"postgresql://{user}:{password}@{host}:{port}/postgres"
-
     print(f"Connecting to admin database to ensure '{dbname}' exists...")
     deadline = time.time() + 120
     while True:
@@ -187,33 +159,25 @@ def ensure_database_exists(dsn: str) -> None:
                 print(f"Failed to connect/create DB: {e}", file=sys.stderr)
                 raise
             time.sleep(2)
-
-
 def reset_database(dsn: str) -> bool:
     """Drop and recreate the target database (or at least clear the public schema).
-
     Returns True if a reset was performed successfully.
     """
     parsed = urlparse(dsn)
     if not parsed.scheme.startswith("postgresql"):
         return False
-
     dbname = (parsed.path or "/").lstrip("/") or "postgres"
     host = parsed.hostname or "localhost"
     port = parsed.port or 5432
     user = parsed.username or "postgres"
     password = parsed.password or "postgres"
-
     admin_dsn = f"postgresql://{user}:{password}@{host}:{port}/postgres"
     target_dsn = _to_psycopg_dsn(dsn)
-
     print(f"RESET_DB: dropping database '{dbname}' and recreating it...")
     try:
-        # Connect to admin DB to terminate sessions and drop the database
         with psycopg.connect(admin_dsn) as conn:
             conn.autocommit = True
             with conn.cursor() as cur:
-                # Terminate any other connections to the target DB
                 try:
                     cur.execute(
                         """
@@ -228,7 +192,6 @@ def reset_database(dsn: str) -> bool:
                         f"Failed to terminate sessions for '{dbname}': {e}",
                         file=sys.stderr,
                     )
-
                 try:
                     cur.execute(f'DROP DATABASE "{dbname}"')
                     print(f"Database '{dbname}' dropped.")
@@ -237,7 +200,6 @@ def reset_database(dsn: str) -> bool:
                         f"DROP DATABASE failed: {e}. Falling back to clearing schema.",
                         file=sys.stderr,
                     )
-                    # Fallback: clear the public schema inside target DB
                     try:
                         with psycopg.connect(target_dsn) as tconn:
                             tconn.autocommit = True
@@ -249,39 +211,28 @@ def reset_database(dsn: str) -> bool:
                         print(f"Failed to clear public schema: {ee}", file=sys.stderr)
                         raise
                 else:
-                    # Recreate the database if we successfully dropped it
                     cur.execute(f'CREATE DATABASE "{dbname}"')
                     print(f"Database '{dbname}' recreated.")
-
         return True
     except Exception as e:
         print(f"RESET_DB failed: {e}", file=sys.stderr)
         return False
-
-
 def run_alembic_migrations(dsn: str) -> None:
-    # Detect and repair corrupted 'jobs' table if necessary
     dropped = _repair_jobs_table_if_corrupted(dsn)
-
-    # If schema was created out-of-band, align Alembic state to avoid DuplicateTable errors.
     current_rev = _alembic_version(dsn)
     jobs_exists = _table_exists(dsn, "jobs")
-
     if dropped:
         print(
             "Corrupted 'jobs' table was dropped; resetting Alembic to 0001_initial before upgrade..."
         )
         subprocess.run(["alembic", "stamp", "0001_initial"], check=True)
-        # Refresh current_rev after stamping
         current_rev = "0001_initial"
         jobs_exists = False
-
     if jobs_exists and (current_rev is None or current_rev == "0001_initial"):
         print(
             "Detected existing 'jobs' table with outdated Alembic version; stamping to 0002_add_jobs_table..."
         )
         subprocess.run(["alembic", "stamp", "0002_add_jobs_table"], check=True)
-
     print("Running Alembic migrations to head...")
     try:
         subprocess.run(["alembic", "upgrade", "head"], check=True)
@@ -291,12 +242,9 @@ def run_alembic_migrations(dsn: str) -> None:
             file=sys.stderr,
         )
         if reset_database(dsn):
-            # After full reset, run migrations fresh
             subprocess.run(["alembic", "upgrade", "head"], check=True)
         else:
             raise
-
-
 def start_uvicorn_process() -> subprocess.Popen:
     host = os.getenv("HOST", "0.0.0.0")
     port = os.getenv("PORT", "8000")
@@ -313,36 +261,22 @@ def start_uvicorn_process() -> subprocess.Popen:
             "src",
         ]
     )
-
-
 def start_worker_in_thread() -> threading.Thread:
     """Start the Monte Carlo worker in a background thread (DISABLED for sync mode)."""
-
     def worker_main():
-        # Worker is disabled since we're using synchronous Monte Carlo execution
         print("Monte Carlo worker is disabled - using synchronous execution mode")
-
-        # Initialize simple worker for async capabilities
         try:
             sys.path.insert(0, os.path.abspath("src"))
             from workers.simple_worker import get_simple_worker, start_cleanup_task
-
-            # Initialize the simple worker
             worker = get_simple_worker()
             print(
                 f"Simple Monte Carlo worker initialized with {worker.max_concurrent_jobs} max concurrent jobs"
             )
-
-            # Start cleanup task
             start_cleanup_task()
             print("Simple worker cleanup task started")
-
         except Exception as e:
             print(f"Failed to initialize simple worker: {e}")
-
         return
-
-    # Return a dummy thread that doesn't actually start a worker
     thread = threading.Thread(
         target=worker_main, name="MonteCarloWorkerThread-Disabled", daemon=True
     )
@@ -351,18 +285,14 @@ def start_worker_in_thread() -> threading.Thread:
         "Monte Carlo worker disabled - using synchronous execution mode with simple async worker."
     )
     return thread
-
-
 def main() -> None:
     url = os.getenv(
         "DATABASE_URL",
         "postgresql+psycopg://postgres:postgres@localhost:5432/trading_db",
     )
     dsn = _normalize_dsn(url)
-    # Ensure Alembic uses psycopg v3 driver and not asyncpg.
     os.environ["DATABASE_URL"] = dsn
     ensure_database_exists(dsn)
-    # Optional hard reset trigger via env var
     reset_requested = os.getenv("RESET_DB", "false").lower() in ("1", "true", "yes")
     if reset_requested:
         ok = reset_database(dsn)
@@ -373,13 +303,9 @@ def main() -> None:
             )
     run_alembic_migrations(dsn)
     run_worker = os.getenv("RUN_WORKER", "false").lower() in ("1", "true", "yes")
-
     api_proc = start_uvicorn_process()
-
     if run_worker:
         start_worker_in_thread()
-
-    # Graceful shutdown on signals
     def _shutdown(signum, frame):
         print(f"Received signal {signum}, shutting down processes...")
         try:
@@ -387,16 +313,8 @@ def main() -> None:
                 api_proc.terminate()
         except Exception:
             pass
-
     signal.signal(signal.SIGINT, _shutdown)
     signal.signal(signal.SIGTERM, _shutdown)
-
-    # Monitor API process; if it exits, the script will terminate
-
     signal.pause()
-
-    # The worker thread is a daemon, so it will exit automatically
-
-
 if __name__ == "__main__":
     main()
