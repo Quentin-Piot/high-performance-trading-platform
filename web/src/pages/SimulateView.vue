@@ -11,6 +11,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { computed, ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, BarChart3, LineChart } from "lucide-vue-next";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { buildEquityPoints } from "@/composables/useEquitySeries";

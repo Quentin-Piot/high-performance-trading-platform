@@ -301,6 +301,11 @@
         "adj_close": "Prix Ajusté",
         "description": "Choisissez entre le prix de clôture brut ou le prix ajusté pour les dividendes et splits"
       },
+      "normalization": {
+        "title": "Normalisation",
+        "description": "Normalise la courbe d'équité pour commencer à 1",
+        "enabled": "Normalisation activée - la courbe d'équité commencera à 1"
+      },
       "buttons": {
         "run": "Lancer",
         "reset": "Réinitialiser"
@@ -361,11 +366,11 @@
     },
     "distributions": {
       "mean": "Moyenne",
-      "median": "Médiane", 
+      "median": "Médiane",
       "std": "Écart-type",
       "volatility": "Volatilité",
       "p5": "5e percentile",
-      "p25": "25e percentile", 
+      "p25": "25e percentile",
       "p75": "75e percentile",
       "p95": "95e percentile",
       "statistics": "Statistiques de Distribution",
@@ -413,7 +418,7 @@
         "data_points": "points de données",
         "percentiles": {
           "5th": "5e Percentile",
-          "25th": "25e Percentile", 
+          "25th": "25e Percentile",
           "median": "Médiane",
           "75th": "75e Percentile",
           "95th": "95e Percentile"
@@ -454,7 +459,7 @@
       "label": "Priorité",
       "select": "Sélectionner une priorité",
       "low": "Faible",
-      "medium": "Moyenne", 
+      "medium": "Moyenne",
       "high": "Élevée"
     }
   },
