@@ -59,6 +59,9 @@ async def backtest_get(
     include_aggregated: bool = Query(
         False, description="Include aggregated metrics across all files"
     ),
+    normalize: bool = Query(
+        False, description="Normalize equity curve to start at 1.0"
+    ),
 ):
     """
     Run backtest using local datasets with Monte Carlo simulation support.
@@ -150,6 +153,7 @@ async def backtest_get(
         },
         include_aggregated=include_aggregated,
         price_type=price_type,
+        normalize=normalize,
     )
     elapsed_time = time.time() - start_time
     result.processing_time = f"{elapsed_time:.2f}s"
@@ -183,6 +187,9 @@ async def backtest_post(
     ),
     include_aggregated: bool = Query(
         False, description="Include aggregated metrics across all files"
+    ),
+    normalize: bool = Query(
+        False, description="Normalize equity curve to start at 1.0"
     ),
     csv: list[UploadFile] = File(default=[]),
     current_user: SimpleUser | None = Depends(get_current_user_simple_optional),
@@ -295,6 +302,7 @@ async def backtest_post(
         },
         include_aggregated=include_aggregated,
         price_type=price_type,
+        normalize=normalize,
     )
     elapsed_time = time.time() - start_time
     result.processing_time = f"{elapsed_time:.2f}s"
@@ -357,6 +365,7 @@ async def run_regular_backtest(
     strategy_params: dict,
     include_aggregated: bool,
     price_type: str = "close",
+    normalize: bool = False,
 ) -> BacktestResponse:
     results = []
     for file in files:
@@ -373,10 +382,16 @@ async def run_regular_backtest(
                     strategy_params["overbought"],
                     strategy_params["oversold"],
                 )
+
+            equity_curve = list(map(float, result.equity.values.tolist()))
+            if normalize and equity_curve and equity_curve[0] != 0:
+                first_value = equity_curve[0]
+                equity_curve = [value / first_value for value in equity_curve]
+
             single_result = SingleBacktestResult(
                 filename=file.filename or f"file_{len(results) + 1}.csv",
                 timestamps=list(map(str, result.equity.index.tolist())),
-                equity_curve=list(map(float, result.equity.values.tolist())),
+                equity_curve=equity_curve,
                 pnl=float(result.pnl),
                 drawdown=float(result.drawdown),
                 sharpe=float(result.sharpe),

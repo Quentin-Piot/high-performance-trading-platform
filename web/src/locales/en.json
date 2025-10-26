@@ -318,6 +318,11 @@
         "adj_close": "Adjusted Close",
         "description": "Choose between raw closing price or adjusted price for dividends and splits"
       },
+      "normalization": {
+        "title": "Normalization",
+        "description": "Normalize the equity curve to start at 1",
+        "enabled": "Normalization enabled - equity curve will start at 1"
+      },
       "buttons": {
         "run": "Run",
         "reset": "Reset"

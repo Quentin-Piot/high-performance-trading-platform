@@ -9,7 +9,8 @@ export type BacktestRequest = {
   method?: 'bootstrap' | 'gaussian';  
   sample_fraction?: number;  
   gaussian_scale?: number;   
-  price_type?: 'close' | 'adj_close';  
+  price_type?: 'close' | 'adj_close';
+  normalize?: boolean;
 }
 export interface MetricsDistribution {
   mean: number
@@ -149,6 +150,7 @@ function buildQuery(req: BacktestRequest, includeAggregated: boolean = false): s
   if (req.method) params.set('method', req.method)
   if (req.sample_fraction) params.set('sample_fraction', req.sample_fraction.toString())
   if (req.gaussian_scale) params.set('gaussian_scale', req.gaussian_scale.toString())
+  if (req.normalize) params.set('normalize', req.normalize.toString())
   if (includeAggregated) params.set('aggregated', 'true')
   return params.toString() ? `?${params.toString()}` : ''
 }
@@ -281,6 +283,7 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
     if (req.sample_fraction) params.set('sample_fraction', req.sample_fraction.toString())
     if (req.gaussian_scale) params.set('gaussian_scale', req.gaussian_scale.toString())
     if (req.price_type) params.set('price_type', req.price_type)
+    if (req.normalize) params.set('normalize', req.normalize.toString())
     const formData = new FormData()
     if (files.length > 0 && (!selectedDatasets || selectedDatasets.length === 0)) {
       validateCsvFiles(files)

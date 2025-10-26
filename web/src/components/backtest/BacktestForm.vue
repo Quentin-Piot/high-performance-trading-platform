@@ -30,6 +30,7 @@ import {
     XCircle,
     AlertCircle,
     Calendar,
+    Maximize2,
 } from "lucide-vue-next";
 const store = useBacktestStore();
 const { t } = useI18n();
@@ -48,6 +49,8 @@ const monteCarloMethod = ref<"bootstrap" | "gaussian" | "">("bootstrap");
 const sampleFraction = ref<number>(0.8);
 const gaussianScale = ref<number>(0.1);
 const priceType = ref<"close" | "adj_close">("close");
+const normalize = ref<boolean>(false);
+
 const isMonteCarloEnabled = computed(() => monteCarloRuns.value > 1);
 watch(monteCarloRuns, (newValue) => {
     if (newValue > 1 && !monteCarloMethod.value) {
@@ -291,6 +294,7 @@ async function onSubmit() {
         sample_fraction: sampleFraction.value,
         gaussian_scale: gaussianScale.value,
         price_type: priceType.value,
+        normalize: normalize.value,
     };
     await store.runBacktestUnified(allFiles, req, selectedDatasets.value);
 }
@@ -307,6 +311,7 @@ function onReset() {
     monteCarloMethod.value = "bootstrap";
     sampleFraction.value = 1.0;
     gaussianScale.value = 1.0;
+    normalize.value = false;
 }
 </script>
 <template>
@@ -403,6 +408,52 @@ function onReset() {
             :price-type="priceType"
             @update:price-type="(value) => (priceType = value)"
         />
+
+        <!-- Normalization Section -->
+        <div class="space-y-2">
+            <Label class="text-sm font-medium flex items-center gap-2">
+                <div
+                    class="rounded-lg bg-trading-green/10 p-1.5 text-trading-green"
+                >
+                    <Maximize2 class="size-3.5" />
+                </div>
+                {{ $t("simulate.form.normalization.title") }}
+            </Label>
+            <div
+                class="flex items-center justify-between p-4 gap-6 rounded-xl bg-gradient-to-r from-secondary/30 to-accent/20 border-2 border-transparent hover:border-trading-green/20 shadow-soft hover:shadow-medium transition-all duration-300"
+            >
+                <div class="flex-1">
+                    <p class="text-xs text-muted-foreground">
+                        {{ $t("simulate.form.normalization.description") }}
+                    </p>
+                </div>
+                <div class="flex items-center">
+                    <input
+                        id="normalize-toggle"
+                        v-model="normalize"
+                        type="checkbox"
+                        class="sr-only"
+                    />
+                    <label
+                        for="normalize-toggle"
+                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out cursor-pointer"
+                        :class="
+                            normalize
+                                ? 'bg-trading-green hover:bg-trading-green/80'
+                                : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                        "
+                    >
+                        <span
+                            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out shadow-sm"
+                            :class="
+                                normalize ? 'translate-x-6' : 'translate-x-1'
+                            "
+                        />
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <div class="space-y-2">
             <Label class="text-sm font-medium flex items-center gap-2">
                 <div
@@ -461,6 +512,7 @@ function onReset() {
             :selected-datasets="selectedDatasets"
             :date-validation-error="dateValidationError"
         />
+
         <div class="flex items-center gap-3 pt-2">
             <Button
                 :disabled="!canSubmit"

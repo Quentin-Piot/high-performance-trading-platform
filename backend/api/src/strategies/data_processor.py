@@ -81,6 +81,6 @@ class DataProcessor:
             Equity curve series
         """
         equity = (1.0 + strategy_returns).cumprod() * initial_capital
-        if equity.isna().all():
+        if len(equity.dropna()) == 0:
             equity = pd.Series(initial_capital, index=close_index)
         return equity

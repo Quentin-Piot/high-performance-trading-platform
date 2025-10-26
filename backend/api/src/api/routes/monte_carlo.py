@@ -69,6 +69,9 @@ async def run_monte_carlo_sync(
     oversold: float | None = Query(
         None, ge=0, le=100, description="Oversold threshold (0-100)"
     ),
+    normalize: bool = Query(
+        False, description="Normalize equity curves to start at 1.0"
+    ),
     file: UploadFile | None = File(None),
     current_user: SimpleUser | None = Depends(get_current_user_simple_optional),
     session: AsyncSession = Depends(get_session),
@@ -177,6 +180,26 @@ async def run_monte_carlo_sync(
             parallel_workers=1,
         )
         from domain.schemas.backtest import MonteCarloBacktestResult, MonteCarloResponse
+
+        if normalize and result.equity_envelope:
+            envelope = result.equity_envelope
+            def normalize_series(series: list[float]) -> list[float]:
+                if not series or series[0] == 0:
+                    return series
+                first_value = series[0]
+                return [value / first_value for value in series]
+
+            from domain.schemas.backtest import EquityEnvelope
+            normalized_envelope = EquityEnvelope(
+                timestamps=envelope.timestamps,
+                p5=normalize_series(envelope.p5),
+                p25=normalize_series(envelope.p25),
+                median=normalize_series(envelope.median),
+                p75=normalize_series(envelope.p75),
+                p95=normalize_series(envelope.p95),
+            )
+            result.equity_envelope = normalized_envelope
+
         monte_carlo_result = MonteCarloBacktestResult(
             filename=result.filename,
             method=result.method,
@@ -280,6 +303,9 @@ async def submit_async_job(
     ),
     oversold: float | None = Query(
         None, ge=0, le=100, description="Oversold threshold (0-100)"
+    ),
+    normalize: bool = Query(
+        False, description="Normalize equity curves to start at 1.0"
     ),
     file: UploadFile | None = File(None),
 ) -> dict[str, Any]:
