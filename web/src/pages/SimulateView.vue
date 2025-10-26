@@ -321,13 +321,7 @@ onMounted(async () => {
                                 class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center"
                             >
                                 <div class="flex flex-col items-center gap-3">
-                                    <Spinner
-                                        class="h-8 w-8 text-trading-blue"
-                                    />
-                                    <span
-                                        class="text-sm text-muted-foreground"
-                                        >{{ t("simulate.loading") }}</span
-                                    >
+                                    <Spinner />
                                 </div>
                             </div>
                         </template>
@@ -347,7 +341,11 @@ onMounted(async () => {
                                 :aggregated-data="aggregatedData"
                                 :active-range="activeRange"
                             />
-                            <BacktestChart v-else :series="chartSeries" :processing-time="store.processingTime" />
+                            <BacktestChart
+                                v-else
+                                :series="chartSeries"
+                                :processing-time="store.processingTime"
+                            />
                         </template>
                     </CardContent>
                 </Card>
@@ -355,10 +353,10 @@ onMounted(async () => {
                     <div v-if="hasMonteCarloResults" class="col-span-full mb-4">
                         <div class="text-center mb-4">
                             <h3 class="text-lg font-semibold text-foreground">
-                                {{ t('simulate.distributions.statistics') }}
+                                {{ t("simulate.distributions.statistics") }}
                             </h3>
                             <p class="text-sm text-muted-foreground">
-                                {{ t('simulate.distributions.showing_median') }}
+                                {{ t("simulate.distributions.showing_median") }}
                             </p>
                         </div>
                         <div

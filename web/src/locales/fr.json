@@ -323,8 +323,8 @@
       },
       "monte_carlo": {
         "title": "Simulation Monte Carlo",
-        "runs": "Nombre d'Exécutions (1-20000)",
-        "runs_description": "Définir à 1 pour un backtest régulier, >1 pour une simulation Monte Carlo",
+        "runs": "Nombre d'Exécutions (1-200)",
+        "runs_description": "Définir à 1 pour un backtest régulier, >1 pour une simulation Monte Carlo (maximum 200 runs)",
         "method": "Méthode de Perturbation",
         "bootstrap": "Bootstrap",
         "gaussian": "Gaussien",
