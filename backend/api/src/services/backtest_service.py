@@ -72,6 +72,8 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
             df = df.sort_values("date")
             df = df.set_index("date")
         if price_col != "close":
+            if "close" in df.columns:
+                df = df.drop(columns=["close"])
             df = df.rename(columns={price_col: "close"})
         df["close"] = df["close"].astype(float)
         return df

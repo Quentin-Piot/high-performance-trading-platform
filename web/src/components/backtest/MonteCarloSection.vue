@@ -16,7 +16,7 @@
             :model-value="monteCarloRuns"
             type="number"
             :min="1"
-            :max="20000"
+            :max="200"
             :step="1"
             class="h-10 border-0 bg-gradient-to-r from-secondary/30 to-accent/20 shadow-soft hover:shadow-medium focus:shadow-strong transition-all duration-300 focus:ring-2 focus:ring-trading-purple/50"
             @update:model-value="(value: string | number) => $emit('update:monteCarloRuns', Number(value))"

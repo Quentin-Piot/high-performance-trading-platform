@@ -1,21 +1,25 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from "vue"
-import { Loader2Icon } from "lucide-vue-next"
-import { cn } from "@/lib/utils"
+import type { HTMLAttributes } from "vue";
+import { VueSpinnerGridPop } from "vue3-spinners";
+import { cn } from "@/lib/utils";
 
 defineOptions({
-  name: 'SpinnerComponent'
-})
+    name: "SpinnerComponent",
+});
 
 const props = defineProps<{
-  class?: HTMLAttributes["class"]
-}>()
+    class?: HTMLAttributes["class"];
+    size?: number;
+    color?: string;
+}>();
 </script>
 
 <template>
-  <Loader2Icon
-    role="status"
-    aria-label="Loading"
-    :class="cn('size-4 animate-spin', props.class)"
-  />
+    <VueSpinnerGridPop
+        role="status"
+        aria-label="Loading"
+        :class="cn('', props.class)"
+        :size="props.size || 16"
+        :color="props.color || '#535462'"
+    />
 </template>
