@@ -27,12 +27,15 @@ const loading = computed(() => store.status === "loading");
 const { t } = useI18n();
 const selectedResolution = ref<"1m" | "5m" | "1h" | "1d">("1d");
 const activeRange = ref<"1W" | "1M" | "YTD" | "All">("All");
+// Monte Carlo WS progress (optional: activated when query param mcJobId is present)
 const mcProgress = ref<number | null>(null);
 const mcStatus = ref<MonteCarloWsMessage["status"] | "idle">("idle");
 let mcDisconnect: (() => void) | null = null;
+// Prefer store-based progress if available, else fallback to local WS progress
 const uiProgress = computed<number | null>(() => {
   return (typeof store.mcProgress === 'number' ? store.mcProgress : null) ?? mcProgress.value;
 });
+// Monte Carlo async loading state: show only the progress bar (no spinner)
 const isMcLoading = computed(() => {
   const hasMcActivity = store.mcStatus !== "idle" || mcStatus.value !== "idle" || uiProgress.value !== null;
   return loading.value && hasMcActivity;
@@ -181,6 +184,7 @@ onMounted(async () => {
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
     }
+    // Optional: allow monitoring a Monte Carlo async job directly via ?mcJobId=...
     const mcJobId = urlParams.get("mcJobId");
     if (mcJobId) {
         const { disconnect } = connectMonteCarloProgress(mcJobId, {
@@ -192,6 +196,7 @@ onMounted(async () => {
                 mcStatus.value = "failed";
             },
             onClose: () => {
+                // leave last known state
             },
         });
         mcDisconnect = disconnect;
@@ -347,6 +352,7 @@ onUnmounted(() => {
                     </CardHeader>
                     <CardContent class="p-3 sm:p-4 relative">
                         <template v-if="loading">
+                            <!-- Monte Carlo async: only show a thick, elegant progress bar (no spinner) -->
                             <div v-if="isMcLoading" class="h-[300px] sm:h-[400px] w-full relative overflow-hidden">
                                 <div class="absolute inset-0 flex items-center justify-center">
                                     <div class="w-full max-w-md px-4">
@@ -363,6 +369,7 @@ onUnmounted(() => {
                                     </div>
                                 </div>
                             </div>
+                            <!-- Regular backtest loading: show spinner -->
                             <div v-else class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center">
                                 <div class="flex flex-col items-center gap-3">
                                     <Spinner class="h-8 w-8 text-trading-blue" />

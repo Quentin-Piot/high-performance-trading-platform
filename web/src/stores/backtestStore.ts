@@ -45,8 +45,9 @@ export const useBacktestStore = defineStore("backtest", {
     } | null,
     equityEnvelope: null as EquityEnvelope | null,
     processingTime: null as string | null,
+    // Monte Carlo async tracking
     mcJobId: null as string | null,
-    mcProgress: null as number | null, 
+    mcProgress: null as number | null, // percentage 0..100 for UI component
     mcStatus: "idle" as MonteCarloJobStatus | "idle",
   }),
   getters: {
@@ -184,6 +185,7 @@ export const useBacktestStore = defineStore("backtest", {
       }
     },
     async runMonteCarloAsync(files: File[], req: BacktestRequest, selectedDatasets?: string[]) {
+      // Mirrors the shell demo: submit job, connect WS for progress, then fetch final result
       this.status = "loading";
       this.errorCode = null;
       this.errorMessage = null;
@@ -211,12 +213,15 @@ export const useBacktestStore = defineStore("backtest", {
               this.mcStatus = "failed";
             },
             onClose: () => {
+              // keep last progress
             },
           });
           disconnect = conn.disconnect;
         }
+        // Poll final result via HTTP when done
         let final: Awaited<ReturnType<typeof getMonteCarloAsyncStatus>> | null = null;
-        for (let i = 0; i < 120; i++) { 
+        // Basic polling loop until terminal state
+        for (let i = 0; i < 120; i++) { // up to ~120s
           if (!this.mcJobId) break;
           const status = await getMonteCarloAsyncStatus(this.mcJobId);
           this.mcStatus = status.status as MonteCarloJobStatus;
@@ -227,12 +232,16 @@ export const useBacktestStore = defineStore("backtest", {
             final = status;
             break;
           }
+          // small delay
           await new Promise(res => setTimeout(res, 1000));
         }
         if (disconnect) disconnect();
         if (!final || final.status !== "completed" || !final.result) {
           throw new Error("Monte Carlo job did not complete successfully");
         }
+        // The simple worker returns a single-result payload (MonteCarloBacktestResult-like)
+        // while the UI expects a MonteCarloResponse with a results array.
+        // Normalize the payload to MonteCarloResponse when needed.
         const raw: any = final.result;
         const isSingleMonteCarloResult = (x: any): boolean => {
           if (!x || typeof x !== "object") return false;
@@ -293,6 +302,7 @@ export const useBacktestStore = defineStore("backtest", {
           this.timestamps = firstResult.equity_envelope.timestamps;
           this.equityCurve = firstResult.equity_envelope.median;
         }
+        // ensure progress shows completed
         this.mcProgress = 100;
         this.lastFiles = files;
         this.lastFile = files.length === 1 ? files[0] || null : null;
