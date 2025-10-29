@@ -8,7 +8,7 @@ export type BacktestRequest = {
   monte_carlo_runs?: number;  
   method?: 'bootstrap' | 'gaussian';  
   sample_fraction?: number;  
-  gaussian_scale?: number;   
+   gaussian_scale?: number;   
   price_type?: 'close' | 'adj_close';
   normalize?: boolean;
 }
@@ -342,4 +342,62 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
   } else {
     return await runMultipleBacktests(files, req)
   }
+}
+
+// --- Async Monte Carlo helpers ---
+export type MonteCarloAsyncSubmissionResponse = {
+  job_id: string
+  status: 'submitted' | 'processing' | 'failed'
+}
+export type MonteCarloAsyncJobStatus = {
+  job_id: string
+  status: 'submitted' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'not_found'
+  progress?: number | null
+  result?: MonteCarloResponse | unknown
+}
+export async function submitMonteCarloAsync(files: File[], req: BacktestRequest, selectedDatasets?: string[]): Promise<MonteCarloAsyncSubmissionResponse> {
+  // Build query params according to backend expectations
+  const params = new URLSearchParams()
+  // Prefer dataset symbol when provided
+  if (selectedDatasets && selectedDatasets.length > 0) {
+    params.set('symbol', selectedDatasets[0]!)
+    if (req.dates?.startDate) params.set('start_date', req.dates.startDate)
+    if (req.dates?.endDate) params.set('end_date', req.dates.endDate)
+  }
+  // Monte Carlo specifics
+  params.set('num_runs', String(req.monte_carlo_runs ?? 1))
+  params.set('initial_capital', '10000')
+  params.set('strategy', req.strategy)
+  Object.entries(req.params).forEach(([key, value]) => {
+    params.set(key, value.toString())
+  })
+  if (req.method) params.set('method', req.method)
+  if (req.sample_fraction) params.set('sample_fraction', req.sample_fraction.toString())
+  if (req.gaussian_scale) params.set('gaussian_scale', req.gaussian_scale.toString())
+  if (req.price_type) params.set('price_type', req.price_type)
+  if (req.normalize) params.set('normalize', req.normalize.toString())
+
+  const url = `${BASE_URL}/monte-carlo/async?${params.toString()}`
+  let body: FormData | undefined
+  // If files provided and no dataset selection, upload first file (backend supports single UploadFile)
+  if (files.length > 0 && (!selectedDatasets || selectedDatasets.length === 0)) {
+    validateCsvFiles(files)
+    body = new FormData()
+    // Backend expects key 'file' (not 'csv') for Monte Carlo endpoints
+    files.forEach(file => body!.append('file', file))
+  }
+  const response = await fetch(url, { method: 'POST', body })
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+    throw new Error(`HTTP ${response.status}: ${errorData.detail || 'Request failed'}`)
+  }
+  return response.json() as Promise<MonteCarloAsyncSubmissionResponse>
+}
+export async function getMonteCarloAsyncStatus(jobId: string): Promise<MonteCarloAsyncJobStatus> {
+  const response = await fetch(`${BASE_URL}/monte-carlo/async/${encodeURIComponent(jobId)}`, { method: 'GET' })
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+    throw new Error(`HTTP ${response.status}: ${errorData.detail || 'Request failed'}`)
+  }
+  return response.json() as Promise<MonteCarloAsyncJobStatus>
 }

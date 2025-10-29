@@ -8,22 +8,15 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, XCircle, Eye, EyeOff } from 'lucide-vue-next'
 import { PasswordValidationService } from '@/services/passwordValidationService'
-
 type Mode = 'login' | 'register'
-
 const props = defineProps<{ mode: Mode }>()
-
 const { t } = useI18n()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const error = ref<string | null>(null)
 const loading = ref(false)
-
-// Validation du mot de passe en temps réel
 const passwordValidation = ref(PasswordValidationService.validatePassword(''))
-
-// Computed properties pour faciliter l'accès aux propriétés de validation
 const passwordRequirements = computed(() => {
   const rules = passwordValidation.value.rules
   return {
@@ -34,7 +27,6 @@ const passwordRequirements = computed(() => {
     hasSymbol: rules.find(r => r.id === 'hasSymbol')?.isValid || false
   }
 })
-
 const passwordStrength = computed(() => {
   const score = passwordValidation.value.score
   return {
@@ -44,14 +36,10 @@ const passwordStrength = computed(() => {
     score
   }
 })
-
-// Validation de l'email
 const isEmailValid = computed(() => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email.value)
 })
-
-// Validation globale
 const valid = computed(() => {
   if (props.mode === 'login') {
     return isEmailValid.value && password.value.length >= 6
@@ -59,17 +47,13 @@ const valid = computed(() => {
     return isEmailValid.value && passwordValidation.value.isValid
   }
 })
-
 const auth = useAuthStore()
 const { navigate } = useRouter()
-
-// Watcher pour la validation du mot de passe en temps réel
 watch(password, (newPassword) => {
   if (props.mode === 'register') {
     passwordValidation.value = PasswordValidationService.validatePassword(newPassword)
   }
 }, { immediate: true })
-
 async function onSubmit() {
   error.value = null
   if (!valid.value) {
@@ -78,7 +62,6 @@ async function onSubmit() {
       : t('auth.errors.invalidPassword', 'Please meet all password requirements')
     return
   }
-  
   loading.value = true
   try {
     if (props.mode === 'login') {
@@ -93,7 +76,6 @@ async function onSubmit() {
     loading.value = false
   }
 }
-
 async function onGoogleLogin() {
   error.value = null
   try {
@@ -102,7 +84,6 @@ async function onGoogleLogin() {
     error.value = e instanceof Error ? e.message : t('auth.errors.googleAuthFailed', 'Google authentication failed')
   }
 }
-
 function togglePasswordVisibility() {
   showPassword.value = !showPassword.value
 }
@@ -152,11 +133,8 @@ function togglePasswordVisibility() {
             <EyeOff v-else class="h-4 w-4" />
           </button>
         </div>
-        
-        <!-- Validation du mot de passe pour l'inscription -->
         <div v-if="props.mode === 'register' && password.length > 0" class="mt-2 space-y-1">
           <div class="text-xs text-gray-600 mb-2">{{ t('auth.password.requirements', 'Password requirements:') }}</div>
-          
           <div class="space-y-1">
              <div class="flex items-center text-xs">
                <CheckCircle v-if="passwordRequirements.minLength" class="h-3 w-3 text-green-500 mr-2" />
@@ -165,7 +143,6 @@ function togglePasswordVisibility() {
                  {{ t('auth.password.minLength', 'At least 8 characters') }}
                </span>
              </div>
-             
              <div class="flex items-center text-xs">
                <CheckCircle v-if="passwordRequirements.hasUppercase" class="h-3 w-3 text-green-500 mr-2" />
                <XCircle v-else class="h-3 w-3 text-red-500 mr-2" />
@@ -173,7 +150,6 @@ function togglePasswordVisibility() {
                  {{ t('auth.password.hasUppercase', 'One uppercase letter') }}
                </span>
              </div>
-             
              <div class="flex items-center text-xs">
                <CheckCircle v-if="passwordRequirements.hasLowercase" class="h-3 w-3 text-green-500 mr-2" />
                <XCircle v-else class="h-3 w-3 text-red-500 mr-2" />
@@ -181,7 +157,6 @@ function togglePasswordVisibility() {
                  {{ t('auth.password.hasLowercase', 'One lowercase letter') }}
                </span>
              </div>
-             
              <div class="flex items-center text-xs">
                <CheckCircle v-if="passwordRequirements.hasNumber" class="h-3 w-3 text-green-500 mr-2" />
                <XCircle v-else class="h-3 w-3 text-red-500 mr-2" />
@@ -189,7 +164,6 @@ function togglePasswordVisibility() {
                  {{ t('auth.password.hasNumber', 'One number') }}
                </span>
              </div>
-             
              <div class="flex items-center text-xs">
                <CheckCircle v-if="passwordRequirements.hasSymbol" class="h-3 w-3 text-green-500 mr-2" />
                <XCircle v-else class="h-3 w-3 text-red-500 mr-2" />
@@ -198,8 +172,6 @@ function togglePasswordVisibility() {
                </span>
              </div>
            </div>
-           
-           <!-- Indicateur de force du mot de passe -->
            <div v-if="password.length > 0" class="mt-2">
              <div class="text-xs text-gray-600 mb-1">{{ t('auth.password.strength', 'Password strength:') }}</div>
              <div class="flex items-center space-x-2">
@@ -216,7 +188,6 @@ function togglePasswordVisibility() {
              </div>
            </div>
         </div>
-        
         <p v-else class="text-xs text-muted-foreground mt-1">{{ t('auth.password.minCharacters', 'Minimum 6 characters.') }}</p>
       </div>
       <Button :disabled="loading || !valid" class="w-full h-10" @click="onSubmit">

@@ -50,7 +50,6 @@ const sampleFraction = ref<number>(0.8);
 const gaussianScale = ref<number>(0.1);
 const priceType = ref<"close" | "adj_close">("close");
 const normalize = ref<boolean>(false);
-
 const isMonteCarloEnabled = computed(() => monteCarloRuns.value > 1);
 watch(monteCarloRuns, (newValue) => {
     if (newValue > 1 && !monteCarloMethod.value) {
@@ -296,7 +295,12 @@ async function onSubmit() {
         price_type: priceType.value,
         normalize: normalize.value,
     };
-    await store.runBacktestUnified(allFiles, req, selectedDatasets.value);
+    const filesForSubmission = selectedDatasets.value.length > 0 ? [] : allFiles;
+    if (isMonteCarloEnabled.value) {
+        await store.runMonteCarloAsync(filesForSubmission, req, selectedDatasets.value);
+    } else {
+        await store.runBacktestUnified(allFiles, req, selectedDatasets.value);
+    }
 }
 function onReset() {
     store.reset();
@@ -408,8 +412,6 @@ function onReset() {
             :price-type="priceType"
             @update:price-type="(value) => (priceType = value)"
         />
-
-        <!-- Normalization Section -->
         <div class="space-y-2">
             <Label class="text-sm font-medium flex items-center gap-2">
                 <div
@@ -453,7 +455,6 @@ function onReset() {
                 </div>
             </div>
         </div>
-
         <div class="space-y-2">
             <Label class="text-sm font-medium flex items-center gap-2">
                 <div
@@ -512,7 +513,6 @@ function onReset() {
             :selected-datasets="selectedDatasets"
             :date-validation-error="dateValidationError"
         />
-
         <div class="flex items-center gap-3 pt-2">
             <Button
                 :disabled="!canSubmit"

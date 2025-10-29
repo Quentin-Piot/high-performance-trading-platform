@@ -191,7 +191,7 @@
                 <CardContent class="p-4 sm:p-6 pt-0">
                     <div
                         v-if="loading"
-                        class="flex items-center justify-center"
+                        class="flex items-center justify-center py-12"
                     >
                         <div class="flex flex-col items-center gap-3">
                             <Spinner />
@@ -561,6 +561,7 @@
     </BaseLayout>
 </template>
 <script setup lang="ts">
+import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "@/router";
 import { useI18n } from "vue-i18n";
@@ -711,7 +712,6 @@ const rerunBacktest = (item: any) => {
                 ? item.datasets_used.join(",")
                 : undefined,
     };
-
     const strategyConfig = BACKTEST_STRATEGIES[item.strategy];
     if (strategyConfig && item.strategy_params) {
         for (const p of strategyConfig.params) {
@@ -723,21 +723,18 @@ const rerunBacktest = (item: any) => {
             }
         }
     }
-
     const filteredQueryParams = Object.fromEntries(
         Object.entries(queryParams).filter(
             ([, value]) =>
                 value !== null && value !== undefined && value !== "",
         ),
     );
-
     const queryString = new URLSearchParams(
         Object.entries(filteredQueryParams).map(([key, value]) => [
             key,
             String(value),
         ]),
     ).toString();
-
     navigate(`/simulate?${queryString}`);
 };
 const confirmDelete = async (id: string) => {

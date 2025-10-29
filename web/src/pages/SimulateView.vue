@@ -6,9 +6,11 @@ import EquityEnvelopeChart from "@/components/backtest/EquityEnvelopeChart.vue";
 import MetricsCard from "@/components/common/MetricsCard.vue";
 import DistributionMetricsCard from "@/components/common/DistributionMetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
+import Progress from "@/components/ui/progress/Progress.vue";
+import { connectMonteCarloProgress, type MonteCarloWsMessage } from "@/services/monteCarloWsService";
 import { useBacktestStore } from "@/stores/backtestStore";
 import { useAuthStore } from "@/stores/authStore";
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,16 @@ const loading = computed(() => store.status === "loading");
 const { t } = useI18n();
 const selectedResolution = ref<"1m" | "5m" | "1h" | "1d">("1d");
 const activeRange = ref<"1W" | "1M" | "YTD" | "All">("All");
+const mcProgress = ref<number | null>(null);
+const mcStatus = ref<MonteCarloWsMessage["status"] | "idle">("idle");
+let mcDisconnect: (() => void) | null = null;
+const uiProgress = computed<number | null>(() => {
+  return (typeof store.mcProgress === 'number' ? store.mcProgress : null) ?? mcProgress.value;
+});
+const isMcLoading = computed(() => {
+  const hasMcActivity = store.mcStatus !== "idle" || mcStatus.value !== "idle" || uiProgress.value !== null;
+  return loading.value && hasMcActivity;
+});
 type EquitySeries = ChartPoint[];
 function timeToSeconds(p: ChartPoint): number {
     if (typeof p.time === "number") return p.time;
@@ -169,6 +181,24 @@ onMounted(async () => {
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
     }
+    const mcJobId = urlParams.get("mcJobId");
+    if (mcJobId) {
+        const { disconnect } = connectMonteCarloProgress(mcJobId, {
+            onUpdate: (msg) => {
+                mcStatus.value = msg.status;
+                mcProgress.value = typeof msg.progress === "number" ? msg.progress * 100 : null;
+            },
+            onError: () => {
+                mcStatus.value = "failed";
+            },
+            onClose: () => {
+            },
+        });
+        mcDisconnect = disconnect;
+    }
+});
+onUnmounted(() => {
+    if (mcDisconnect) mcDisconnect();
 });
 </script>
 <template>
@@ -317,11 +347,25 @@ onMounted(async () => {
                     </CardHeader>
                     <CardContent class="p-3 sm:p-4 relative">
                         <template v-if="loading">
-                            <div
-                                class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center"
-                            >
+                            <div v-if="isMcLoading" class="h-[300px] sm:h-[400px] w-full relative overflow-hidden">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="w-full max-w-md px-4">
+                                        <div class="flex items-center justify-center gap-2 mb-2">
+                                            <span class="text-xs sm:text-sm font-medium text-muted-foreground">{{ t('simulate.results.monte_carlo.progress_label') }}</span>
+                                            <span v-if="uiProgress !== null" class="text-xs sm:text-sm font-mono text-foreground tabular-nums">{{ Math.round(uiProgress ?? 0) }}%</span>
+                                        </div>
+                                        <Progress
+                                            v-if="uiProgress !== null"
+                                            :value="uiProgress ?? 0"
+                                            variant="gradient"
+                                            class="h-4 sm:h-5 shadow-soft ring-1 ring-secondary/40"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center">
                                 <div class="flex flex-col items-center gap-3">
-                                    <Spinner />
+                                    <Spinner class="h-8 w-8 text-trading-blue" />
                                 </div>
                             </div>
                         </template>
@@ -333,6 +377,7 @@ onMounted(async () => {
                                     "
                                     :active-range="activeRange"
                                     :processing-time="store.processingTime"
+                                    :progress-value="uiProgress ?? undefined"
                                 />
                             </div>
                             <MultiLineChart
@@ -341,11 +386,7 @@ onMounted(async () => {
                                 :aggregated-data="aggregatedData"
                                 :active-range="activeRange"
                             />
-                            <BacktestChart
-                                v-else
-                                :series="chartSeries"
-                                :processing-time="store.processingTime"
-                            />
+                            <BacktestChart v-else :series="chartSeries" :processing-time="store.processingTime" />
                         </template>
                     </CardContent>
                 </Card>
@@ -353,10 +394,10 @@ onMounted(async () => {
                     <div v-if="hasMonteCarloResults" class="col-span-full mb-4">
                         <div class="text-center mb-4">
                             <h3 class="text-lg font-semibold text-foreground">
-                                {{ t("simulate.distributions.statistics") }}
+                                {{ t('simulate.distributions.statistics') }}
                             </h3>
                             <p class="text-sm text-muted-foreground">
-                                {{ t("simulate.distributions.showing_median") }}
+                                {{ t('simulate.distributions.showing_median') }}
                             </p>
                         </div>
                         <div

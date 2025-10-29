@@ -522,7 +522,8 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
         from workers.simple_worker import get_simple_worker
         worker = get_simple_worker()
         logger.info("WebSocket connection established", extra={"job_id": job_id})
-        job_status = await worker.get_job_status(job_id)
+        # get_job_status est synchrone; ne pas utiliser await ici
+        job_status = worker.get_job_status(job_id)
         if job_status:
             await websocket.send_json(job_status)
         else:
