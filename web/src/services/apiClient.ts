@@ -12,7 +12,7 @@ export type BacktestResponse = {
   drawdown: number;
   sharpe: number;
 };
-export const BASE_URL = "http://localhost:8000/api/v1";
+export const BASE_URL = "/api/v1";
 export function buildWsUrl(path: string): string {
   const base = BASE_URL.replace(/^http/, "ws");
   return `${base}${path}`;
