@@ -10,6 +10,7 @@ This project is a high-performance trading platform, featuring a Vue.js frontend
 - [Frontend Performance](#frontend-performance)
 - [Architecture](#architecture)
   - [Local Development Architecture](#local-development-architecture)
+  - [WebSocket Real-time Communication](#websocket-real-time-communication)
   - [Cloud Architecture (AWS Terraform)](#cloud-architecture-aws-terraform)
 - [Local Development Setup](#local-development-setup)
   - [Prerequisites](#prerequisites)
@@ -21,8 +22,10 @@ This project is a high-performance trading platform, featuring a Vue.js frontend
 ## Project Overview
 
 The platform provides:
-- **Frontend (Vue.js)**: A user interface for configuring and running backtests and Monte Carlo simulations, visualizing results, and managing data.
+- **Frontend (Vue.js)**: A user interface for configuring and running backtests and Monte Carlo simulations, visualizing results, and managing data with real-time progress tracking.
 - **Backend (FastAPI)**: A Python API that handles business logic, data processing, backtesting algorithms, Monte Carlo simulations, and interacts with a PostgreSQL database and Redis cache.
+- **Real-time Communication**: WebSocket integration for live progress updates during Monte Carlo simulations, providing instant feedback to users without polling.
+- **Asynchronous Processing**: In-process worker system (`SimpleMonteCarloWorker`) with concurrent job execution and real-time progress callbacks.
 - **Data Management**: Supports uploading custom CSV datasets and utilizing pre-loaded datasets for simulations.
 - **Infrastructure as Code (Terraform)**: Defines the AWS cloud infrastructure for deploying the application.
 
@@ -51,6 +54,17 @@ For local development, the project leverages `docker-compose` to orchestrate the
 
 All services communicate over a shared Docker network.
 
+### WebSocket Real-time Communication
+
+The platform implements WebSocket connections for real-time progress tracking during Monte Carlo simulations:
+
+- **FastAPI WebSocket Endpoint**: `/ws/{job_id}` provides dedicated connections for each simulation job
+- **Progress Callbacks**: The `SimpleMonteCarloWorker` includes progress callback mechanisms that push updates through WebSocket connections
+- **Frontend Integration**: Vue.js components establish WebSocket connections to receive live progress updates, displaying real-time percentage completion and status changes
+- **Concurrent Job Support**: Multiple WebSocket connections can be maintained simultaneously, allowing users to monitor several Monte Carlo simulations in parallel
+- **Automatic Reconnection**: Client-side WebSocket management with automatic reconnection handling for robust real-time communication
+- **Job Lifecycle Events**: WebSocket messages include job status changes (pending, running, completed, failed, cancelled) with detailed progress information
+
 ### Cloud Architecture (AWS Terraform)
 
 The cloud infrastructure is provisioned on AWS using Terraform, designed with cost-effectiveness in mind for demo and low-traffic projects.
@@ -73,6 +87,8 @@ The cloud infrastructure is provisioned on AWS using Terraform, designed with co
 - **Monte Carlo Worker System**: Asynchronous job processing with concurrent execution capabilities:
   - **In-process Worker**: `SimpleMonteCarloWorker` supporting up to 2 simultaneous jobs with ThreadPoolExecutor
   - **Concurrent Processing**: Multi-threaded execution for parallel Monte Carlo simulations
+  - **Real-time Progress Tracking**: WebSocket-enabled progress callbacks providing live updates to the frontend
+  - **Job Management**: Complete lifecycle management with status tracking, cancellation, and cleanup capabilities
 - **Cognito**: For user authentication and authorization.
 
 **Note on Cost-Saving Choices**:
@@ -199,6 +215,9 @@ The following features and improvements are planned for future releases to enhan
 - **Database Optimization**: Migrate to Amazon RDS with read replicas for improved performance and reliability
 
 ### Real-time Features
+- **WebSocket Integration**: Live progress updates for Monte Carlo simulations with real-time percentage completion
+- **Asynchronous Job Monitoring**: Non-blocking UI with instant feedback on simulation progress and status changes
+- **Concurrent Simulation Tracking**: Support for monitoring multiple simultaneous Monte Carlo jobs with individual progress bars
 - **Enhanced WebSocket Support**: Real-time portfolio updates, live market data streaming, and collaborative features
 - **Push Notifications**: Browser and mobile notifications for job completion, alerts, and market events
 
