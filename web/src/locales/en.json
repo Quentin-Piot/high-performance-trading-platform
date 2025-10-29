@@ -72,11 +72,6 @@
       },
       "backToHome": "Back to home"
     },
-    "common": {
-      "language": "Language",
-      "selectLanguage": "Select language",
-      "select_language": "Select language"
-    },
     "password": {
       "requirements": "Password requirements:",
       "minLength": "At least 8 characters",
@@ -372,7 +367,8 @@
       "monte_carlo": {
         "title": "Monte Carlo Simulation Results",
         "description": "Showing equity envelope with confidence bands",
-        "progress_title": "Monte Carlo Simulation Progress"
+        "progress_title": "Monte Carlo Simulation Progress",
+        "progress_label": "Monte Carlo simulation running"
       }
     },
     "loading": "Loading...",
@@ -476,7 +472,10 @@
     "refresh": "Refresh",
     "retry": "Retry",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "language": "Language",
+    "selectLanguage": "Select language",
+    "select_language": "Select language"
   },
   "history": {
     "title": "Backtest History",

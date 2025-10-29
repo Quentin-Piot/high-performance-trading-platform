@@ -355,7 +355,8 @@
       "monte_carlo": {
         "title": "Résultats de Simulation Monte Carlo",
         "description": "Affichage de l'enveloppe d'équité avec bandes de confiance",
-        "progress_title": "Progression de la Simulation Monte Carlo"
+        "progress_title": "Progression de la Simulation Monte Carlo",
+        "progress_label": "Simulation Monte Carlo en cours"
       }
     },
     "loading": "Chargement...",

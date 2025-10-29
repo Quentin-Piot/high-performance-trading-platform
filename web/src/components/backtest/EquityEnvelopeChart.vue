@@ -1,32 +1,42 @@
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { createChart, ColorType } from 'lightweight-charts'
 import { BarChart3, Clock } from 'lucide-vue-next'
 import { formatProcessingTime } from '@/utils/timeFormatter'
+import Progress from '@/components/ui/progress/Progress.vue'
 import { useI18n } from 'vue-i18n'
-interface EquityEnvelope {
-  timestamps: string[]
-  p5: number[]
-  p25: number[]
-  median: number[]
-  p75: number[]
-  p95: number[]
-}
-const props = defineProps<{
-  equityEnvelope?: EquityEnvelope
-  activeRange?: "1W" | "1M" | "YTD" | "All"
-  processingTime?: string | null
-}>()
-
+const props = defineProps({
+  equityEnvelope: {
+    type: Object,
+    required: false,
+    default: () => ({ timestamps: [], p5: [], p25: [], median: [], p75: [], p95: [] })
+  },
+  activeRange: {
+    type: String,
+    required: false,
+    default: 'All',
+    validator: (value) => ['1W', '1M', 'YTD', 'All'].includes(value)
+  },
+  processingTime: {
+    type: String,
+    required: false,
+    default: null
+  },
+  progressValue: {
+    type: Number,
+    required: false,
+    default: 0
+  }
+})
 const { t } = useI18n()
-const el = ref<HTMLDivElement | null>(null)
-let chart: any = null
-let p5Series: any = null
-let p25Series: any = null
-let medianSeries: any = null
-let p75Series: any = null
-let p95Series: any = null
-let ro: ResizeObserver | null = null
+const el = ref(null)
+let chart = null
+let p5Series = null
+let p25Series = null
+let medianSeries = null
+let p75Series = null
+let p95Series = null
+let ro = null
 const hasData = computed(() => {
   return !!(props.equityEnvelope?.timestamps?.length && 
            props.equityEnvelope?.median?.length && 
@@ -34,7 +44,7 @@ const hasData = computed(() => {
            props.equityEnvelope?.p75?.length)
 })
 const pointCount = computed(() => props.equityEnvelope?.timestamps.length ?? 0)
-function convertToChartData(timestamps: string[], values: number[]) {
+function convertToChartData(timestamps, values) {
   let data = timestamps.map((timestamp, index) => ({
     time: new Date(timestamp).getTime() / 1000, 
     value: values[index]
@@ -68,7 +78,7 @@ function updateSeries() {
   if (p75Series) p75Series.setData(p75Data)
   if (p95Series) p95Series.setData(p95Data)
   if (hasData.value) {
-    (chart as any).timeScale().fitContent()
+    chart.timeScale().fitContent()
   }
 }
 onMounted(() => {
@@ -119,7 +129,7 @@ onMounted(() => {
   })
   updateSeries()
   if (hasData.value) {
-    (chart as any).timeScale().fitContent()
+    chart.timeScale().fitContent()
   }
   ro = new ResizeObserver(() => {
     if (rootEl && chart) {
@@ -169,13 +179,21 @@ watch(() => props.activeRange, updateSeries)
         class="w-full h-[400px] rounded-xl transition-all duration-500 relative z-10"
         :class="{ 'opacity-50': !hasData }"
       />
-      <div 
+    <div 
         v-if="!hasData" 
         class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary/20 to-accent/10 rounded-xl"
       >
         <div class="text-center text-muted-foreground">
           <BarChart3 class="h-12 w-12 mx-auto mb-2 opacity-50" />
           <p class="text-sm">{{ t('simulate.chart.monte_carlo.no_data') }}</p>
+        </div>
+        <div v-if="typeof props.progressValue === 'number'" class="absolute inset-0 flex items-center justify-center">
+          <div class="w-full max-w-md px-4">
+            <div class="text-center text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+              {{ t('simulate.results.monte_carlo.progress_label') }}
+            </div>
+            <Progress :value="props.progressValue ?? 0" variant="gradient" class="h-4 sm:h-5 shadow-soft ring-1 ring-secondary/40" />
+          </div>
         </div>
       </div>
     </div>
