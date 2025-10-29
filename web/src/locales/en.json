@@ -424,20 +424,21 @@
           "95th": "95th Percentile"
         },
         "progress_label": "Monte Carlo simulation running"
-      },
-      "distributions": {
-        "mean": "Mean",
-        "median": "Median",
-        "std": "Standard Deviation",
-        "volatility": "Volatility",
-        "p5": "5th percentile",
-        "p25": "25th percentile",
-        "p75": "75th percentile",
-        "p95": "95th percentile",
-        "statistics": "Distribution Statistics",
-        "showing_median": "Showing median values with distribution ranges",
-        "percentile_short": "%ile"
       }
+    },
+
+    "distributions": {
+      "mean": "Mean",
+      "median": "Median",
+      "std": "Standard Deviation",
+      "volatility": "Volatility",
+      "p5": "5th percentile",
+      "p25": "25th percentile",
+      "p75": "75th percentile",
+      "p95": "95th percentile",
+      "statistics": "Distribution Statistics",
+      "showing_median": "Showing median values with distribution ranges",
+      "percentile_short": "%ile"
     }
   },
   "errors": {
