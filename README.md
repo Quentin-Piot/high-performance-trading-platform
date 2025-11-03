@@ -23,7 +23,7 @@ This project is a high-performance finance platform, featuring a Vue.js frontend
 
 The platform provides:
 - **Frontend (Vue.js)**: A user interface for configuring and running backtests and Monte Carlo simulations, visualizing results, and managing data with real-time progress tracking.
-- **Backend (FastAPI)**: A Python API that handles business logic, data processing, backtesting algorithms, Monte Carlo simulations, and interacts with a PostgreSQL database and Redis cache.
+- **Backend (FastAPI)**: A Python API that handles business logic, data processing, backtesting algorithms, Monte Carlo simulations, workers, and interacts with a PostgreSQL database.
 - **Real-time Communication**: WebSocket integration for live progress updates during Monte Carlo simulations, providing instant feedback to users without polling.
 - **Asynchronous Processing**: In-process worker system (`SimpleMonteCarloWorker`) with concurrent job execution and real-time progress callbacks.
 - **Data Management**: Supports uploading custom CSV datasets and utilizing pre-loaded datasets for simulations.
