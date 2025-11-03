@@ -1,4 +1,4 @@
-# High-Performance Trading Platform (HPTP) — Foundation for an Open-Source Mini Backtesting Platform
+# HPTP — Foundation for an Open-Source Mini Backtesting Platform
 
 > **Note: Demonstration Project**
 > This project is a demonstration developed as part of a professional portfolio to showcase my technical expertise in full-stack development (JavaScript/Python) and DevOps (AWS CI/CD) in the design of high-performance trading systems. It is intended for illustrative purposes and may not represent a production-ready solution. In addition to demonstrating distributed systems, performance, and infrastructure practices, this repository also serves as a base for an open-source mini backtesting platform for finance. It is structured to be extended into a lightweight tool for configuring, running, and visualizing backtests and Monte Carlo simulations.
