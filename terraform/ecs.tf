@@ -15,16 +15,18 @@ resource "aws_ecs_task_definition" "backend_task" {
   family                   = "${var.project_name}-backend-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "1024"
-  memory                   = "2048"
+  cpu                      = "256"  # Réduit de 1024 à 256 (0.25 vCPU)
+  memory                   = "512"  # Réduit de 2048 à 512 MB
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
       name      = "postgres"
-      image     = "postgres:16"
+      image     = "postgres:16-alpine"  # Version alpine plus légère
       essential = true
+      cpu       = 128  # Allocation CPU explicite
+      memory    = 256  # Allocation mémoire explicite
       environment = [
         { name = "POSTGRES_DB", value = "trading_db" },
         { name = "POSTGRES_USER", value = "postgres" },
@@ -47,57 +49,25 @@ resource "aws_ecs_task_definition" "backend_task" {
       }
     },
     {
-      name      = "redis"
-      image     = "redis:7-alpine"
-      essential = true
-      portMappings = [
-        { containerPort = 6379, protocol = "tcp" }
-      ]
-      command = [
-        "redis-server",
-        "--appendonly", "no",
-        "--save", "",
-        "--maxmemory", "256mb",
-        "--maxmemory-policy", "allkeys-lru",
-        "--protected-mode", "yes"
-      ]
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "redis"
-        }
-      }
-    },
-    {
       name      = "backend"
       image     = "${aws_ecr_repository.backend.repository_url}:latest"
       essential = true
+      cpu       = 128
+      memory    = 256
       portMappings = [
         { containerPort = 8000, protocol = "tcp" }
       ]
       environment = [
         # Database configuration
-        { name = "DATABASE_HOST", value = "localhost" }, # postgres in same task
+        { name = "DATABASE_HOST", value = "localhost" },
         { name = "DATABASE_PORT", value = "5432" },
         { name = "DATABASE_NAME", value = "trading_db" },
         { name = "DATABASE_USER", value = "postgres" },
         { name = "DATABASE_PASSWORD", value = "postgres" },
 
-        # Redis cache
-        { name = "REDIS_URL", value = "redis://localhost:6379/0" },
-        { name = "CACHE_ENABLED", value = "true" },
-
         # AWS configuration
         { name = "AWS_REGION", value = var.aws_region },
         { name = "AWS_DEFAULT_REGION", value = var.aws_region },
-
-        # SQS configuration
-        { name = "SQS_QUEUE_URL", value = aws_sqs_queue.monte_carlo_jobs.url },
-        { name = "SQS_DLQ_URL", value = aws_sqs_queue.monte_carlo_dlq.url },
-        { name = "SQS_VISIBILITY_TIMEOUT", value = "300" },
-        { name = "SQS_MESSAGE_RETENTION", value = "1209600" },
 
         # CloudWatch Logs configuration
         { name = "ENABLE_CLOUDWATCH_LOGGING", value = "true" },
@@ -126,14 +96,10 @@ resource "aws_ecs_task_definition" "backend_task" {
         { name = "COGNITO_REGION", value = var.aws_region },
         { name = "COGNITO_USER_POOL_ID", value = aws_cognito_user_pool.main.id },
         { name = "COGNITO_CLIENT_ID", value = aws_cognito_user_pool_client.web_client.id },
-        { name = "COGNITO_IDENTITY_POOL_ID", value = aws_cognito_identity_pool.main.id },
-
-        # Worker configuration
-        { name = "RUN_WORKER", value = "true" }
+        { name = "COGNITO_IDENTITY_POOL_ID", value = aws_cognito_identity_pool.main.id }
       ]
       dependsOn = [
-        { containerName = "postgres", condition = "START" },
-        { containerName = "redis", condition = "START" }
+        { containerName = "postgres", condition = "START" }
       ]
       logConfiguration = {
         logDriver = "awslogs"
