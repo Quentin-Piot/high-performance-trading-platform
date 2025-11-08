@@ -16,3 +16,7 @@ terraform/*.tfvars
 terraform/*.tfvars.json
 terraform/*.log
 terraform/*.tmp
+
+
+# macOS
+.DS_Store
