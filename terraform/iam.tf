@@ -29,7 +29,7 @@ resource "aws_iam_role_policy_attachment" "exec_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Add ECR read (included above but safe) and EFS client
+# Add ECR read and EFS client
 resource "aws_iam_role_policy_attachment" "ecr_read" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
@@ -50,7 +50,7 @@ resource "aws_iam_role" "ecs_task_role" {
   }
 }
 
-# Custom policy for SQS, S3, CloudWatch, and Cognito access
+# Custom policy for S3, CloudWatch, and Cognito access (SQS retiré)
 resource "aws_iam_policy" "app_permissions" {
   name        = "${var.project_name}-app-permissions"
   description = "Permissions for trading platform application"
@@ -58,20 +58,6 @@ resource "aws_iam_policy" "app_permissions" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage",
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:ChangeMessageVisibility"
-        ]
-        Resource = [
-          aws_sqs_queue.monte_carlo_jobs.arn,
-          aws_sqs_queue.monte_carlo_dlq.arn
-        ]
-      },
       {
         Effect = "Allow"
         Action = [
@@ -95,9 +81,7 @@ resource "aws_iam_policy" "app_permissions" {
         ]
         Resource = [
           aws_cloudwatch_log_group.application.arn,
-          aws_cloudwatch_log_group.monte_carlo_worker.arn,
-          "${aws_cloudwatch_log_group.application.arn}:*",
-          "${aws_cloudwatch_log_group.monte_carlo_worker.arn}:*"
+          "${aws_cloudwatch_log_group.application.arn}:*"
         ]
       },
       {

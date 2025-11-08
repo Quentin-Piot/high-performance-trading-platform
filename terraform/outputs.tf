@@ -32,25 +32,9 @@ output "ecs_service_name" {
   value       = aws_ecs_service.backend_service.name
 }
 
-# New outputs for queue and logging infrastructure
-output "sqs_queue_url" {
-  description = "URL of the main SQS queue for Monte Carlo jobs"
-  value       = aws_sqs_queue.monte_carlo_jobs.url
-}
-
-output "sqs_dlq_url" {
-  description = "URL of the Dead Letter Queue for failed Monte Carlo jobs"
-  value       = aws_sqs_queue.monte_carlo_dlq.url
-}
-
 output "cloudwatch_log_group" {
   description = "Name of the CloudWatch log group for application logs"
   value       = aws_cloudwatch_log_group.application.name
-}
-
-output "cloudwatch_worker_log_group" {
-  description = "Name of the CloudWatch log group for Monte Carlo worker logs"
-  value       = aws_cloudwatch_log_group.monte_carlo_worker.name
 }
 
 output "s3_bucket_arn" {
