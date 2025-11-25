@@ -89,6 +89,15 @@ class CognitoGoogleIntegrationService:
                         attr["Name"]: attr["Value"] for attr in user["Attributes"]
                     }
 
+                    try:
+                        current_google_sub = user_attributes.get("custom:google_sub", "")
+                        if not current_google_sub or current_google_sub != google_user_info["sub"]:
+                            await self._link_google_identity(
+                                user["Username"], google_user_info
+                            )
+                    except Exception as e:
+                        logger.warning(f"Could not link Google identity: {e}")
+
                     logger.info(f"Returning existing user: {email}")
                     return CognitoUser(
                         sub=user_attributes.get(
@@ -152,6 +161,7 @@ class CognitoGoogleIntegrationService:
             if user_info.get("name"):
                 user_attributes.append({"Name": "name", "Value": user_info["name"]})
 
+            # Créer l'utilisateur
             logger.info(f"Creating user with attributes: {user_attributes}")
             create_response = self.cognito_idp.admin_create_user(
                 UserPoolId=self.user_pool_id,
@@ -162,6 +172,21 @@ class CognitoGoogleIntegrationService:
 
             created_username = create_response["User"]["Username"]
             logger.info(f"User created successfully: {created_username}")
+
+            try:
+                self.cognito_idp.admin_update_user_attributes(
+                    UserPoolId=self.user_pool_id,
+                    Username=created_username,
+                    UserAttributes=[
+                        {"Name": "custom:google_sub", "Value": user_info["sub"]},
+                        {"Name": "custom:provider", "Value": "google"},
+                    ],
+                )
+                logger.info(f"Custom attributes added for user: {created_username}")
+            except ClientError as attr_error:
+                logger.warning(
+                    f"Could not add custom attributes (non-critical): {attr_error}"
+                )
 
             return CognitoUser(
                 sub=f"google_{user_info['sub']}",
@@ -206,6 +231,27 @@ class CognitoGoogleIntegrationService:
                 f"Unexpected error creating federated user: {e}", exc_info=True
             )
             return None
+
+    async def _link_google_identity(
+            self, username: str, google_user_info: dict[str, Any]
+    ) -> bool:
+        """Link Google identity to existing Cognito user."""
+        try:
+            self.cognito_idp.admin_update_user_attributes(
+                UserPoolId=self.user_pool_id,
+                Username=username,
+                UserAttributes=[
+                    {"Name": "custom:google_sub", "Value": google_user_info["sub"]},
+                    {"Name": "custom:provider", "Value": "google"},
+                ],
+            )
+            logger.info(
+                f"Linked Google identity for user: {username}"
+            )
+            return True
+        except ClientError as e:
+            logger.warning(f"Error linking Google identity (non-critical): {e}")
+            return False
 
     async def get_federated_credentials(self, id_token: str) -> dict[str, str] | None:
         """
