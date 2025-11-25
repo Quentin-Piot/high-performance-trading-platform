@@ -32,8 +32,10 @@ import {
     Calendar,
     Maximize2,
 } from "lucide-vue-next";
+
 const store = useBacktestStore();
 const { t } = useI18n();
+
 const selectedFiles = ref<File[]>([]);
 const selectedDatasets = ref<string[]>([]);
 const strategy = ref<StrategyId>("sma_crossover");
@@ -44,18 +46,23 @@ const startDateValue = ref<DateValue>();
 const endDateValue = ref<DateValue>();
 const error = ref<string | null>(null);
 const dateValidationError = ref<string | null>(null);
-const monteCarloRuns = ref<number>(1);
+
+const monteCarloRuns = ref<number>(25);
 const monteCarloMethod = ref<"bootstrap" | "gaussian" | "">("bootstrap");
 const sampleFraction = ref<number>(0.8);
 const gaussianScale = ref<number>(0.1);
+
 const priceType = ref<"close" | "adj_close">("close");
 const normalize = ref<boolean>(false);
+
 const isMonteCarloEnabled = computed(() => monteCarloRuns.value > 1);
+
 watch(monteCarloRuns, (newValue) => {
     if (newValue > 1 && !monteCarloMethod.value) {
         monteCarloMethod.value = "bootstrap";
     }
 });
+
 watch(startDateValue, (value) => {
     if (value) {
         startDate.value = value.toString();
@@ -63,6 +70,7 @@ watch(startDateValue, (value) => {
         startDate.value = "";
     }
 });
+
 watch(endDateValue, (value) => {
     if (value) {
         endDate.value = value.toString();
@@ -70,6 +78,7 @@ watch(endDateValue, (value) => {
         endDate.value = "";
     }
 });
+
 watch(startDate, (value) => {
     if (value && value !== startDateValue.value?.toString()) {
         try {
@@ -91,6 +100,7 @@ watch(startDate, (value) => {
         startDateValue.value = undefined;
     }
 });
+
 watch(endDate, (value) => {
     if (value && value !== endDateValue.value?.toString()) {
         try {
@@ -112,15 +122,20 @@ watch(endDate, (value) => {
         endDateValue.value = undefined;
     }
 });
+
 const currentCfg = computed(() => BACKTEST_STRATEGIES[strategy.value]);
+
 function initParams() {
     const cfg = currentCfg.value;
     for (const p of cfg.params) {
         params[p.key] = p.default;
     }
 }
+
 initParams();
+
 watch(strategy, () => initParams());
+
 onMounted(async () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.size > 0) {
@@ -128,6 +143,7 @@ onMounted(async () => {
         if (urlStrategy && urlStrategy in BACKTEST_STRATEGIES) {
             strategy.value = urlStrategy as StrategyId;
         }
+
         const urlDatasets = urlParams.get("datasets");
         if (urlDatasets) {
             const datasetIds = urlDatasets
@@ -147,13 +163,16 @@ onMounted(async () => {
                 });
             selectedDatasets.value = datasetIds;
         }
+
         const urlStartDate = urlParams.get("startDate");
         const urlEndDate = urlParams.get("endDate");
         if (urlStartDate) startDate.value = urlStartDate;
         if (urlEndDate) endDate.value = urlEndDate;
+
         const urlMonteCarloRuns = urlParams.get("monteCarloRuns");
         if (urlMonteCarloRuns)
-            monteCarloRuns.value = parseInt(urlMonteCarloRuns, 10) || 1;
+            monteCarloRuns.value = parseInt(urlMonteCarloRuns, 10) || 25;
+
         const urlMonteCarloMethod = urlParams.get("monteCarloMethod");
         if (
             urlMonteCarloMethod &&
@@ -162,12 +181,15 @@ onMounted(async () => {
         ) {
             monteCarloMethod.value = urlMonteCarloMethod;
         }
+
         const urlSampleFraction = urlParams.get("sampleFraction");
         if (urlSampleFraction)
             sampleFraction.value = parseFloat(urlSampleFraction) || 0.8;
+
         const urlGaussianScale = urlParams.get("gaussianScale");
         if (urlGaussianScale)
             gaussianScale.value = parseFloat(urlGaussianScale) || 0.1;
+
         const urlPriceType = urlParams.get("priceType");
         if (
             urlPriceType &&
@@ -175,6 +197,7 @@ onMounted(async () => {
         ) {
             priceType.value = urlPriceType;
         }
+
         const currentStrategy = BACKTEST_STRATEGIES[strategy.value];
         if (currentStrategy) {
             for (const param of currentStrategy.params) {
@@ -187,6 +210,7 @@ onMounted(async () => {
                 }
             }
         }
+
         setTimeout(async () => {
             if (canSubmit.value) {
                 await onSubmit();
@@ -203,6 +227,7 @@ onMounted(async () => {
         }, 500);
     }
 });
+
 watch([startDate, endDate, selectedDatasets], () => {
     dateValidationError.value = null;
     if (selectedDatasets.value.length === 0) {
@@ -223,6 +248,7 @@ watch([startDate, endDate, selectedDatasets], () => {
         }
     }, 100);
 });
+
 watch([selectedDatasets, selectedFiles], async ([newDatasets, newFiles]) => {
     if (newDatasets.length === 0 && newFiles.length === 0) {
         return;
@@ -236,8 +262,10 @@ watch([selectedDatasets, selectedFiles], async ([newDatasets, newFiles]) => {
         endDate.value = fullRange.maxDate;
     }
 });
+
 const validation = computed(() => currentCfg.value.validate(params));
 const validParams = computed(() => validation.value.ok);
+
 const canSubmit = computed(
     () =>
         (selectedFiles.value.length > 0 || selectedDatasets.value.length > 0) &&
@@ -247,13 +275,22 @@ const canSubmit = computed(
             (isMonteCarloEnabled.value && monteCarloMethod.value)) &&
         !dateValidationError.value,
 );
+
 async function onSubmit() {
     error.value = null;
+
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+
     if (isMonteCarloEnabled.value && !monteCarloMethod.value) {
         error.value = t("simulate.form.monte_carlo.method_required");
         return;
     }
+
     let allFiles = [...selectedFiles.value];
+
     if (selectedDatasets.value.length > 0) {
         try {
             const datasetFiles = await Promise.all(
@@ -273,14 +310,17 @@ async function onSubmit() {
             return;
         }
     }
+
     if (allFiles.length === 0) {
         error.value = t("errors.no_csv_file");
         return;
     }
+
     if (!validParams.value) {
         error.value = validation.value.message || t("errors.invalid_params");
         return;
     }
+
     const req = {
         strategy: strategy.value,
         params: { ...params },
@@ -295,13 +335,16 @@ async function onSubmit() {
         price_type: priceType.value,
         normalize: normalize.value,
     };
+
     const filesForSubmission = selectedDatasets.value.length > 0 ? [] : allFiles;
+
     if (isMonteCarloEnabled.value) {
         await store.runMonteCarloAsync(filesForSubmission, req, selectedDatasets.value);
     } else {
         await store.runBacktestUnified(allFiles, req, selectedDatasets.value);
     }
 }
+
 function onReset() {
     store.reset();
     selectedFiles.value = [];
@@ -311,13 +354,14 @@ function onReset() {
     initParams();
     startDate.value = "";
     endDate.value = "";
-    monteCarloRuns.value = 1;
+    monteCarloRuns.value = 25;
     monteCarloMethod.value = "bootstrap";
-    sampleFraction.value = 1.0;
-    gaussianScale.value = 1.0;
+    sampleFraction.value = 0.8;
+    gaussianScale.value = 0.1;
     normalize.value = false;
 }
 </script>
+
 <template>
     <div class="space-y-4">
         <div
@@ -408,10 +452,12 @@ function onReset() {
                 </div>
             </div>
         </div>
+
         <PriceTypeSection
             :price-type="priceType"
             @update:price-type="(value) => (priceType = value)"
         />
+
         <div class="space-y-2">
             <Label class="text-sm font-medium flex items-center gap-2">
                 <div
@@ -455,6 +501,7 @@ function onReset() {
                 </div>
             </div>
         </div>
+
         <div class="space-y-2">
             <Label class="text-sm font-medium flex items-center gap-2">
                 <div
@@ -485,12 +532,14 @@ function onReset() {
                 />
             </div>
         </div>
+
         <StrategyParametersSection
             :strategy="strategy"
             :params="params"
             :current-cfg="currentCfg"
             @update:params="(newParams) => Object.assign(params, newParams)"
         />
+
         <MonteCarloSection
             :monte-carlo-runs="monteCarloRuns"
             :monte-carlo-method="monteCarloMethod"
@@ -505,6 +554,7 @@ function onReset() {
             @update:sample-fraction="(value) => (sampleFraction = value)"
             @update:gaussian-scale="(value) => (gaussianScale = value)"
         />
+
         <DateRangeSelector
             v-model:start-date-value="startDateValue"
             v-model:end-date-value="endDateValue"
@@ -513,6 +563,7 @@ function onReset() {
             :selected-datasets="selectedDatasets"
             :date-validation-error="dateValidationError"
         />
+
         <div class="flex items-center gap-3 pt-2">
             <Button
                 :disabled="!canSubmit"
@@ -535,6 +586,7 @@ function onReset() {
                 </div>
             </Button>
         </div>
+
         <div class="space-y-3">
             <div
                 v-if="!validParams"
