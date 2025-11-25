@@ -2,6 +2,7 @@
 Service for integrating Google OAuth with AWS Cognito Identity Provider.
 """
 import logging
+import uuid
 from typing import Any
 
 import boto3
@@ -151,7 +152,7 @@ class CognitoGoogleIntegrationService:
             return None
 
         try:
-            username = user_info["email"]
+            username = str(uuid.uuid4())
 
             user_attributes = [
                 {"Name": "email", "Value": user_info["email"]},
