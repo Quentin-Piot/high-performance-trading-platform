@@ -11,22 +11,26 @@ from core.cognito import CognitoUser
 from core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
 class CognitoGoogleIntegrationService:
     """Service for managing Google OAuth integration with Cognito."""
+
     def __init__(
-        self,
-        cognito_idp_client: Any | None = None,
-        cognito_identity_client: Any | None = None,
+            self,
+            cognito_idp_client: Any | None = None,
+            cognito_identity_client: Any | None = None,
     ):
         self.settings = get_settings()
         self.region = self.settings.cognito_region
         self.user_pool_id = self.settings.cognito_user_pool_id
         self.identity_pool_id = self.settings.cognito_identity_pool_id
         self.is_development = (
-            self.settings.env == "development"
-            and hasattr(self.settings, "aws_endpoint_url")
-            and self.settings.aws_endpoint_url == "http://localhost:4566"
+                self.settings.env == "development"
+                and hasattr(self.settings, "aws_endpoint_url")
+                and self.settings.aws_endpoint_url == "http://localhost:4566"
         )
+
         if self.is_development:
             logger.info(
                 "Running in development mode with LocalStack - using mock Cognito Google integration"
@@ -44,8 +48,9 @@ class CognitoGoogleIntegrationService:
             logger.warning("Cognito configuration incomplete for Google integration")
             self.cognito_idp = None
             self.cognito_identity = None
+
     async def create_federated_user(
-        self, google_user_info: dict[str, Any]
+            self, google_user_info: dict[str, Any]
     ) -> CognitoUser | None:
         """
         Create or link a federated user in Cognito using Google identity.
@@ -65,24 +70,26 @@ class CognitoGoogleIntegrationService:
                 email_verified=True,
                 cognito_username=google_user_info.get("email", "test@example.com"),
             )
+
         if not self.cognito_idp:
             logger.error("Cognito IDP client not initialized")
             return None
+
         try:
             email = google_user_info["email"]
+
             try:
                 response = self.cognito_idp.list_users(
                     UserPoolId=self.user_pool_id, Filter=f'email = "{email}"'
                 )
+
                 if response["Users"]:
                     user = response["Users"][0]
                     user_attributes = {
                         attr["Name"]: attr["Value"] for attr in user["Attributes"]
                     }
-                    if "identities" not in user_attributes:
-                        await self._link_google_identity(
-                            user["Username"], google_user_info
-                        )
+
+                    logger.info(f"Returning existing user: {email}")
                     return CognitoUser(
                         sub=user_attributes.get(
                             "sub", f"google_{google_user_info['sub']}"
@@ -94,29 +101,32 @@ class CognitoGoogleIntegrationService:
                         email_verified=user_attributes.get(
                             "email_verified", "false"
                         ).lower()
-                        == "true",
+                                       == "true",
                         cognito_username=user["Username"],
                     )
             except ClientError as e:
                 logger.warning(f"Error searching for existing user: {e}")
+
             return await self._create_federated_user(google_user_info)
+
         except Exception as e:
-            logger.error(f"Error creating federated user: {e}")
+            logger.error(f"Error in create_federated_user: {e}", exc_info=True)
             return None
+
     async def _create_federated_user(
-        self, user_info: dict[str, Any]
+            self, user_info: dict[str, Any]
     ) -> CognitoUser | None:
         """
-        Create or get federated user in Cognito using Google identity.
+        Create federated user in Cognito using Google identity.
         Args:
             user_info: User information from Google OAuth
         Returns:
             CognitoUser instance or None if failed
         """
         logger.info(
-            f"Creating federated user for email: {user_info.get('email', 'unknown')}"
+            f"Creating NEW federated user for email: {user_info.get('email', 'unknown')}"
         )
-        logger.debug(f"User info received: {user_info}")
+
         if self.is_development:
             logger.info("Development mode: creating mock federated user")
             return CognitoUser(
@@ -124,67 +134,79 @@ class CognitoGoogleIntegrationService:
                 email=user_info["email"],
                 name=user_info.get("name", ""),
                 email_verified=user_info.get("email_verified", False),
+                cognito_username=user_info["email"],
             )
+
         if not self.cognito_idp:
             logger.error("Cognito IDP client not initialized")
             return None
+
         try:
-            self.cognito_idp.admin_create_user(
+            username = user_info["email"]
+
+            user_attributes = [
+                {"Name": "email", "Value": user_info["email"]},
+                {"Name": "email_verified", "Value": "true"},
+            ]
+
+            if user_info.get("name"):
+                user_attributes.append({"Name": "name", "Value": user_info["name"]})
+
+            logger.info(f"Creating user with attributes: {user_attributes}")
+            create_response = self.cognito_idp.admin_create_user(
                 UserPoolId=self.user_pool_id,
-                Username=user_info["email"],
-                UserAttributes=[
-                    {"Name": "email", "Value": user_info["email"]},
-                    {"Name": "email_verified", "Value": str(user_info.get("email_verified", False)).lower()},
-                    {"Name": "name", "Value": user_info.get("name", "")},
-                ],
-                DesiredDeliveryMediums=["EMAIL"],
+                Username=username,
+                UserAttributes=user_attributes,
+                MessageAction="SUPPRESS",
             )
-            self.cognito_idp.admin_update_user_attributes(
-                UserPoolId=self.user_pool_id,
-                Username=user_info["email"],
-                UserAttributes=[
-                    {"Name": "custom:google_sub", "Value": user_info["sub"]},
-                    {"Name": "custom:provider", "Value": "google"},
-                ],
-            )
-            logger.info(
-                f"Successfully created/retrieved federated user: {user_info['email']}"
-            )
+
+            created_username = create_response["User"]["Username"]
+            logger.info(f"User created successfully: {created_username}")
+
             return CognitoUser(
                 sub=f"google_{user_info['sub']}",
                 email=user_info["email"],
                 name=user_info.get("name", ""),
                 email_verified=user_info.get("email_verified", False),
-                cognito_username=user_info["email"],
+                cognito_username=created_username,
             )
+
         except ClientError as e:
-            logger.error(f"Error creating federated user: {e}", exc_info=True)
+            error_code = e.response.get("Error", {}).get("Code", "")
+            error_message = e.response.get("Error", {}).get("Message", "")
+
+            logger.error(
+                f"ClientError creating federated user: {error_code} - {error_message}",
+                exc_info=True
+            )
+
+            if error_code == "UsernameExistsException":
+                try:
+                    response = self.cognito_idp.list_users(
+                        UserPoolId=self.user_pool_id,
+                        Filter=f'email = "{user_info["email"]}"'
+                    )
+                    if response["Users"]:
+                        user = response["Users"][0]
+                        logger.info(f"User already exists, returning it: {user_info['email']}")
+                        return CognitoUser(
+                            sub=f"google_{user_info['sub']}",
+                            email=user_info["email"],
+                            name=user_info.get("name", ""),
+                            email_verified=user_info.get("email_verified", False),
+                            cognito_username=user["Username"],
+                        )
+                except Exception as list_error:
+                    logger.error(f"Error listing existing user: {list_error}")
+
             return None
+
         except Exception as e:
             logger.error(
                 f"Unexpected error creating federated user: {e}", exc_info=True
             )
             return None
-    async def _link_google_identity(
-        self, username: str, google_user_info: dict[str, Any]
-    ) -> bool:
-        """Link Google identity to existing Cognito user."""
-        try:
-            self.cognito_idp.admin_update_user_attributes(
-                UserPoolId=self.user_pool_id,
-                Username=username,
-                UserAttributes=[
-                    {"Name": "custom:google_sub", "Value": google_user_info["sub"]},
-                    {"Name": "custom:provider", "Value": "google"},
-                ],
-            )
-            logger.info(
-                f"Linked Google identity for user: {username} with Google sub: {google_user_info['sub']}"
-            )
-            return True
-        except ClientError as e:
-            logger.error(f"Error linking Google identity: {e}")
-            return False
+
     async def get_federated_credentials(self, id_token: str) -> dict[str, str] | None:
         """
         Get temporary AWS credentials for federated user.
@@ -201,18 +223,22 @@ class CognitoGoogleIntegrationService:
                 "secret_key": "mock_secret_key",
                 "session_token": "mock_session_token",
             }
+
         if not self.cognito_identity:
             logger.error("Cognito Identity client not initialized")
             return None
+
         try:
             identity_response = self.cognito_identity.get_id(
                 IdentityPoolId=self.identity_pool_id,
                 Logins={"accounts.google.com": id_token},
             )
             identity_id = identity_response["IdentityId"]
+
             credentials_response = self.cognito_identity.get_credentials_for_identity(
                 IdentityId=identity_id, Logins={"accounts.google.com": id_token}
             )
+
             credentials = credentials_response["Credentials"]
             return {
                 "identity_id": identity_id,
@@ -223,7 +249,11 @@ class CognitoGoogleIntegrationService:
         except ClientError as e:
             logger.error(f"Error getting federated credentials: {e}")
             return None
+
+
 _cognito_google_service: CognitoGoogleIntegrationService | None = None
+
+
 def get_cognito_google_service() -> CognitoGoogleIntegrationService:
     """Get Cognito Google integration service instance."""
     global _cognito_google_service
