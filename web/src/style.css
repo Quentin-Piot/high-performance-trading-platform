@@ -259,58 +259,59 @@
 }
 
 .dark {
-  --background: oklch(0.08 0.01 240);
-  --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.12 0.01 240);
-  --card-foreground: oklch(0.95 0.01 240);
-  --popover: oklch(0.12 0.01 240);
-  --popover-foreground: oklch(0.95 0.01 240);
-  --primary: oklch(0.65 0.2 260);
-  --primary-foreground: oklch(0.08 0.01 240);
-  --secondary: oklch(0.18 0.01 240);
-  --secondary-foreground: oklch(0.9 0.01 240);
-  --muted: oklch(0.16 0.01 240);
-  --muted-foreground: oklch(0.65 0.02 240);
-  --accent: oklch(0.2 0.02 240);
-  --accent-foreground: oklch(0.9 0.01 240);
-  --destructive: oklch(0.65 0.25 15);
-  --destructive-foreground: oklch(0.95 0.01 240);
-  --border: oklch(0.2 0.01 240);
-  --input: oklch(0.16 0.01 240);
-  --ring: oklch(0.65 0.2 260);
-  --chart-1: oklch(0.7 0.25 260);
-  --chart-2: oklch(0.75 0.2 180);
-  --chart-3: oklch(0.65 0.22 320);
-  --chart-4: oklch(0.8 0.18 80);
-  --chart-5: oklch(0.73 0.24 30);
-  --sidebar: oklch(0.1 0.01 240);
-  --sidebar-foreground: oklch(0.95 0.01 240);
-  --sidebar-primary: oklch(0.65 0.2 260);
-  --sidebar-primary-foreground: oklch(0.08 0.01 240);
-  --sidebar-accent: oklch(0.2 0.02 240);
-  --sidebar-accent-foreground: oklch(0.9 0.01 240);
-  --sidebar-border: oklch(0.2 0.01 240);
-  --sidebar-ring: oklch(0.65 0.2 260);
-  
-  /* Palette sombre pour TradingView style */
-  --trading-green: oklch(0.75 0.25 140);
-  --trading-red: oklch(0.7 0.25 15);
-  --trading-blue: oklch(0.65 0.22 240);
-  --trading-purple: oklch(0.7 0.2 300);
-  --trading-orange: oklch(0.75 0.2 50);
-  --trading-cyan: oklch(0.75 0.18 200);
-  
-  /* Dégradés sombres */
-  --gradient-primary: linear-gradient(135deg, oklch(0.65 0.2 260) 0%, oklch(0.7 0.2 300) 100%);
-  --gradient-secondary: linear-gradient(135deg, oklch(0.75 0.25 140) 0%, oklch(0.75 0.18 200) 100%);
-  --gradient-accent: linear-gradient(135deg, oklch(0.75 0.2 50) 0%, oklch(0.7 0.25 15) 100%);
-  --gradient-hero: linear-gradient(135deg, oklch(0.65 0.2 260 / 0.15) 0%, oklch(0.75 0.25 140 / 0.15) 50%, oklch(0.7 0.2 300 / 0.15) 100%);
-  
-  /* Ombres sombres avec glow */
-  --shadow-soft: 0 2px 8px oklch(0 0 0 / 0.3);
-  --shadow-medium: 0 4px 16px oklch(0 0 0 / 0.4);
-  --shadow-strong: 0 8px 32px oklch(0 0 0 / 0.5);
-  --shadow-glow: 0 0 20px oklch(0.65 0.2 260 / 0.4);
+  /* TradingView-inspired dark theme - Near-black backgrounds for professional look */
+  --background: oklch(0.11 0.008 240);
+  --foreground: oklch(0.96 0.005 240);
+  --card: oklch(0.15 0.01 240);
+  --card-foreground: oklch(0.96 0.005 240);
+  --popover: oklch(0.14 0.01 240);
+  --popover-foreground: oklch(0.96 0.005 240);
+  --primary: oklch(0.60 0.20 255);
+  --primary-foreground: oklch(0.98 0.005 240);
+  --secondary: oklch(0.19 0.012 240);
+  --secondary-foreground: oklch(0.92 0.008 240);
+  --muted: oklch(0.17 0.01 240);
+  --muted-foreground: oklch(0.56 0.015 240);
+  --accent: oklch(0.22 0.015 240);
+  --accent-foreground: oklch(0.94 0.008 240);
+  --destructive: oklch(0.62 0.25 15);
+  --destructive-foreground: oklch(0.98 0.005 240);
+  --border: oklch(0.22 0.012 240);
+  --input: oklch(0.17 0.01 240);
+  --ring: oklch(0.60 0.20 255);
+  --chart-1: oklch(0.68 0.24 260);
+  --chart-2: oklch(0.72 0.22 180);
+  --chart-3: oklch(0.64 0.23 320);
+  --chart-4: oklch(0.76 0.20 80);
+  --chart-5: oklch(0.70 0.25 30);
+  --sidebar: oklch(0.12 0.008 240);
+  --sidebar-foreground: oklch(0.96 0.005 240);
+  --sidebar-primary: oklch(0.60 0.20 255);
+  --sidebar-primary-foreground: oklch(0.98 0.005 240);
+  --sidebar-accent: oklch(0.22 0.015 240);
+  --sidebar-accent-foreground: oklch(0.94 0.008 240);
+  --sidebar-border: oklch(0.22 0.012 240);
+  --sidebar-ring: oklch(0.60 0.20 255);
+
+  /* TradingView-style vibrant chart colors for dark theme */
+  --trading-green: oklch(0.72 0.26 145);
+  --trading-red: oklch(0.65 0.26 20);
+  --trading-blue: oklch(0.62 0.22 245);
+  --trading-purple: oklch(0.68 0.22 300);
+  --trading-orange: oklch(0.72 0.22 50);
+  --trading-cyan: oklch(0.72 0.20 200);
+
+  /* Professional gradients for dark theme */
+  --gradient-primary: linear-gradient(135deg, oklch(0.60 0.20 255) 0%, oklch(0.68 0.22 280) 100%);
+  --gradient-secondary: linear-gradient(135deg, oklch(0.72 0.26 145) 0%, oklch(0.72 0.20 200) 100%);
+  --gradient-accent: linear-gradient(135deg, oklch(0.72 0.22 50) 0%, oklch(0.65 0.26 20) 100%);
+  --gradient-hero: linear-gradient(135deg, oklch(0.60 0.20 255 / 0.12) 0%, oklch(0.72 0.26 145 / 0.12) 50%, oklch(0.68 0.22 280 / 0.12) 100%);
+
+  /* Enhanced shadows with subtle glow for depth */
+  --shadow-soft: 0 2px 8px oklch(0 0 0 / 0.4);
+  --shadow-medium: 0 4px 16px oklch(0 0 0 / 0.5);
+  --shadow-strong: 0 8px 32px oklch(0 0 0 / 0.6);
+  --shadow-glow: 0 0 24px oklch(0.60 0.20 255 / 0.35);
 }
 
 @layer base {
@@ -711,29 +712,34 @@
 
 
 
-/* Custom scrollbar */
+/* Custom scrollbar - TradingView style */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: oklch(var(--muted) / 0.3);
-  border-radius: 4px;
+  background: oklch(0.13 0.008 240);
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(var(--trading-blue) / 0.6);
-  border-radius: 4px;
+  background: oklch(0.30 0.015 240);
+  border-radius: 5px;
+  border: 2px solid oklch(0.13 0.008 240);
   transition: var(--transition-smooth);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(var(--trading-blue) / 0.8);
+  background: oklch(0.40 0.020 245);
 }
 
-/* Selection styling */
+::-webkit-scrollbar-thumb:active {
+  background: oklch(0.50 0.020 250);
+}
+
+/* Selection styling - High contrast for readability */
 ::selection {
-  background: oklch(var(--trading-blue) / 0.3);
-  color: oklch(var(--foreground));
+  background: oklch(0.60 0.20 255 / 0.35);
+  color: oklch(0.98 0.005 240);
 }

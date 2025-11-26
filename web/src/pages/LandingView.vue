@@ -85,20 +85,17 @@ const architectureCards = [
 </script>
 <template>
     <div
-        class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900"
+        class="min-h-screen flex flex-col bg-background"
     >
         <BaseLayout main-class="flex-1 flex flex-col" container-class="">
             <section
                 class="flex-1 flex items-center justify-center relative overflow-hidden pt-8 md:pt-12"
             >
                 <div
-                    class="liquid-glass-hero rounded-3xl p-12 md:p-16 lg:p-20 relative z-10"
+                    class="hero-container rounded-3xl p-12 md:p-16 lg:p-20 relative z-10"
                 >
-                    <div class="liquid-glass-bg"></div>
-                    <div class="liquid-glass-overlay"></div>
-                    <div class="liquid-glass-reflection"></div>
-                    <div class="liquid-glass-shimmer"></div>
-                    <div class="liquid-glass-noise"></div>
+                    <div class="hero-bg"></div>
+                    <div class="hero-glow"></div>
                     <div class="relative z-20 text-center space-y-8">
                         <div class="space-y-6">
                             <h1
@@ -131,12 +128,12 @@ const architectureCards = [
                 <div class="max-w-7xl mx-auto">
                     <div class="text-center mb-16">
                         <h2
-                            class="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent mb-6"
+                            class="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent mb-6"
                         >
                             {{ t("landing.project.title") }}
                         </h2>
                         <p
-                            class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed"
+                            class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
                         >
                             {{ t("landing.project.description") }}
                         </p>
@@ -156,12 +153,8 @@ const architectureCards = [
             </section>
         </BaseLayout>
         <footer class="relative mt-4 sm:mt-6">
-            <div class="liquid-glass-hero">
-                <div class="liquid-glass-bg"></div>
-                <div class="liquid-glass-overlay"></div>
-                <div class="liquid-glass-reflection"></div>
-                <div class="liquid-glass-shimmer"></div>
-                <div class="liquid-glass-noise"></div>
+            <div class="footer-container">
+                <div class="footer-bg"></div>
                 <div
                     class="relative z-10 max-w-7xl mx-auto flex items-center justify-between py-3 px-4 sm:py-4 sm:px-6"
                 >
@@ -179,190 +172,74 @@ const architectureCards = [
     </div>
 </template>
 <style scoped>
-.liquid-glass-hero {
+/* Hero Container - TradingView minimalist style */
+.hero-container {
     position: relative;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(24px) saturate(1.15);
-    -webkit-backdrop-filter: blur(24px) saturate(1.15);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.12);
-    transition: none;
+    border: 1px solid rgba(96, 165, 250, 0.15);
     overflow: hidden;
+    transition: border-color 0.3s ease;
 }
-.liquid-glass-hero::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 600%;
-    height: 600%;
-    background: radial-gradient(
-        circle closest-corner at 50% 50%,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 5%,
-        transparent 15%
-    );
-    transform: translate(-50%, -50%) scale(0);
-    border-radius: 50%;
-    transition:
-        transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        opacity 0.8s ease;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
+
+.hero-container:hover {
+    border-color: rgba(96, 165, 250, 0.25);
 }
-.liquid-glass-hero:hover::before {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-}
-.liquid-glass-bg {
+
+.hero-bg {
     position: absolute;
     inset: 0;
     background: linear-gradient(
         135deg,
-        rgba(22, 28, 43, 0.88) 0%,
-        rgba(28, 22, 46, 0.88) 55%,
-        rgba(35, 24, 58, 0.88) 100%
-    );
-    background-size: 180% 180%;
-    border-radius: inherit;
-}
-.liquid-glass-overlay {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        circle at 30% 20%,
-        rgba(255, 255, 255, 0.24) 0%,
-        rgba(255, 255, 255, 0.1) 40%,
-        transparent 70%
+        rgba(26, 29, 40, 0.98) 0%,
+        rgba(30, 34, 48, 0.98) 100%
     );
     border-radius: inherit;
-    opacity: 0.95;
 }
-.liquid-glass-reflection {
+
+.hero-glow {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 42%;
+    inset: -1px;
     background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.18) 0%,
-        rgba(255, 255, 255, 0.08) 45%,
-        transparent 100%
+        135deg,
+        rgba(96, 165, 250, 0.1) 0%,
+        transparent 40%,
+        rgba(147, 51, 234, 0.1) 100%
     );
     border-radius: inherit;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-.liquid-glass-shimmer {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        90deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.12) 50%,
-        transparent 70%
-    );
-    background-size: 300% 100%;
-    border-radius: inherit;
-    opacity: 0;
-    transition: none;
-}
-.liquid-glass-noise {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 4px 4px;
-    mix-blend-mode: overlay;
-    opacity: 0.15;
+    opacity: 0.6;
     pointer-events: none;
 }
+
+/* Footer Container - Clean and minimal */
+.footer-container {
+    position: relative;
+    border-top: 1px solid rgba(96, 165, 250, 0.1);
+    overflow: hidden;
+}
+
+.footer-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(26, 29, 40, 0.95);
+}
+
+/* Gradient Text - Subtle and professional */
 .gradient-text {
-    background:
-        radial-gradient(
-            50% 140% at -20% 50%,
-            rgba(255, 255, 255, 0.42),
-            transparent 64%
-        ),
-        linear-gradient(
-            90deg,
-            rgba(238, 242, 255, 0.98) 0%,
-            rgba(245, 243, 255, 0.98) 50%,
-            rgba(240, 245, 255, 0.98) 100%
-        ),
-        linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.96) 0%,
-            rgba(255, 255, 255, 0.86) 48%,
-            rgba(255, 255, 255, 0.78) 100%
-        );
-    background-size: 100% 100%;
-    background-position: 0% 0%;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(147, 197, 253, 0.9) 50%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.1),
-        0 8px 22px rgba(0, 0, 0, 0.2),
-        0 -1px 8px rgba(255, 255, 255, 0.2);
 }
+
 .hero-title {
-    text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.06),
-        0 4px 12px rgba(0, 0, 0, 0.1);
-    opacity: 0.96;
-    filter: blur(0.15px);
+    letter-spacing: -0.02em;
 }
+
 .hero-description {
-    color: rgba(255, 255, 255, 0.88);
-    opacity: 0.95;
-    filter: blur(0.2px);
-}
-@media (prefers-color-scheme: dark) {
-    .liquid-glass-hero {
-        background: rgba(0, 0, 0, 0.28);
-        border-color: rgba(255, 255, 255, 0.14);
-        box-shadow:
-            0 10px 40px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.14),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-    }
-    .liquid-glass-hero::before {
-        background: radial-gradient(
-            circle closest-corner at 50% 50%,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.04) 5%,
-            transparent 15%
-        );
-    }
-    .liquid-glass-overlay {
-        background: radial-gradient(
-            circle at 30% 20%,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(255, 255, 255, 0.04) 40%,
-            transparent 70%
-        );
-    }
-    .liquid-glass-reflection {
-        background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.04) 45%,
-            transparent 100%
-        );
-    }
-    .gradient-text {
-        text-shadow:
-            0 1px 2px rgba(0, 0, 0, 0.12),
-            0 8px 20px rgba(255, 255, 255, 0.18);
-    }
-    .hero-description {
-        color: rgba(255, 255, 255, 0.92);
-    }
+    color: rgba(255, 255, 255, 0.85);
 }
 </style>

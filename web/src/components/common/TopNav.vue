@@ -56,12 +56,9 @@ async function handleLogout() {
 </script>
 <template>
     <nav class="relative">
-        <div class="liquid-glass-hero">
-            <div class="liquid-glass-bg"></div>
-            <div class="liquid-glass-overlay"></div>
-            <div class="liquid-glass-reflection"></div>
-            <div class="liquid-glass-shimmer"></div>
-            <div class="liquid-glass-noise"></div>
+        <div class="nav-container">
+            <div class="nav-bg"></div>
+            <div class="nav-border"></div>
         </div>
         <div class="relative z-10 mx-auto max-w-7xl">
             <div
@@ -149,7 +146,7 @@ async function handleLogout() {
                                 />
                             </SelectTrigger>
                             <SelectContent
-                                class="border-white/10 bg-[#1a1f2e]/98 backdrop-blur-xl"
+                                class="border-border bg-card/98 backdrop-blur-xl"
                             >
                                 <SelectGroup>
                                     <SelectItem
@@ -194,7 +191,7 @@ async function handleLogout() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent
-                                    class="w-64 border-white/10 bg-[#1a1f2e]/98 backdrop-blur-xl p-0"
+                                    class="w-64 border-border bg-card/98 backdrop-blur-xl p-0"
                                 >
                                     <div class="p-4 border-b border-white/10">
                                         <div class="flex items-center gap-3">
@@ -289,7 +286,7 @@ async function handleLogout() {
                             </span>
                         </SelectTrigger>
                         <SelectContent
-                            class="border-white/10 bg-[#1a1f2e]/98 backdrop-blur-xl"
+                            class="border-border bg-card/98 backdrop-blur-xl"
                         >
                             <SelectGroup>
                                 <SelectItem
@@ -325,7 +322,7 @@ async function handleLogout() {
                 class="lg:hidden absolute top-full left-0 right-0 mt-2 px-4 z-50"
             >
                 <div
-                    class="bg-[#1a1f2e]/98 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+                    class="bg-card/98 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden"
                 >
                     <div class="p-3 space-y-1">
                         <Button
@@ -436,123 +433,66 @@ async function handleLogout() {
     </nav>
 </template>
 <style scoped>
-.liquid-glass-hero {
+/* Navigation Container - TradingView minimalist style */
+.nav-container {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(24px) saturate(1.15);
-    -webkit-backdrop-filter: blur(24px) saturate(1.15);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.12);
     border-radius: 1rem;
     overflow: hidden;
 }
-.liquid-glass-bg {
+
+.nav-bg {
     position: absolute;
     inset: 0;
     background: linear-gradient(
         135deg,
-        rgba(22, 28, 43, 0.88) 0%,
-        rgba(28, 22, 46, 0.88) 55%,
-        rgba(35, 24, 58, 0.88) 100%
-    );
-    background-size: 180% 180%;
-    border-radius: inherit;
-}
-.liquid-glass-overlay {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        circle at 30% 20%,
-        rgba(255, 255, 255, 0.24) 0%,
-        rgba(255, 255, 255, 0.1) 40%,
-        transparent 70%
+        rgba(26, 29, 40, 0.98) 0%,
+        rgba(30, 34, 48, 0.98) 100%
     );
     border-radius: inherit;
-    opacity: 0.95;
 }
-.liquid-glass-reflection {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 42%;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.18) 0%,
-        rgba(255, 255, 255, 0.08) 45%,
-        transparent 100%
-    );
-    border-radius: inherit;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-.liquid-glass-shimmer {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        90deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.12) 50%,
-        transparent 70%
-    );
-    background-size: 300% 100%;
-    border-radius: inherit;
-    opacity: 0;
-}
-.liquid-glass-noise {
+
+.nav-border {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 4px 4px;
-    mix-blend-mode: overlay;
-    opacity: 0.15;
+    border: 1px solid rgba(96, 165, 250, 0.12);
     pointer-events: none;
 }
+
+/* Gradient Text - Clean and modern */
 .gradient-text {
-    background:
-        radial-gradient(
-            50% 140% at -20% 50%,
-            rgba(255, 255, 255, 0.42),
-            transparent 64%
-        ),
-        linear-gradient(
-            90deg,
-            rgba(238, 242, 255, 0.98) 0%,
-            rgba(245, 243, 255, 0.98) 50%,
-            rgba(240, 245, 255, 0.98) 100%
-        ),
-        linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.96) 0%,
-            rgba(255, 255, 255, 0.86) 48%,
-            rgba(255, 255, 255, 0.78) 100%
-        );
-    background-size: 100% 100%;
-    background-position: 0% 0%;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(147, 197, 253, 0.9) 50%,
+        rgba(255, 255, 255, 0.95) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.1),
-        0 8px 22px rgba(0, 0, 0, 0.2),
-        0 -1px 8px rgba(255, 255, 255, 0.2);
+    letter-spacing: -0.02em;
 }
+
+.hover-scale {
+    transition: transform 0.2s ease;
+}
+
 .hover-scale:hover {
     transform: scale(1.02);
 }
+
+/* Mobile Menu Transitions */
 .mobile-menu-enter-active,
 .mobile-menu-leave-active {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .mobile-menu-enter-from {
     opacity: 0;
     transform: translateY(-8px);
 }
+
 .mobile-menu-leave-to {
     opacity: 0;
     transform: translateY(-8px);

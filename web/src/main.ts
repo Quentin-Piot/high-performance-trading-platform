@@ -7,6 +7,8 @@ import type { Plugin } from "vue";
 import en from "./locales/en.json";
 import fr from "./locales/fr.json";
 
+document.documentElement.classList.add("dark");
+
 const pinia = createPinia();
 const app = createApp(App);
 

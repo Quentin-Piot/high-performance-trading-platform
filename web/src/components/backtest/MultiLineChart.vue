@@ -29,16 +29,16 @@ const loaded = ref(false);
 let ro: ResizeObserver | null = null;
 const seriesMap = new Map<string, LineSeriesApi>();
 const colors = [
-    "#10b981", 
-    "#3b82f6", 
-    "#f59e0b", 
-    "#ef4444", 
-    "#8b5cf6", 
-    "#06b6d4", 
-    "#f97316", 
-    "#84cc16", 
-    "#ec4899", 
-    "#6366f1", 
+    "#26a69a",
+    "#2962ff",
+    "#ff6d00",
+    "#ef5350",
+    "#ab47bc",
+    "#00acc1",
+    "#ff7043",
+    "#9ccc65",
+    "#ec407a",
+    "#5c6bc0",
 ];
 const seriesVisibility = ref<Record<string, boolean>>({});
 function applyTimeRangeFilter(data: LinePoint[]): LinePoint[] {
@@ -83,7 +83,7 @@ const chartSeries = computed<ChartSeries[]>(() => {
             id: aggregatedId,
             name: t("simulate.chart.aggregated"),
             data: filteredAggregatedData,
-            color: "#1f2937", 
+            color: "#fdd835",
             visible: seriesVisibility.value[aggregatedId] !== false,
         });
     }
@@ -145,8 +145,8 @@ onMounted(() => {
         320,
         rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
     );
-    const textColor = "#e2e8f0";
-    const gridColor = "#1e293b";
+    const textColor = "#d1d4dc";
+    const gridColor = "#2a2e39";
     rootEl.style.color = textColor;
     chart = createChart(rootEl, {
         layout: {

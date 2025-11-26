@@ -26,12 +26,12 @@ const props = defineProps<Props>();
 const { t } = useI18n();
 const getCtaColor = () => {
     if (props.gradient.includes("green"))
-        return "text-emerald-600 dark:text-emerald-400";
+        return "text-trading-green";
     if (props.gradient.includes("purple"))
-        return "text-purple-600 dark:text-purple-400";
+        return "text-trading-purple";
     if (props.gradient.includes("orange"))
-        return "text-orange-600 dark:text-orange-400";
-    return "text-blue-600 dark:text-blue-400";
+        return "text-trading-orange";
+    return "text-trading-blue";
 };
 </script>
 <template>
@@ -43,7 +43,7 @@ const getCtaColor = () => {
                 class="group cursor-pointer h-full transition-transform duration-500 ease-out hover:-translate-y-2 w-full border-0 bg-transparent p-0"
             >
                 <div
-                    class="arch-card relative h-full rounded-3xl overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-xl transition-all duration-500"
+                    class="arch-card relative h-full rounded-3xl overflow-hidden bg-card/90 backdrop-blur-xl border border-border shadow-xl transition-all duration-500"
                 >
                     <div
                         class="arch-glow absolute -inset-0.5 rounded-3xl opacity-0 group-hover:opacity-60 transition-opacity duration-500 blur-xl -z-10"
@@ -52,7 +52,7 @@ const getCtaColor = () => {
                         }"
                     ></div>
                     <div
-                        class="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 dark:from-white/10 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                        class="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                     ></div>
                     <div
                         class="relative p-8 flex flex-col items-center text-center h-full"
@@ -63,12 +63,12 @@ const getCtaColor = () => {
                             <component :is="icon" class="h-8 w-8 text-white" />
                         </div>
                         <h3
-                            class="text-2xl font-bold text-gray-900 dark:text-white mb-4 leading-tight"
+                            class="text-2xl font-bold text-foreground mb-4 leading-tight"
                         >
                             {{ t(`landing.project.${cardId}.title`) }}
                         </h3>
                         <p
-                            class="text-base text-gray-600 dark:text-gray-300 leading-relaxed flex-1 mb-6"
+                            class="text-base text-muted-foreground leading-relaxed flex-1 mb-6"
                         >
                             {{ t(`landing.project.${cardId}.description`) }}
                         </p>
@@ -101,10 +101,10 @@ const getCtaColor = () => {
             </button>
         </DialogTrigger>
         <DialogScrollContent
-            class="modal-glass sm:max-w-4xl p-0 border-0 overflow-hidden"
+            class="modal-glass sm:max-w-4xl p-0 border-0 overflow-hidden bg-card"
         >
             <DialogHeader
-                class="p-10 pb-6 flex flex-col items-center text-center border-b border-black/6 dark:border-white/6 relative"
+                class="p-10 pb-6 flex flex-col items-center text-center border-b border-border relative"
             >
                 <div
                     :class="`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-5 shadow-xl`"
@@ -112,7 +112,7 @@ const getCtaColor = () => {
                     <component :is="icon" class="h-7 w-7 text-white" />
                 </div>
                 <DialogTitle
-                    class="text-3xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight"
+                    class="text-3xl font-bold text-foreground mb-3 tracking-tight"
                 >
                     {{
                         t(
@@ -121,7 +121,7 @@ const getCtaColor = () => {
                     }}
                 </DialogTitle>
                 <DialogDescription
-                    class="text-lg text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl"
+                    class="text-lg text-muted-foreground leading-relaxed max-w-2xl"
                 >
                     {{
                         t(
@@ -134,7 +134,7 @@ const getCtaColor = () => {
                 <div
                     v-for="(section, idx) in sections"
                     :key="idx"
-                    class="modal-section relative rounded-2xl p-7 backdrop-blur-md bg-gradient-to-r from-gray-100 to-gray-50 dark:from-white dark:via-blue-200 dark:to-white border border-white/40 dark:border-white/8 shadow-lg hover:shadow-xl hover:bg-white/40 dark:hover:bg-slate-900/40 transition-all duration-300"
+                    class="modal-section relative rounded-2xl p-7 backdrop-blur-md bg-gradient-to-r from-secondary/80 to-secondary/50 border border-border shadow-lg hover:shadow-xl hover:bg-secondary/90 transition-all duration-300"
                 >
                     <div class="flex items-center gap-3 mb-5">
                         <div
@@ -146,7 +146,7 @@ const getCtaColor = () => {
                             />
                         </div>
                         <h4
-                            class="text-xl font-bold text-gray-900 dark:text-white tracking-tight"
+                            class="text-xl font-bold text-foreground tracking-tight"
                         >
                             {{
                                 section.titleKey
@@ -159,13 +159,13 @@ const getCtaColor = () => {
                         <div
                             v-for="(point, pointIdx) in section.points"
                             :key="pointIdx"
-                            class="flex items-start gap-4 p-3.5 rounded-xl backdrop-blur-sm bg-white/25 dark:bg-slate-800/25 border border-white/30 dark:border-white/10 hover:bg-white/40 dark:hover:bg-slate-800/40 hover:translate-x-1 transition-all duration-300"
+                            class="flex items-start gap-4 p-3.5 rounded-xl backdrop-blur-sm bg-muted/50 border border-border hover:bg-muted/70 hover:translate-x-1 transition-all duration-300"
                         >
                             <div
-                                class="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 mt-2 flex-shrink-0 shadow-sm"
+                                class="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-primary to-primary/80 mt-2 flex-shrink-0 shadow-sm"
                             ></div>
                             <p
-                                class="text-[15px] text-gray-700 dark:text-gray-200 leading-relaxed"
+                                class="text-[15px] text-foreground leading-relaxed"
                             >
                                 {{ t(point) }}
                             </p>

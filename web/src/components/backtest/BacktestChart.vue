@@ -38,8 +38,8 @@ onMounted(() => {
   if (!el.value) return
   const rootEl = el.value!
   const width = Math.max(320, rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600)
-  const textColor = '#e2e8f0'
-  const gridColor = '#1e293b'
+  const textColor = '#d1d4dc'
+  const gridColor = '#2a2e39'
   rootEl.style.color = textColor
   chart = createChart(rootEl, {
     layout: { 
@@ -62,10 +62,10 @@ onMounted(() => {
     }
   })
   if (!chart) return
-  const lineColor = isPositiveTrend.value ? '#10b981' : '#ef4444'
-  lineSeries = chart.addLineSeries({ 
-    color: lineColor, 
-    lineWidth: 3
+  const lineColor = isPositiveTrend.value ? '#26a69a' : '#ef5350'
+  lineSeries = chart.addLineSeries({
+    color: lineColor,
+    lineWidth: 2
   })
   setSeries(props.series)
   if (props.series && props.series.length > 0) {

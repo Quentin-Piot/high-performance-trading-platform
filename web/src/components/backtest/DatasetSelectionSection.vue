@@ -26,7 +26,7 @@
                     v-for="dataset in AVAILABLE_DATASETS"
                     :key="dataset.id"
                     :value="dataset.id"
-                    class="text-xs px-3 py-2 font-medium transition-all duration-200 !rounded-md !border-2 !border-gray-200 data-[state=on]:!bg-gradient-to-r data-[state=on]:!from-[oklch(0.55_0.18_260)] data-[state=on]:!to-[oklch(0.65_0.2_300)] data-[state=on]:!text-white data-[state=on]:!shadow-md data-[state=on]:!border-transparent data-[state=on]:!scale-[1.02] data-[state=on]:!font-semibold hover:data-[state=on]:!opacity-90 data-[state=off]:hover:!border-purple-300/30 data-[state=off]:hover:!bg-purple-50/5"
+                    class="text-xs px-3 py-2 font-medium transition-all duration-200 rounded-lg border border-border bg-secondary/30 hover:bg-secondary/50 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:shadow-md data-[state=on]:scale-[1.02] data-[state=on]:font-semibold hover:data-[state=on]:opacity-90"
                 >
                     {{ dataset.name }}
                 </ToggleGroupItem>

@@ -84,7 +84,7 @@ onMounted(async () => {
         <AuthForm mode="login" />
       </div>
     </div>
-    <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#161c2b] via-[#1c162e] to-[#23183a]">
+    <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-background via-card to-secondary">
       <div class="absolute inset-0 bg-gradient-to-tr from-blue-500/15 via-purple-500/10 to-cyan-500/15"></div>
       <div class="absolute top-20 right-20 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
       <div class="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl animate-pulse delay-1000"></div>

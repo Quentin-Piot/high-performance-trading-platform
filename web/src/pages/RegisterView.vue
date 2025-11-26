@@ -87,7 +87,7 @@ onMounted(async () => {
             </div>
         </div>
         <div
-            class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#161c2b] via-[#1c162e] to-[#23183a]"
+            class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-background via-card to-secondary"
         >
             <div
                 class="absolute inset-0 bg-gradient-to-tr from-purple-500/15 via-cyan-500/10 to-blue-500/15"

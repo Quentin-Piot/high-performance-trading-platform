@@ -85,8 +85,8 @@ onMounted(() => {
   if (!el.value) return
   const rootEl = el.value
   const width = Math.max(320, rootEl.clientWidth || 600)
-  const textColor = '#e2e8f0'
-  const gridColor = '#1e293b'
+  const textColor = '#d1d4dc'
+  const gridColor = '#2a2e39'
   chart = createChart(rootEl, {
     layout: { 
       background: { type: ColorType.Solid, color: 'transparent' }, 
@@ -108,23 +108,23 @@ onMounted(() => {
     }
   })
   p5Series = chart.addLineSeries({
-    color: 'rgba(239, 68, 68, 0.6)',
+    color: 'rgba(239, 83, 80, 0.5)',
     lineWidth: 1
   })
   p25Series = chart.addLineSeries({
-    color: 'rgba(251, 146, 60, 0.8)',
+    color: 'rgba(255, 112, 67, 0.7)',
     lineWidth: 2
   })
   medianSeries = chart.addLineSeries({
-    color: '#10b981',
-    lineWidth: 3
+    color: '#26a69a',
+    lineWidth: 2
   })
   p75Series = chart.addLineSeries({
-    color: 'rgba(34, 197, 94, 0.8)',
+    color: 'rgba(38, 166, 154, 0.7)',
     lineWidth: 2
   })
   p95Series = chart.addLineSeries({
-    color: 'rgba(16, 185, 129, 0.6)',
+    color: 'rgba(38, 166, 154, 0.5)',
     lineWidth: 1
   })
   updateSeries()
