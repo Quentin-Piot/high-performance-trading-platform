@@ -256,28 +256,25 @@ class TestHistoryEndpoints:
             app.dependency_overrides.clear()
 
     def test_unauthorized_access(self, client):
-        """Test unauthorized access to protected endpoints."""
-        # Test without token
+        """Test unauthenticated access to protected endpoints returns 401."""
         response = client.get("/api/v1/history/")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
         response = client.get("/api/v1/history/stats")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
         response = client.get("/api/v1/history/1")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
         response = client.delete("/api/v1/history/1")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_invalid_token_access(self, client):
-        """Test access with invalid token."""
-        # Test without authentication (no dependency override)
+        """Test access without token returns 401."""
         response = client.get("/api/v1/history/")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_unverified_email_access(self, client):
-        """Test access with unverified email."""
-        # Test without authentication (no dependency override)
+        """Test access without token returns 401."""
         response = client.get("/api/v1/history/")
-        assert response.status_code == 403
+        assert response.status_code == 401

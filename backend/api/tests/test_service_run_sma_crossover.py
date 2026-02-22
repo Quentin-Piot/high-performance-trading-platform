@@ -1,12 +1,7 @@
-import io
-
 import pandas as pd
+import pytest
 
-from services.backtest_service import (
-    CsvBytesPriceSeriesSource,
-    run_sma_crossover,
-    sma_crossover_backtest,
-)
+from services.backtest_service import CsvBytesPriceSeriesSource, run_sma_crossover
 
 
 def _csv_from_prices(prices):
@@ -16,34 +11,22 @@ def _csv_from_prices(prices):
     return "\n".join(lines) + "\n"
 
 
-def test_run_sma_crossover_matches_compat_helper():
+def test_run_sma_crossover_returns_valid_result():
     prices = [100, 101, 102, 103, 102, 104, 105]
     csv = _csv_from_prices(prices)
-    buf = io.BytesIO(csv.encode("utf-8"))
+    source = CsvBytesPriceSeriesSource(csv.encode("utf-8"))
+    result = run_sma_crossover(source, sma_short=2, sma_long=3)
 
-    # Using source and run_sma_crossover
-    source = CsvBytesPriceSeriesSource(buf.getvalue())
-    res = run_sma_crossover(source, sma_short=2, sma_long=3)
-
-    # Using compatibility helper
-    equity2, pnl2, dd2, sharpe2 = sma_crossover_backtest(
-        buf.getvalue(), sma_short=2, sma_long=3
-    )
-
-    assert isinstance(res.equity, pd.Series)
-    assert list(res.equity.values) == list(equity2.values)
-    assert round(res.pnl, 10) == round(pnl2, 10)
-    assert round(res.drawdown, 10) == round(dd2, 10)
-    assert round(res.sharpe, 10) == round(sharpe2, 10)
+    assert isinstance(result.equity, pd.Series)
+    assert len(result.equity) == len(prices)
+    assert isinstance(result.pnl, float)
+    assert isinstance(result.drawdown, float)
+    assert isinstance(result.sharpe, float)
 
 
 def test_run_sma_crossover_invalid_params_raise():
     prices = [100, 101, 102, 103]
     csv = _csv_from_prices(prices)
-    buf = io.BytesIO(csv.encode("utf-8"))
-    source = CsvBytesPriceSeriesSource(buf.getvalue())
-    # short >= long should raise ValueError from strategy
-    import pytest
-
+    source = CsvBytesPriceSeriesSource(csv.encode("utf-8"))
     with pytest.raises(ValueError):
         run_sma_crossover(source, sma_short=3, sma_long=3)

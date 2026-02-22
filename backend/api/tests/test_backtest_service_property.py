@@ -1,12 +1,11 @@
 import datetime as dt
-import io
 import math
 
 import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from services.backtest_service import sma_crossover_backtest
+from services.backtest_service import CsvBytesPriceSeriesSource, run_sma_crossover
 
 
 def _csv_from_prices(prices):
@@ -31,27 +30,16 @@ valid_float = st.floats(
 )
 def test_backtest_outputs_are_well_formed(prices, sma_short, sma_gap):
     sma_long = sma_short + sma_gap
-
     csv = _csv_from_prices(prices)
-    buffer = io.BytesIO(csv.encode("utf-8"))
+    source = CsvBytesPriceSeriesSource(csv.encode("utf-8"))
+    result = run_sma_crossover(source, sma_short=sma_short, sma_long=sma_long)
 
-    equity, pnl, dd, sharpe = sma_crossover_backtest(
-        buffer, sma_short=sma_short, sma_long=sma_long
-    )
+    assert len(result.equity) == len(prices)
+    assert float(result.equity.iloc[0]) == 1.0
+    assert np.isfinite(result.equity.values).all()
 
-    # Longueur cohérente
-    assert len(equity) == len(prices)
-
-    # Première valeur d'équité à 1.0
-    assert float(equity.iloc[0]) == 1.0
-
-    # Pas de NaN/Inf dans equity
-    assert np.isfinite(equity.values).all()
-
-    # PnL/drawdown/sharpe finis
-    for v in (pnl, dd, sharpe):
+    for v in (result.pnl, result.drawdown, result.sharpe):
         assert isinstance(v, float)
         assert math.isfinite(v)
 
-    # Drawdown négatif entre -1 et 0
-    assert -1.0 <= dd <= 0.0
+    assert -1.0 <= result.drawdown <= 0.0

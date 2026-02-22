@@ -2,7 +2,11 @@ import io
 
 import pytest
 
-from services.backtest_service import _read_csv_to_series, sma_crossover_backtest
+from services.backtest_service import (
+    CsvBytesPriceSeriesSource,
+    _read_csv_to_series,
+    run_sma_crossover,
+)
 
 
 @pytest.mark.parametrize(
@@ -16,9 +20,9 @@ from services.backtest_service import _read_csv_to_series, sma_crossover_backtes
 )
 def test_sma_params_invalid_raise_value_error(sma_short, sma_long):
     csv_content = """date,close\n2023-01-01,100\n2023-01-02,101\n"""
-    buffer = io.BytesIO(csv_content.encode("utf-8"))
+    source = CsvBytesPriceSeriesSource(csv_content.encode("utf-8"))
     with pytest.raises(ValueError):
-        sma_crossover_backtest(buffer, sma_short=sma_short, sma_long=sma_long)
+        run_sma_crossover(source, sma_short=sma_short, sma_long=sma_long)
 
 
 def test_read_csv_missing_price_column_raises():

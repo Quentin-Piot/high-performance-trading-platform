@@ -34,7 +34,9 @@ def test_monte_carlo_async_websocket_progress(client):
         while True:
             # Timeout pour éviter les tests bloqués
             if time.time() - start_time > timeout_seconds:
-                pytest.fail("Timeout: le job Monte Carlo n'a pas terminé dans le délai imparti")
+                pytest.fail(
+                    "Timeout: le job Monte Carlo n'a pas terminé dans le délai imparti"
+                )
             msg = ws.receive_json()
             assert "status" in msg
             statuses.append(msg["status"])
@@ -48,9 +50,10 @@ def test_monte_carlo_async_websocket_progress(client):
     assert len(progress_values) >= 1, "Aucune mise à jour de progression reçue"
     assert progress_values[0] >= 0.0
     # progression non décroissante
-    assert all(x2 + 1e-9 >= x1 for x1, x2 in zip(progress_values, progress_values[1:], strict=False)), (
-        f"Progression non monotone: {progress_values}"
-    )
+    assert all(
+        x2 + 1e-9 >= x1
+        for x1, x2 in zip(progress_values, progress_values[1:], strict=False)
+    ), f"Progression non monotone: {progress_values}"
     # Le dernier statut doit être completed et la progression à 1.0
     assert statuses[-1] == "completed", f"Statut final inattendu: {statuses[-1]}"
     assert progress_values[-1] == pytest.approx(1.0, rel=1e-6, abs=1e-6)
@@ -62,4 +65,9 @@ def test_monte_carlo_async_websocket_progress(client):
     assert status_data["status"] == "completed"
     assert status_data.get("result") is not None
     metrics = status_data["result"].get("metrics_distribution")
-    assert metrics is not None and "pnl" in metrics and "sharpe" in metrics and "drawdown" in metrics
+    assert (
+        metrics is not None
+        and "pnl" in metrics
+        and "sharpe" in metrics
+        and "drawdown" in metrics
+    )

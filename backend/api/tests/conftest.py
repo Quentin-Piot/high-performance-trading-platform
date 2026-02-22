@@ -70,17 +70,19 @@ def mock_aws_services():
 
         # Mock JWKS response
         mock_response = Mock()
-        mock_response.read.return_value = json.dumps({
-            "keys": [
-                {
-                    "kid": "test-key-id",
-                    "kty": "RSA",
-                    "use": "sig",
-                    "n": "test-n-value",
-                    "e": "AQAB",
-                }
-            ]
-        }).encode()
+        mock_response.read.return_value = json.dumps(
+            {
+                "keys": [
+                    {
+                        "kid": "test-key-id",
+                        "kty": "RSA",
+                        "use": "sig",
+                        "n": "test-n-value",
+                        "e": "AQAB",
+                    }
+                ]
+            }
+        ).encode()
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
         yield
@@ -214,7 +216,7 @@ def mock_data_service():
                     {"date": "2023-01-01", "close": 100.0},
                     {"date": "2023-01-02", "close": 101.0},
                     {"date": "2023-01-03", "close": 102.0},
-                ]
+                ],
             }
         )
         mock_service.return_value = mock_instance
@@ -225,10 +227,7 @@ def mock_data_service():
 def mock_user():
     """Mock user for history tests."""
     return Mock(
-        id=1,
-        email="test@example.com",
-        name="Test User",
-        cognito_sub="test-user-123"
+        id=1, email="test@example.com", name="Test User", cognito_sub="test-user-123"
     )
 
 
