@@ -101,103 +101,107 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Plus, Trash2, CheckCircle } from 'lucide-vue-next'
-const { t } = useI18n()
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Plus, Trash2, CheckCircle } from "lucide-vue-next";
+const { t } = useI18n();
 interface Todo {
-  id: string
-  text: string
-  completed: boolean
-  priority: 'low' | 'medium' | 'high'
-  createdAt: Date
+	id: string;
+	text: string;
+	completed: boolean;
+	priority: "low" | "medium" | "high";
+	createdAt: Date;
 }
 const todos = ref<Todo[]>([
-  {
-    id: '1',
-    text: 'Optimiser les performances des backtests Monte Carlo',
-    completed: false,
-    priority: 'high',
-    createdAt: new Date('2024-01-15')
-  },
-  {
-    id: '2', 
-    text: 'Ajouter plus de stratégies de trading',
-    completed: false,
-    priority: 'medium',
-    createdAt: new Date('2024-01-16')
-  },
-  {
-    id: '3',
-    text: 'Améliorer la documentation utilisateur',
-    completed: true,
-    priority: 'low',
-    createdAt: new Date('2024-01-14')
-  }
-])
-const showAddDialog = ref(false)
-const newTodoText = ref('')
-const newTodoPriority = ref<'low' | 'medium' | 'high'>('medium')
+	{
+		id: "1",
+		text: "Optimiser les performances des backtests Monte Carlo",
+		completed: false,
+		priority: "high",
+		createdAt: new Date("2024-01-15"),
+	},
+	{
+		id: "2",
+		text: "Ajouter plus de stratégies de trading",
+		completed: false,
+		priority: "medium",
+		createdAt: new Date("2024-01-16"),
+	},
+	{
+		id: "3",
+		text: "Améliorer la documentation utilisateur",
+		completed: true,
+		priority: "low",
+		createdAt: new Date("2024-01-14"),
+	},
+]);
+const showAddDialog = ref(false);
+const newTodoText = ref("");
+const newTodoPriority = ref<"low" | "medium" | "high">("medium");
 const addTodo = () => {
-  showAddDialog.value = true
-  newTodoText.value = ''
-  newTodoPriority.value = 'medium'
-}
+	showAddDialog.value = true;
+	newTodoText.value = "";
+	newTodoPriority.value = "medium";
+};
 const submitTodo = () => {
-  if (!newTodoText.value.trim()) return
-  const newTodo: Todo = {
-    id: Date.now().toString(),
-    text: newTodoText.value.trim(),
-    completed: false,
-    priority: newTodoPriority.value,
-    createdAt: new Date()
-  }
-  todos.value.unshift(newTodo)
-  showAddDialog.value = false
-}
+	if (!newTodoText.value.trim()) return;
+	const newTodo: Todo = {
+		id: Date.now().toString(),
+		text: newTodoText.value.trim(),
+		completed: false,
+		priority: newTodoPriority.value,
+		createdAt: new Date(),
+	};
+	todos.value.unshift(newTodo);
+	showAddDialog.value = false;
+};
 const toggleTodo = (id: string) => {
-  const todo = todos.value.find(t => t.id === id)
-  if (todo) {
-    todo.completed = !todo.completed
-  }
-}
+	const todo = todos.value.find((t) => t.id === id);
+	if (todo) {
+		todo.completed = !todo.completed;
+	}
+};
 const removeTodo = (id: string) => {
-  const index = todos.value.findIndex(t => t.id === id)
-  if (index > -1) {
-    todos.value.splice(index, 1)
-  }
-}
+	const index = todos.value.findIndex((t) => t.id === id);
+	if (index > -1) {
+		todos.value.splice(index, 1);
+	}
+};
 const getPriorityVariant = (priority: string) => {
-  switch (priority) {
-    case 'high': return 'destructive'
-    case 'medium': return 'default'
-    case 'low': return 'secondary'
-    default: return 'default'
-  }
-}
+	switch (priority) {
+		case "high":
+			return "destructive";
+		case "medium":
+			return "default";
+		case "low":
+			return "secondary";
+		default:
+			return "default";
+	}
+};
 const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
-    month: 'short'
-  }).format(date)
-}
+	return new Intl.DateTimeFormat("fr-FR", {
+		day: "numeric",
+		month: "short",
+	}).format(date);
+};
 </script>

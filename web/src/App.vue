@@ -15,33 +15,33 @@ const i18n = useI18n();
 const authStore = useAuthStore();
 
 const localeRef = (i18n as unknown as { locale: { value: "en" | "fr" } })
-    .locale;
+	.locale;
 const selectedLocale = ref<"en" | "fr">("en");
 
 watch(selectedLocale, (val) => {
-    if (localeRef) localeRef.value = val;
+	if (localeRef) localeRef.value = val;
 });
 
 const View = computed(() => {
-    if (currentPath.value === "/history" && !authStore.isAuthenticated) {
-        navigate("/login");
-        return LoginView;
-    }
+	if (currentPath.value === "/history" && !authStore.isAuthenticated) {
+		navigate("/login");
+		return LoginView;
+	}
 
-    switch (currentPath.value) {
-        case "/":
-            return LandingView;
-        case "/login":
-            return LoginView;
-        case "/register":
-            return RegisterView;
-        case "/simulate":
-            return SimulateView;
-        case "/history":
-            return HistoryView;
-        default:
-            return LandingView;
-    }
+	switch (currentPath.value) {
+		case "/":
+			return LandingView;
+		case "/login":
+			return LoginView;
+		case "/register":
+			return RegisterView;
+		case "/simulate":
+			return SimulateView;
+		case "/history":
+			return HistoryView;
+		default:
+			return LandingView;
+	}
 });
 </script>
 

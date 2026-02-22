@@ -3,31 +3,31 @@ import { useRouter } from "@/router";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useI18n } from "vue-i18n";
 import { ref, computed } from "vue";
 import { useLocale } from "@/composables/useLocale";
 import {
-    Home,
-    BarChart3,
-    LogIn,
-    UserPlus,
-    Globe,
-    Menu,
-    X,
-    LogOut,
-    History,
+	Home,
+	BarChart3,
+	LogIn,
+	UserPlus,
+	Globe,
+	Menu,
+	X,
+	LogOut,
+	History,
 } from "lucide-vue-next";
 const { navigate } = useRouter();
 const { t } = useI18n();
@@ -38,20 +38,20 @@ const isAuthenticated = computed(() => auth.isAuthenticated);
 const userName = computed(() => auth.userName || auth.userEmail || "User");
 const userProvider = computed(() => auth.user?.provider || "cognito");
 function go(path: string) {
-    navigate(path);
-    mobileMenuOpen.value = false;
+	navigate(path);
+	mobileMenuOpen.value = false;
 }
 function goHome() {
-    navigate("/");
-    mobileMenuOpen.value = false;
+	navigate("/");
+	mobileMenuOpen.value = false;
 }
 function toggleMobileMenu() {
-    mobileMenuOpen.value = !mobileMenuOpen.value;
+	mobileMenuOpen.value = !mobileMenuOpen.value;
 }
 async function handleLogout() {
-    await auth.logout();
-    navigate("/");
-    mobileMenuOpen.value = false;
+	await auth.logout();
+	navigate("/");
+	mobileMenuOpen.value = false;
 }
 </script>
 <template>

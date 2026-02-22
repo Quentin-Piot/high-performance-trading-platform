@@ -7,7 +7,10 @@ import MetricsCard from "@/components/common/MetricsCard.vue";
 import DistributionMetricsCard from "@/components/common/DistributionMetricsCard.vue";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import Progress from "@/components/ui/progress/Progress.vue";
-import { connectMonteCarloProgress, type MonteCarloWsMessage } from "@/services/monteCarloWsService";
+import {
+	connectMonteCarloProgress,
+	type MonteCarloWsMessage,
+} from "@/services/monteCarloWsService";
 import { useBacktestStore } from "@/stores/backtestStore";
 import { useAuthStore } from "@/stores/authStore";
 import { computed, ref, onMounted, onUnmounted } from "vue";
@@ -31,174 +34,177 @@ const mcProgress = ref<number | null>(null);
 const mcStatus = ref<MonteCarloWsMessage["status"] | "idle">("idle");
 let mcDisconnect: (() => void) | null = null;
 const uiProgress = computed<number | null>(() => {
-  return (typeof store.mcProgress === 'number' ? store.mcProgress : null) ?? mcProgress.value;
+	return (
+		(typeof store.mcProgress === "number" ? store.mcProgress : null) ??
+		mcProgress.value
+	);
 });
 const isMcLoading = computed(() => {
-  const hasMcActivity = store.mcStatus !== "idle" || mcStatus.value !== "idle" || uiProgress.value !== null;
-  return loading.value && hasMcActivity;
+	const hasMcActivity =
+		store.mcStatus !== "idle" ||
+		mcStatus.value !== "idle" ||
+		uiProgress.value !== null;
+	return loading.value && hasMcActivity;
 });
 type EquitySeries = ChartPoint[];
 function timeToSeconds(p: ChartPoint): number {
-    if (typeof p.time === "number") return p.time;
-    const bd = p.time as BusinessDay;
-    if (
-        bd &&
-        typeof bd.year === "number" &&
-        typeof bd.month === "number" &&
-        typeof bd.day === "number"
-    ) {
-        return Math.floor(Date.UTC(bd.year, bd.month - 1, bd.day) / 1000);
-    }
-    return Number(p.time) || 0;
+	if (typeof p.time === "number") return p.time;
+	const bd = p.time as BusinessDay;
+	if (
+		bd &&
+		typeof bd.year === "number" &&
+		typeof bd.month === "number" &&
+		typeof bd.day === "number"
+	) {
+		return Math.floor(Date.UTC(bd.year, bd.month - 1, bd.day) / 1000);
+	}
+	return Number(p.time) || 0;
 }
 function downsample(
-    series: EquitySeries,
-    resolution: "1m" | "5m" | "1h" | "1d",
+	series: EquitySeries,
+	resolution: "1m" | "5m" | "1h" | "1d",
 ): EquitySeries {
-    const stepMap: Record<"1m" | "5m" | "1h" | "1d", number> = {
-        "1m": 60,
-        "5m": 300,
-        "1h": 3600,
-        "1d": 86400,
-    };
-    const step = stepMap[resolution];
-    const out: EquitySeries = [];
-    let bucketStart: number | null = null;
-    for (const p of series) {
-        const t = timeToSeconds(p);
-        if (!Number.isFinite(t)) continue;
-        if (bucketStart === null) bucketStart = t;
-        const inBucket = t < bucketStart + step;
-        if (!inBucket) {
-            bucketStart = t;
-            out.push(p);
-        } else if (out.length === 0) {
-            out.push(p);
-        } else {
-            out[out.length - 1] = p;
-        }
-    }
-    return out;
+	const stepMap: Record<"1m" | "5m" | "1h" | "1d", number> = {
+		"1m": 60,
+		"5m": 300,
+		"1h": 3600,
+		"1d": 86400,
+	};
+	const step = stepMap[resolution];
+	const out: EquitySeries = [];
+	let bucketStart: number | null = null;
+	for (const p of series) {
+		const t = timeToSeconds(p);
+		if (!Number.isFinite(t)) continue;
+		if (bucketStart === null) bucketStart = t;
+		const inBucket = t < bucketStart + step;
+		if (!inBucket) {
+			bucketStart = t;
+			out.push(p);
+		} else if (out.length === 0) {
+			out.push(p);
+		} else {
+			out[out.length - 1] = p;
+		}
+	}
+	return out;
 }
 function applyRange(
-    series: EquitySeries,
-    range: "1W" | "1M" | "YTD" | "All",
+	series: EquitySeries,
+	range: "1W" | "1M" | "YTD" | "All",
 ): EquitySeries {
-    if (range === "All" || series.length === 0) return series;
-    const times = series.map((s) => timeToSeconds(s)).filter(Number.isFinite);
-    const maxTime = Math.max(...times);
-    let cutoff = maxTime;
-    if (range === "1W") cutoff = maxTime - 7 * 86400;
-    else if (range === "1M") cutoff = maxTime - 30 * 86400;
-    else if (range === "YTD") {
-        const d = new Date(maxTime * 1000);
-        const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
-        cutoff = jan1;
-    }
-    return series.filter((s) => timeToSeconds(s) >= cutoff);
+	if (range === "All" || series.length === 0) return series;
+	const times = series.map((s) => timeToSeconds(s)).filter(Number.isFinite);
+	const maxTime = Math.max(...times);
+	let cutoff = maxTime;
+	if (range === "1W") cutoff = maxTime - 7 * 86400;
+	else if (range === "1M") cutoff = maxTime - 30 * 86400;
+	else if (range === "YTD") {
+		const d = new Date(maxTime * 1000);
+		const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
+		cutoff = jan1;
+	}
+	return series.filter((s) => timeToSeconds(s) >= cutoff);
 }
 const displaySeries = computed<EquitySeries>(() => {
-    const base: EquitySeries = store.equitySeries || [];
-    const ranged = applyRange(base, activeRange.value);
-    return downsample(ranged, selectedResolution.value);
+	const base: EquitySeries = store.equitySeries || [];
+	const ranged = applyRange(base, activeRange.value);
+	return downsample(ranged, selectedResolution.value);
 });
 const chartSeries = computed<LinePoint[]>(() =>
-    displaySeries.value.map((p) => ({
-        time: timeToSeconds(p),
-        value: p.value,
-    })),
+	displaySeries.value.map((p) => ({
+		time: timeToSeconds(p),
+		value: p.value,
+	})),
 );
 const hasMultipleResults = computed(
-    () => store.isMultipleResults && store.results.length > 1,
+	() => store.isMultipleResults && store.results.length > 1,
 );
 const hasMonteCarloResults = computed(() => {
-    return store.isMonteCarloResults && store.monteCarloResults.length > 0;
+	return store.isMonteCarloResults && store.monteCarloResults.length > 0;
 });
 const aggregatedData = computed<LinePoint[]>(() => {
-    if (!hasMultipleResults.value || !store.results.length) return [];
-    const timestampMap = new Map<number, { sum: number; count: number }>();
-    store.results.forEach((result) => {
-        const points = buildEquityPoints(
-            result.timestamps,
-            result.equity_curve,
-        );
-        points.forEach((point) => {
-            const existing = timestampMap.get(point.time);
-            if (existing) {
-                existing.sum += point.value;
-                existing.count += 1;
-            } else {
-                timestampMap.set(point.time, { sum: point.value, count: 1 });
-            }
-        });
-    });
-    let aggregatedPoints = Array.from(timestampMap.entries())
-        .map(([time, { sum, count }]) => ({
-            time,
-            value: sum / count,
-        }))
-        .sort((a, b) => a.time - b.time);
-    if (activeRange.value !== "All" && aggregatedPoints.length > 0) {
-        const times = aggregatedPoints.map((p) => p.time);
-        const maxTime = Math.max(...times);
-        let cutoff = maxTime;
-        if (activeRange.value === "1W") cutoff = maxTime - 7 * 86400;
-        else if (activeRange.value === "1M") cutoff = maxTime - 30 * 86400;
-        else if (activeRange.value === "YTD") {
-            const d = new Date(maxTime * 1000);
-            const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
-            cutoff = jan1;
-        }
-        aggregatedPoints = aggregatedPoints.filter((p) => p.time >= cutoff);
-    }
-    return aggregatedPoints;
+	if (!hasMultipleResults.value || !store.results.length) return [];
+	const timestampMap = new Map<number, { sum: number; count: number }>();
+	store.results.forEach((result) => {
+		const points = buildEquityPoints(result.timestamps, result.equity_curve);
+		points.forEach((point) => {
+			const existing = timestampMap.get(point.time);
+			if (existing) {
+				existing.sum += point.value;
+				existing.count += 1;
+			} else {
+				timestampMap.set(point.time, { sum: point.value, count: 1 });
+			}
+		});
+	});
+	let aggregatedPoints = Array.from(timestampMap.entries())
+		.map(([time, { sum, count }]) => ({
+			time,
+			value: sum / count,
+		}))
+		.sort((a, b) => a.time - b.time);
+	if (activeRange.value !== "All" && aggregatedPoints.length > 0) {
+		const times = aggregatedPoints.map((p) => p.time);
+		const maxTime = Math.max(...times);
+		let cutoff = maxTime;
+		if (activeRange.value === "1W") cutoff = maxTime - 7 * 86400;
+		else if (activeRange.value === "1M") cutoff = maxTime - 30 * 86400;
+		else if (activeRange.value === "YTD") {
+			const d = new Date(maxTime * 1000);
+			const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
+			cutoff = jan1;
+		}
+		aggregatedPoints = aggregatedPoints.filter((p) => p.time >= cutoff);
+	}
+	return aggregatedPoints;
 });
 function downloadCsv() {
-    const rows = [
-        ["time", "value"],
-        ...displaySeries.value.map((p) => [
-            String(timeToSeconds(p)),
-            String(p.value),
-        ]),
-    ];
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "equity_series.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+	const rows = [
+		["time", "value"],
+		...displaySeries.value.map((p) => [
+			String(timeToSeconds(p)),
+			String(p.value),
+		]),
+	];
+	const csv = rows.map((r) => r.join(",")).join("\n");
+	const blob = new Blob([csv], { type: "text/csv" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = "equity_series.csv";
+	a.click();
+	URL.revokeObjectURL(url);
 }
 onMounted(async () => {
-    await auth.rehydrate();
-    const urlParams = new URLSearchParams(window.location.search);
-    if (
-        urlParams.get("auth") === "success" &&
-        urlParams.get("provider") === "google"
-    ) {
-        await auth.handleGoogleCallback();
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-    }
-    const mcJobId = urlParams.get("mcJobId");
-    if (mcJobId) {
-        const { disconnect } = connectMonteCarloProgress(mcJobId, {
-            onUpdate: (msg) => {
-                mcStatus.value = msg.status;
-                mcProgress.value = typeof msg.progress === "number" ? msg.progress * 100 : null;
-            },
-            onError: () => {
-                mcStatus.value = "failed";
-            },
-            onClose: () => {
-            },
-        });
-        mcDisconnect = disconnect;
-    }
+	await auth.rehydrate();
+	const urlParams = new URLSearchParams(window.location.search);
+	if (
+		urlParams.get("auth") === "success" &&
+		urlParams.get("provider") === "google"
+	) {
+		await auth.handleGoogleCallback();
+		const cleanUrl = window.location.pathname;
+		window.history.replaceState({}, document.title, cleanUrl);
+	}
+	const mcJobId = urlParams.get("mcJobId");
+	if (mcJobId) {
+		const { disconnect } = connectMonteCarloProgress(mcJobId, {
+			onUpdate: (msg) => {
+				mcStatus.value = msg.status;
+				mcProgress.value =
+					typeof msg.progress === "number" ? msg.progress * 100 : null;
+			},
+			onError: () => {
+				mcStatus.value = "failed";
+			},
+			onClose: () => {},
+		});
+		mcDisconnect = disconnect;
+	}
 });
 onUnmounted(() => {
-    if (mcDisconnect) mcDisconnect();
+	if (mcDisconnect) mcDisconnect();
 });
 </script>
 <template>

@@ -1,91 +1,106 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useAuthStore } from '@/stores/authStore'
-import { useRouter } from '@/router'
-import { useI18n } from 'vue-i18n'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { CheckCircle, XCircle, Eye, EyeOff } from 'lucide-vue-next'
-import { PasswordValidationService } from '@/services/passwordValidationService'
-type Mode = 'login' | 'register'
-const props = defineProps<{ mode: Mode }>()
-const { t } = useI18n()
-const email = ref('')
-const password = ref('')
-const showPassword = ref(false)
-const error = ref<string | null>(null)
-const loading = ref(false)
-const passwordValidation = ref(PasswordValidationService.validatePassword(''))
+import { ref, computed, watch } from "vue";
+import { useAuthStore } from "@/stores/authStore";
+import { useRouter } from "@/router";
+import { useI18n } from "vue-i18n";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, XCircle, Eye, EyeOff } from "lucide-vue-next";
+import { PasswordValidationService } from "@/services/passwordValidationService";
+type Mode = "login" | "register";
+const props = defineProps<{ mode: Mode }>();
+const { t } = useI18n();
+const email = ref("");
+const password = ref("");
+const showPassword = ref(false);
+const error = ref<string | null>(null);
+const loading = ref(false);
+const passwordValidation = ref(PasswordValidationService.validatePassword(""));
 const passwordRequirements = computed(() => {
-  const rules = passwordValidation.value.rules
-  return {
-    minLength: rules.find(r => r.id === 'minLength')?.isValid || false,
-    hasUppercase: rules.find(r => r.id === 'hasUppercase')?.isValid || false,
-    hasLowercase: rules.find(r => r.id === 'hasLowercase')?.isValid || false,
-    hasNumber: rules.find(r => r.id === 'hasNumber')?.isValid || false,
-    hasSymbol: rules.find(r => r.id === 'hasSymbol')?.isValid || false
-  }
-})
+	const rules = passwordValidation.value.rules;
+	return {
+		minLength: rules.find((r) => r.id === "minLength")?.isValid || false,
+		hasUppercase: rules.find((r) => r.id === "hasUppercase")?.isValid || false,
+		hasLowercase: rules.find((r) => r.id === "hasLowercase")?.isValid || false,
+		hasNumber: rules.find((r) => r.id === "hasNumber")?.isValid || false,
+		hasSymbol: rules.find((r) => r.id === "hasSymbol")?.isValid || false,
+	};
+});
 const passwordStrength = computed(() => {
-  const score = passwordValidation.value.score
-  return {
-    level: PasswordValidationService.getPasswordStrength(score),
-    color: PasswordValidationService.getPasswordStrengthColor(score),
-    bgColor: PasswordValidationService.getPasswordStrengthBgColor(score),
-    score
-  }
-})
+	const score = passwordValidation.value.score;
+	return {
+		level: PasswordValidationService.getPasswordStrength(score),
+		color: PasswordValidationService.getPasswordStrengthColor(score),
+		bgColor: PasswordValidationService.getPasswordStrengthBgColor(score),
+		score,
+	};
+});
 const isEmailValid = computed(() => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email.value)
-})
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	return emailRegex.test(email.value);
+});
 const valid = computed(() => {
-  if (props.mode === 'login') {
-    return isEmailValid.value && password.value.length >= 6
-  } else {
-    return isEmailValid.value && passwordValidation.value.isValid
-  }
-})
-const auth = useAuthStore()
-const { navigate } = useRouter()
-watch(password, (newPassword) => {
-  if (props.mode === 'register') {
-    passwordValidation.value = PasswordValidationService.validatePassword(newPassword)
-  }
-}, { immediate: true })
+	if (props.mode === "login") {
+		return isEmailValid.value && password.value.length >= 6;
+	} else {
+		return isEmailValid.value && passwordValidation.value.isValid;
+	}
+});
+const auth = useAuthStore();
+const { navigate } = useRouter();
+watch(
+	password,
+	(newPassword) => {
+		if (props.mode === "register") {
+			passwordValidation.value =
+				PasswordValidationService.validatePassword(newPassword);
+		}
+	},
+	{ immediate: true },
+);
 async function onSubmit() {
-  error.value = null
-  if (!valid.value) {
-    error.value = props.mode === 'login' 
-      ? t('auth.errors.invalidCredentials', 'Invalid email or password')
-      : t('auth.errors.invalidPassword', 'Please meet all password requirements')
-    return
-  }
-  loading.value = true
-  try {
-    if (props.mode === 'login') {
-      await auth.login({ email: email.value, password: password.value })
-    } else {
-      await auth.register({ email: email.value, password: password.value })
-    }
-    navigate('/simulate')
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : t('auth.errors.authFailed', 'Authentication failed')
-  } finally {
-    loading.value = false
-  }
+	error.value = null;
+	if (!valid.value) {
+		error.value =
+			props.mode === "login"
+				? t("auth.errors.invalidCredentials", "Invalid email or password")
+				: t(
+						"auth.errors.invalidPassword",
+						"Please meet all password requirements",
+					);
+		return;
+	}
+	loading.value = true;
+	try {
+		if (props.mode === "login") {
+			await auth.login({ email: email.value, password: password.value });
+		} else {
+			await auth.register({ email: email.value, password: password.value });
+		}
+		navigate("/simulate");
+	} catch (e: unknown) {
+		error.value =
+			e instanceof Error
+				? e.message
+				: t("auth.errors.authFailed", "Authentication failed");
+	} finally {
+		loading.value = false;
+	}
 }
 async function onGoogleLogin() {
-  error.value = null
-  try {
-    await auth.loginWithGoogle('/simulate')
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : t('auth.errors.googleAuthFailed', 'Google authentication failed')
-  }
+	error.value = null;
+	try {
+		await auth.loginWithGoogle("/simulate");
+	} catch (e: unknown) {
+		error.value =
+			e instanceof Error
+				? e.message
+				: t("auth.errors.googleAuthFailed", "Google authentication failed");
+	}
 }
 function togglePasswordVisibility() {
-  showPassword.value = !showPassword.value
+	showPassword.value = !showPassword.value;
 }
 </script>
 <template>

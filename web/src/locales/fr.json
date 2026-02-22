@@ -1,512 +1,512 @@
 {
-  "nav": {
-    "title": "Haute Performance",
-    "subtitle": "Plateforme de Trading",
-    "home": "Accueil",
-    "simulate": "Simuler",
-    "history": "Historique",
-    "legacy": "Ancien",
-    "login": "Connexion",
-    "register": "Inscription"
-  },
-  "auth": {
-    "login": {
-      "backToHome": "Retour à l'accueil",
-      "welcome": "Bon retour",
-      "description": "Connectez-vous à votre compte pour accéder aux fonctionnalités de trading avancées",
-      "features": {
-        "secure": "Authentification Sécurisée",
-        "fast": "Performance Rapide",
-        "advanced": "Analyses Avancées"
-      }
-    },
-    "register": {
-      "backToHome": "Retour à l'accueil",
-      "welcome": "Créez votre compte",
-      "description": "Rejoignez notre plateforme pour commencer à backtester vos stratégies de trading",
-      "features": {
-        "encrypted": "Chiffrement de bout en bout",
-        "backtesting": "Backtesting Avancé",
-        "free": "Gratuit pour commencer"
-      }
-    },
-    "logout": "Déconnexion",
-    "email": "Email",
-    "password": "Mot de passe",
-    "confirmPassword": "Confirmer le mot de passe",
-    "forgotPassword": "Mot de passe oublié ?",
-    "rememberMe": "Se souvenir de moi",
-    "noAccount": "Vous n'avez pas de compte ?",
-    "hasAccount": "Vous avez déjà un compte ?",
-    "signUp": "S'inscrire",
-    "signIn": "Se connecter",
-    "createAccount": "Créer un compte",
-    "loginWithGoogle": "Se connecter avec Google",
-    "registerWithGoogle": "S'inscrire avec Google",
-    "titles": {
-      "login": "Connexion",
-      "register": "Inscription"
-    },
-    "buttons": {
-      "googleLogin": "Continuer avec Google",
-      "loading": "Chargement...",
-      "login": "Se connecter",
-      "register": "S'inscrire"
-    },
-    "labels": {
-      "orContinueWithEmail": "Ou continuer avec l'email",
-      "email": "Email",
-      "password": "Mot de passe"
-    },
-    "placeholders": {
-      "email": "Entrez votre email",
-      "password": "Entrez votre mot de passe"
-    },
-    "password": {
-      "requirements": "Exigences du mot de passe :",
-      "minLength": "Au moins 8 caractères",
-      "hasUppercase": "Une lettre majuscule",
-      "hasLowercase": "Une lettre minuscule",
-      "hasNumber": "Un chiffre",
-      "hasSymbol": "Un symbole",
-      "strength": {
-        "weak": "Faible",
-        "fair": "Correct",
-        "good": "Bon",
-        "strong": "Fort"
-      },
-      "minCharacters": "Minimum 6 caractères.",
-      "validation": {
-        "minLength": "Le mot de passe doit contenir au moins 8 caractères",
-        "hasUppercase": "Le mot de passe doit contenir au moins une lettre majuscule",
-        "hasLowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
-        "hasNumber": "Le mot de passe doit contenir au moins un chiffre",
-        "hasSymbol": "Le mot de passe doit contenir au moins un symbole"
-      }
-    },
-    "errors": {
-      "invalidCredentials": "Email ou mot de passe invalide",
-      "invalidPassword": "Veuillez respecter toutes les exigences du mot de passe",
-      "authFailed": "Échec de l'authentification",
-      "googleAuthFailed": "Échec de l'authentification Google"
-    },
-    "links": {
-      "createAccount": "Créer un compte",
-      "alreadyHaveAccount": "Vous avez déjà un compte ?"
-    }
-  },
-  "landing": {
-    "title": "Plateforme de Trading Haute Performance",
-    "subtitle": "Démo technique d'une plateforme de trading moderne. Projet éducatif combinant Vue.js et FastAPI.",
-    "cta": {
-      "startBacktest": "Démarrer le Backtest",
-      "login": "Connexion",
-      "register": "Inscription"
-    },
-    "legacy": {
-      "text": "Vous préférez l'ancien tableau de bord ? Visitez la page héritée.",
-      "open": "Ouvrir le tableau de bord hérité"
-    },
-    "sections": {
-      "simulation": {
-        "title": "Simulation de Backtest",
-        "description": "Backtests rapides, paramètres clairs, résultats fiables.",
-        "text": "Importez votre CSV de prix, définissez les paramètres SMA et lancez un backtest côté serveur. Résultats avec courbe d'équité, PnL et drawdown, UI robuste et responsive."
-      },
-      "auth": {
-        "title": "Authentification",
-        "description": "Flux d'authentification simplifié et sécurisé.",
-        "text": "Inscrivez-vous et connectez-vous pour stocker le token dans Pinia. Les requêtes utilisent un client API authentifié. Pour tester, la page de simulation est accessible sans connexion."
-      },
-      "visualization": {
-        "title": "Visualisation",
-        "description": "Visualisations nettes, thèmes lisibles, détails pertinents.",
-        "text": "Courbe d'équité rendue avec Lightweight Charts. Mesures de PnL et drawdown dans un design clair et minimal."
-      }
-    },
-    "final": {
-      "ready": "Prêt à commencer ?",
-      "startSimulation": "Commencer une simulation"
-    },
-    "architecture": {
-      "open": "Ouvrir les détails d'architecture",
-      "dialog": {
-        "title": "Aperçu de l'Architecture Système",
-        "description": "Choix haut niveau pour stack, infrastructure, données et alignement."
-      },
-      "sections": {
-        "stack": {
-          "title": "Stack Applicative (Full Stack)",
-          "points": {
-            "0": "Frontend : Vue.js + Vite avec shadcn/vue pour une UI professionnelle et accessible.",
-            "1": "Backend : FastAPI avec Uvicorn, orienté performance et asynchronisme.",
-            "2": "Reverse Proxy : Nginx routant /api vers FastAPI."
-          }
-        },
-        "infra": {
-          "title": "Infrastructure & Déploiement (IaC & DevOps)",
-          "points": {
-            "0": "Infrastructure-as-Code complète avec Terraform (VPC, ECS, Route 53, ACM, CloudFront).",
-            "1": "Automatisation CI/CD avec GitHub Actions et validation Pytest.",
-            "2": "Backend FastAPI haute performance avec workers Monte Carlo parallélisés.",
-            "3": "Déploiement frontend sécurisé sur CloudFront avec HTTPS et authentification Cognito.",
-            "4": "Surveillance et journalisation centralisées via CloudWatch.",
-            "5": "Modèle de sécurité robuste basé sur IAM, OAuth2 et JWT.",
-            "6": "Conçu pour la scalabilité, la maintenabilité et la résilience en production.",
-            "7": "VPC avec sous-réseaux privés pour une sécurité et un isolement renforcés."
-          }
-        },
-        "data_cache": {
-          "title": "Services Backend & Données",
-          "points": {
-            "0": "Base de données : PostgreSQL 16 pour une persistance des données robuste.",
-            "1": "Suite de tests complète avec Pytest pour les API et les tests unitaires.",
-            "2": "Workers Monte Carlo asynchrones pour des simulations parallèles."
-          }
-        },
-        "alignment": {
-          "title": "Alignement Rôle Architecte/Lead",
-          "points": {
-            "0": "System Design : évolution d'une EC2 unique vers cloud natif (ECS, RDS, ALB).",
-            "1": "Expertise technique : Clean Architecture et DDD reflétés dans l'API et la conception des données.",
-            "2": "Haute performance/Fintech : feuille de route FastAPI + Redis/Rust adaptée aux charges financières."
-          }
-        }
-      },
-      "frontend": {
-        "title": "Architecture Frontend (Vue)",
-        "description": "Structure du projet, composants UI, et i18n pour une UX soignée.",
-        "points_title": "Points clés",
-        "experience": "Composants prêts pour la production et DX moderne"
-      },
-      "backend": {
-        "title": "Backend (FastAPI) & Architecture",
-        "description": "Performance, Clean Architecture, DDD et options de montée en charge.",
-        "points_title": "Points clés"
-      },
-      "infra_dialog": {
-        "title": "Infrastructure (AWS & Terraform)",
-        "description": "Infrastructure as Code, déploiement multi-conteneurs, évolution Cloud."
-      }
-    },
-    "project": {
-      "title": "Architecture du Projet",
-      "description": "Plateforme de trading full-stack moderne construite avec des technologies de pointe",
-      "frontend": {
-        "title": "Frontend",
-        "description": "Vue.js 3 avec TypeScript, Vite, et composants UI modernes",
-        "click_to_architecture": "Cliquer pour l'architecture du frontend"
-      },
-      "backend": {
-        "title": "API Backend",
-        "description": "FastAPI avec Python, base de données PostgreSQL, et traitement de données robuste",
-        "click_to_system_design": "Cliquer pour le System Design"
-      },
-      "infrastructure": {
-        "title": "Infrastructure AWS",
-        "description": "ECS Fargate, CDN CloudFront, stockage S3, et Application Load Balancer",
-        "click_to_iac_cloud": "Cliquer pour l'IaC et Cloud"
-      },
-      "frontend.click_to_architecture": "Cliquer pour l'architecture du frontend",
-      "backend.click_to_system_design": "Cliquer pour le System Design",
-      "infrastructure.click_to_iac_cloud": "Cliquer pour l'IaC et Cloud",
-      "features": {
-        "title": "Fonctionnalités Clés",
-        "items": [
-          "Backtesting en temps réel avec simulations Monte Carlo",
-          "Graphiques interactifs avec la bibliothèque Lightweight Charts",
-          "Authentification sécurisée et gestion de session",
-          "Design responsive avec support thème sombre/clair",
-          "Infrastructure cloud évolutive sur AWS"
-        ]
-      }
-    }
-  },
-  "backtest": {
-    "steps": {
-      "data_selection": {
-        "title": "Sélection des Données",
-        "short_desc": "Choisissez vos données de marché",
-        "subtitle": "Importez un fichier CSV ou sélectionnez un jeu de données",
-        "description": "Sélectionnez les données de marché pour votre backtest. Vous pouvez importer un fichier CSV ou choisir parmi nos jeux de données pré-chargés.",
-        "help": "Sélectionnez un fichier CSV avec les colonnes Date, Open, High, Low, Close, Volume ou choisissez un jeu de données pré-chargé."
-      },
-      "strategy": {
-        "title": "Configuration Stratégie",
-        "short_desc": "Définissez votre stratégie de trading",
-        "subtitle": "Choisissez et configurez votre stratégie",
-        "description": "Sélectionnez une stratégie de trading et configurez ses paramètres.",
-        "help": "Choisissez une stratégie (SMA Crossover ou RSI) et ajustez les paramètres selon vos besoins."
-      },
-      "advanced": {
-        "title": "Paramètres Avancés",
-        "short_desc": "Options avancées et Monte Carlo",
-        "subtitle": "Configuration avancée du backtest",
-        "description": "Configurez les paramètres avancés comme la période d'analyse et les simulations Monte Carlo.",
-        "help": "Définissez la période d'analyse et configurez les simulations Monte Carlo pour une analyse plus robuste."
-      },
-      "review": {
-        "title": "Révision et Lancement",
-        "short_desc": "Vérifiez et lancez le backtest",
-        "subtitle": "Vérifiez vos paramètres",
-        "description": "Vérifiez tous vos paramètres avant de lancer le backtest.",
-        "help": "Vérifiez que tous les paramètres sont corrects avant de lancer le backtest."
-      }
-    },
-    "help": {
-      "data_selection": "Sélectionnez un fichier CSV avec les colonnes Date, Open, High, Low, Close, Volume ou choisissez un jeu de données pré-chargé.",
-      "strategy_config": "Choisissez une stratégie (SMA Crossover ou RSI) et ajustez les paramètres selon vos besoins.",
-      "advanced_config": "Définissez la période d'analyse et configurez les simulations Monte Carlo pour une analyse plus robuste.",
-      "review_launch": "Vérifiez que tous les paramètres sont corrects avant de lancer le backtest."
-    },
-    "success": {
-      "data_selected": "Données sélectionnées avec succès",
-      "strategy_configured": "Stratégie configurée avec succès",
-      "advanced_configured": "Paramètres avancés configurés avec succès"
-    }
-  },
-  "simulate": {
-    "header": {
-      "title": "Simulation de Backtest",
-      "subtitle": "Importez un CSV et lancez un backtest SMA."
-    },
-    "form": {
-      "title": "Formulaire de Stratégie",
-      "step": "Étape",
-      "of": "sur",
-      "required": "Obligatoire",
-      "or": "OU",
-      "data_source": {
-        "title": "Source de Données",
-        "description": "Choisissez un jeu de données OU importez un fichier CSV",
-        "dataset_selected": "{count} jeu de données sélectionné | {count} jeux de données sélectionnés"
-      },
-      "labels": {
-        "csv_file": "Fichier CSV",
-        "strategy": "Stratégie",
-        "start_date_optional": "Date de début (optionnel)",
-        "end_date_optional": "Date de fin (optionnel)",
-        "datasets": "Sélectionner les Jeux de Données",
-        "datasets_description": "Choisissez parmi les jeux de données de marché pré-chargés",
-        "strategy_params": "Paramètres de stratégie",
-        "analysis_period": "Période d'analyse",
-        "date_range": "Plage de Dates",
-        "start_date": "Date de Début",
-        "end_date": "Date de Fin",
-        "available_date_range": "Plage de Dates Disponible"
-      },
-      "price_type": {
-        "label": "Type de Prix",
-        "close": "Prix de Clôture",
-        "adj_close": "Prix Ajusté",
-        "description": "Choisissez entre le prix de clôture brut ou le prix ajusté pour les dividendes et splits"
-      },
-      "normalization": {
-        "title": "Normalisation",
-        "description": "Normalise la courbe d'équité pour commencer à 1",
-        "enabled": "Normalisation activée - la courbe d'équité commencera à 1"
-      },
-      "buttons": {
-        "run": "Lancer",
-        "reset": "Réinitialiser"
-      },
-      "placeholders": {
-        "select_start_date": "Sélectionner la date de début",
-        "select_end_date": "Sélectionner la date de fin"
-      },
-      "csv": {
-        "drop_hint": "Glissez-déposez votre fichier ou cliquez pour sélectionner.",
-        "selected_file": "Fichier sélectionné : {name}",
-        "max_files": "Sélectionnez jusqu'à 10 fichiers CSV",
-        "files_selected": "fichier(s) sélectionné(s)",
-        "datasets_selected": "jeu(x) de données sélectionné(s)"
-      },
-      "monte_carlo": {
-        "title": "Simulation Monte Carlo",
-        "runs": "Nombre d'Exécutions (1-200)",
-        "runs_description": "Définir à 1 pour un backtest régulier, >1 pour une simulation Monte Carlo (maximum 200 runs)",
-        "method": "Méthode de Perturbation",
-        "bootstrap": "Bootstrap",
-        "gaussian": "Gaussien",
-        "sample_fraction": "Fraction d'Échantillon (0.1-2.0)",
-        "gaussian_scale": "Échelle Gaussienne (0.1-5.0)",
-        "method_required": "Veuillez sélectionner une méthode de perturbation pour la simulation Monte Carlo"
-      },
-      "strategy": {
-        "names": {
-          "sma_crossover": "Croisement SMA",
-          "rsi": "Stratégie RSI"
-        },
-        "params": {
-          "sma_crossover": {
-            "sma_short": "SMA courte",
-            "sma_long": "SMA longue"
-          },
-          "rsi": {
-            "period": "Période RSI",
-            "overbought": "Surachat",
-            "oversold": "Survente"
-          }
-        }
-      }
-    },
-    "results": {
-      "title": "Résultats",
-      "monte_carlo": {
-        "title": "Résultats de Simulation Monte Carlo",
-        "description": "Affichage de l'enveloppe d'équité avec bandes de confiance",
-        "progress_title": "Progression de la Simulation Monte Carlo",
-        "progress_label": "Simulation Monte Carlo en cours"
-      }
-    },
-    "loading": "Chargement...",
-    "metrics": {
-      "pnl": "P&L",
-      "drawdown": "Drawdown Max",
-      "sharpe": "Ratio de Sharpe"
-    },
-    "distributions": {
-      "mean": "Moyenne",
-      "median": "Médiane",
-      "std": "Écart-type",
-      "volatility": "Volatilité",
-      "p5": "5e percentile",
-      "p25": "25e percentile",
-      "p75": "75e percentile",
-      "p95": "95e percentile",
-      "statistics": "Statistiques de Distribution",
-      "showing_median": "Affichage des valeurs médianes avec plages de distribution",
-      "percentile_short": "%ile"
-    },
-    "errors": {
-      "backtest": "Erreur lors du backtest"
-    },
-    "chart": {
-      "title": "Courbe d'équité",
-      "subtitle": "Performance de la stratégie",
-      "trend": {
-        "positive": "Tendance positive",
-        "negative": "Tendance négative"
-      },
-      "empty": {
-        "title": "Aucune donnée disponible",
-        "subtitle": "Lancez un backtest pour voir les résultats"
-      },
-      "legend": "Équité",
-      "multi_title": "Graphique Multi-Lignes",
-      "multi_analysis": "Analyse comparative",
-      "aggregated": "Données Agrégées",
-      "series_visible": "séries visibles",
-      "series_total": "séries au total",
-      "no_data": "Aucune donnée à afficher",
-      "resolution": {
-        "1m": "1m",
-        "5m": "5m",
-        "1h": "1h",
-        "1d": "1j"
-      },
-      "range": {
-        "1W": "1 semaine",
-        "1M": "1 mois",
-        "YTD": "YTD",
-        "All": "Tout"
-      },
-      "monte_carlo": {
-        "title": "Enveloppe d'Équité Monte Carlo",
-        "description": "Résultats de distribution de simulation",
-        "no_data": "Aucune donnée Monte Carlo disponible",
-        "simulation": "Simulation Monte Carlo",
-        "data_points": "points de données",
-        "percentiles": {
-          "5th": "5e Percentile",
-          "25th": "25e Percentile",
-          "median": "Médiane",
-          "75th": "75e Percentile",
-          "95th": "95e Percentile"
-        }
-      }
-    }
-  },
-  "errors": {
-    "invalid_csv": "Le fichier doit être au format CSV",
-    "no_csv_file": "Veuillez sélectionner un fichier CSV",
-    "invalid_params": "Paramètres invalides",
-    "csv_too_large": "Le fichier doit être ≤ 5MB",
-    "invalid_sma_params": "Paramètres SMA invalides",
-    "invalid_rsi_params": "Paramètres RSI invalides",
-    "backtest_failed": "Échec du backtest",
-    "auth_login_failed": "Échec de la connexion",
-    "auth_register_failed": "Échec de l'inscription",
-    "network_error": "Erreur réseau",
-    "request_timeout": "Délai de la requête dépassé",
-    "retrying": "Nouvelle tentative…",
-    "date_validation": {
-      "start_date_invalid": "La date de début est invalide",
-      "end_date_invalid": "La date de fin est invalide",
-      "end_before_start": "La date de fin ne peut pas être antérieure à la date de début",
-      "date_outside_range": "La date sélectionnée est en dehors de la plage disponible",
-      "available_range": "Plage disponible : {minDate} à {maxDate}",
-      "invalid_date_range": "Plage de dates invalide"
-    }
-  },
-  "todo": {
-    "title": "Liste des Tâches",
-    "add": "Ajouter",
-    "add_new": "Nouvelle Tâche",
-    "task": "Tâche",
-    "task_placeholder": "Décrivez votre tâche...",
-    "empty": "Aucune tâche pour le moment",
-    "priority": {
-      "label": "Priorité",
-      "select": "Sélectionner une priorité",
-      "low": "Faible",
-      "medium": "Moyenne",
-      "high": "Élevée"
-    }
-  },
-  "common": {
-    "cancel": "Annuler",
-    "save": "Enregistrer",
-    "delete": "Supprimer",
-    "edit": "Modifier",
-    "loading": "Chargement...",
-    "refresh": "Actualiser",
-    "retry": "Réessayer",
-    "previous": "Précédent",
-    "next": "Suivant",
-    "select_language": "Sélectionner la langue"
-  },
-  "history": {
-    "title": "Historique des Backtests",
-    "description": "Consultez et gérez vos précédents backtests",
-    "filter_by_strategy": "Filtrer par stratégie",
-    "all_strategies": "Toutes les stratégies",
-    "backtest_history": "Historique des Backtests",
-    "no_history": "Aucun historique de backtest trouvé",
-    "run_first_backtest": "Lancez votre premier backtest",
-    "view_details": "Voir les détails",
-    "rerun": "Relancer",
-    "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce backtest ?",
-    "date_range": "Période",
-    "total_return": "Rendement Total",
-    "sharpe_ratio": "Ratio de Sharpe",
-    "max_drawdown": "Drawdown Max",
-    "created_at": "Créé le",
-    "parameters": "Paramètres",
-    "datasets": "Jeux de données",
-    "showing": "Affichage de",
-    "of": "sur",
-    "results": "résultats",
-    "stats": {
-      "total_backtests": "Total Backtests",
-      "avg_return": "Rendement Moyen",
-      "avg_sharpe": "Sharpe Moyen",
-      "monte_carlo_runs": "Runs Monte Carlo"
-    },
-    "status": {
-      "completed": "Terminé",
-      "running": "En cours",
-      "failed": "Échoué"
-    }
-  }
+	"nav": {
+		"title": "Haute Performance",
+		"subtitle": "Plateforme de Trading",
+		"home": "Accueil",
+		"simulate": "Simuler",
+		"history": "Historique",
+		"legacy": "Ancien",
+		"login": "Connexion",
+		"register": "Inscription"
+	},
+	"auth": {
+		"login": {
+			"backToHome": "Retour à l'accueil",
+			"welcome": "Bon retour",
+			"description": "Connectez-vous à votre compte pour accéder aux fonctionnalités de trading avancées",
+			"features": {
+				"secure": "Authentification Sécurisée",
+				"fast": "Performance Rapide",
+				"advanced": "Analyses Avancées"
+			}
+		},
+		"register": {
+			"backToHome": "Retour à l'accueil",
+			"welcome": "Créez votre compte",
+			"description": "Rejoignez notre plateforme pour commencer à backtester vos stratégies de trading",
+			"features": {
+				"encrypted": "Chiffrement de bout en bout",
+				"backtesting": "Backtesting Avancé",
+				"free": "Gratuit pour commencer"
+			}
+		},
+		"logout": "Déconnexion",
+		"email": "Email",
+		"password": "Mot de passe",
+		"confirmPassword": "Confirmer le mot de passe",
+		"forgotPassword": "Mot de passe oublié ?",
+		"rememberMe": "Se souvenir de moi",
+		"noAccount": "Vous n'avez pas de compte ?",
+		"hasAccount": "Vous avez déjà un compte ?",
+		"signUp": "S'inscrire",
+		"signIn": "Se connecter",
+		"createAccount": "Créer un compte",
+		"loginWithGoogle": "Se connecter avec Google",
+		"registerWithGoogle": "S'inscrire avec Google",
+		"titles": {
+			"login": "Connexion",
+			"register": "Inscription"
+		},
+		"buttons": {
+			"googleLogin": "Continuer avec Google",
+			"loading": "Chargement...",
+			"login": "Se connecter",
+			"register": "S'inscrire"
+		},
+		"labels": {
+			"orContinueWithEmail": "Ou continuer avec l'email",
+			"email": "Email",
+			"password": "Mot de passe"
+		},
+		"placeholders": {
+			"email": "Entrez votre email",
+			"password": "Entrez votre mot de passe"
+		},
+		"password": {
+			"requirements": "Exigences du mot de passe :",
+			"minLength": "Au moins 8 caractères",
+			"hasUppercase": "Une lettre majuscule",
+			"hasLowercase": "Une lettre minuscule",
+			"hasNumber": "Un chiffre",
+			"hasSymbol": "Un symbole",
+			"strength": {
+				"weak": "Faible",
+				"fair": "Correct",
+				"good": "Bon",
+				"strong": "Fort"
+			},
+			"minCharacters": "Minimum 6 caractères.",
+			"validation": {
+				"minLength": "Le mot de passe doit contenir au moins 8 caractères",
+				"hasUppercase": "Le mot de passe doit contenir au moins une lettre majuscule",
+				"hasLowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
+				"hasNumber": "Le mot de passe doit contenir au moins un chiffre",
+				"hasSymbol": "Le mot de passe doit contenir au moins un symbole"
+			}
+		},
+		"errors": {
+			"invalidCredentials": "Email ou mot de passe invalide",
+			"invalidPassword": "Veuillez respecter toutes les exigences du mot de passe",
+			"authFailed": "Échec de l'authentification",
+			"googleAuthFailed": "Échec de l'authentification Google"
+		},
+		"links": {
+			"createAccount": "Créer un compte",
+			"alreadyHaveAccount": "Vous avez déjà un compte ?"
+		}
+	},
+	"landing": {
+		"title": "Plateforme de Trading Haute Performance",
+		"subtitle": "Démo technique d'une plateforme de trading moderne. Projet éducatif combinant Vue.js et FastAPI.",
+		"cta": {
+			"startBacktest": "Démarrer le Backtest",
+			"login": "Connexion",
+			"register": "Inscription"
+		},
+		"legacy": {
+			"text": "Vous préférez l'ancien tableau de bord ? Visitez la page héritée.",
+			"open": "Ouvrir le tableau de bord hérité"
+		},
+		"sections": {
+			"simulation": {
+				"title": "Simulation de Backtest",
+				"description": "Backtests rapides, paramètres clairs, résultats fiables.",
+				"text": "Importez votre CSV de prix, définissez les paramètres SMA et lancez un backtest côté serveur. Résultats avec courbe d'équité, PnL et drawdown, UI robuste et responsive."
+			},
+			"auth": {
+				"title": "Authentification",
+				"description": "Flux d'authentification simplifié et sécurisé.",
+				"text": "Inscrivez-vous et connectez-vous pour stocker le token dans Pinia. Les requêtes utilisent un client API authentifié. Pour tester, la page de simulation est accessible sans connexion."
+			},
+			"visualization": {
+				"title": "Visualisation",
+				"description": "Visualisations nettes, thèmes lisibles, détails pertinents.",
+				"text": "Courbe d'équité rendue avec Lightweight Charts. Mesures de PnL et drawdown dans un design clair et minimal."
+			}
+		},
+		"final": {
+			"ready": "Prêt à commencer ?",
+			"startSimulation": "Commencer une simulation"
+		},
+		"architecture": {
+			"open": "Ouvrir les détails d'architecture",
+			"dialog": {
+				"title": "Aperçu de l'Architecture Système",
+				"description": "Choix haut niveau pour stack, infrastructure, données et alignement."
+			},
+			"sections": {
+				"stack": {
+					"title": "Stack Applicative (Full Stack)",
+					"points": {
+						"0": "Frontend : Vue.js + Vite avec shadcn/vue pour une UI professionnelle et accessible.",
+						"1": "Backend : FastAPI avec Uvicorn, orienté performance et asynchronisme.",
+						"2": "Reverse Proxy : Nginx routant /api vers FastAPI."
+					}
+				},
+				"infra": {
+					"title": "Infrastructure & Déploiement (IaC & DevOps)",
+					"points": {
+						"0": "Infrastructure-as-Code complète avec Terraform (VPC, ECS, Route 53, ACM, CloudFront).",
+						"1": "Automatisation CI/CD avec GitHub Actions et validation Pytest.",
+						"2": "Backend FastAPI haute performance avec workers Monte Carlo parallélisés.",
+						"3": "Déploiement frontend sécurisé sur CloudFront avec HTTPS et authentification Cognito.",
+						"4": "Surveillance et journalisation centralisées via CloudWatch.",
+						"5": "Modèle de sécurité robuste basé sur IAM, OAuth2 et JWT.",
+						"6": "Conçu pour la scalabilité, la maintenabilité et la résilience en production.",
+						"7": "VPC avec sous-réseaux privés pour une sécurité et un isolement renforcés."
+					}
+				},
+				"data_cache": {
+					"title": "Services Backend & Données",
+					"points": {
+						"0": "Base de données : PostgreSQL 16 pour une persistance des données robuste.",
+						"1": "Suite de tests complète avec Pytest pour les API et les tests unitaires.",
+						"2": "Workers Monte Carlo asynchrones pour des simulations parallèles."
+					}
+				},
+				"alignment": {
+					"title": "Alignement Rôle Architecte/Lead",
+					"points": {
+						"0": "System Design : évolution d'une EC2 unique vers cloud natif (ECS, RDS, ALB).",
+						"1": "Expertise technique : Clean Architecture et DDD reflétés dans l'API et la conception des données.",
+						"2": "Haute performance/Fintech : feuille de route FastAPI + Redis/Rust adaptée aux charges financières."
+					}
+				}
+			},
+			"frontend": {
+				"title": "Architecture Frontend (Vue)",
+				"description": "Structure du projet, composants UI, et i18n pour une UX soignée.",
+				"points_title": "Points clés",
+				"experience": "Composants prêts pour la production et DX moderne"
+			},
+			"backend": {
+				"title": "Backend (FastAPI) & Architecture",
+				"description": "Performance, Clean Architecture, DDD et options de montée en charge.",
+				"points_title": "Points clés"
+			},
+			"infra_dialog": {
+				"title": "Infrastructure (AWS & Terraform)",
+				"description": "Infrastructure as Code, déploiement multi-conteneurs, évolution Cloud."
+			}
+		},
+		"project": {
+			"title": "Architecture du Projet",
+			"description": "Plateforme de trading full-stack moderne construite avec des technologies de pointe",
+			"frontend": {
+				"title": "Frontend",
+				"description": "Vue.js 3 avec TypeScript, Vite, et composants UI modernes",
+				"click_to_architecture": "Cliquer pour l'architecture du frontend"
+			},
+			"backend": {
+				"title": "API Backend",
+				"description": "FastAPI avec Python, base de données PostgreSQL, et traitement de données robuste",
+				"click_to_system_design": "Cliquer pour le System Design"
+			},
+			"infrastructure": {
+				"title": "Infrastructure AWS",
+				"description": "ECS Fargate, CDN CloudFront, stockage S3, et Application Load Balancer",
+				"click_to_iac_cloud": "Cliquer pour l'IaC et Cloud"
+			},
+			"frontend.click_to_architecture": "Cliquer pour l'architecture du frontend",
+			"backend.click_to_system_design": "Cliquer pour le System Design",
+			"infrastructure.click_to_iac_cloud": "Cliquer pour l'IaC et Cloud",
+			"features": {
+				"title": "Fonctionnalités Clés",
+				"items": [
+					"Backtesting en temps réel avec simulations Monte Carlo",
+					"Graphiques interactifs avec la bibliothèque Lightweight Charts",
+					"Authentification sécurisée et gestion de session",
+					"Design responsive avec support thème sombre/clair",
+					"Infrastructure cloud évolutive sur AWS"
+				]
+			}
+		}
+	},
+	"backtest": {
+		"steps": {
+			"data_selection": {
+				"title": "Sélection des Données",
+				"short_desc": "Choisissez vos données de marché",
+				"subtitle": "Importez un fichier CSV ou sélectionnez un jeu de données",
+				"description": "Sélectionnez les données de marché pour votre backtest. Vous pouvez importer un fichier CSV ou choisir parmi nos jeux de données pré-chargés.",
+				"help": "Sélectionnez un fichier CSV avec les colonnes Date, Open, High, Low, Close, Volume ou choisissez un jeu de données pré-chargé."
+			},
+			"strategy": {
+				"title": "Configuration Stratégie",
+				"short_desc": "Définissez votre stratégie de trading",
+				"subtitle": "Choisissez et configurez votre stratégie",
+				"description": "Sélectionnez une stratégie de trading et configurez ses paramètres.",
+				"help": "Choisissez une stratégie (SMA Crossover ou RSI) et ajustez les paramètres selon vos besoins."
+			},
+			"advanced": {
+				"title": "Paramètres Avancés",
+				"short_desc": "Options avancées et Monte Carlo",
+				"subtitle": "Configuration avancée du backtest",
+				"description": "Configurez les paramètres avancés comme la période d'analyse et les simulations Monte Carlo.",
+				"help": "Définissez la période d'analyse et configurez les simulations Monte Carlo pour une analyse plus robuste."
+			},
+			"review": {
+				"title": "Révision et Lancement",
+				"short_desc": "Vérifiez et lancez le backtest",
+				"subtitle": "Vérifiez vos paramètres",
+				"description": "Vérifiez tous vos paramètres avant de lancer le backtest.",
+				"help": "Vérifiez que tous les paramètres sont corrects avant de lancer le backtest."
+			}
+		},
+		"help": {
+			"data_selection": "Sélectionnez un fichier CSV avec les colonnes Date, Open, High, Low, Close, Volume ou choisissez un jeu de données pré-chargé.",
+			"strategy_config": "Choisissez une stratégie (SMA Crossover ou RSI) et ajustez les paramètres selon vos besoins.",
+			"advanced_config": "Définissez la période d'analyse et configurez les simulations Monte Carlo pour une analyse plus robuste.",
+			"review_launch": "Vérifiez que tous les paramètres sont corrects avant de lancer le backtest."
+		},
+		"success": {
+			"data_selected": "Données sélectionnées avec succès",
+			"strategy_configured": "Stratégie configurée avec succès",
+			"advanced_configured": "Paramètres avancés configurés avec succès"
+		}
+	},
+	"simulate": {
+		"header": {
+			"title": "Simulation de Backtest",
+			"subtitle": "Importez un CSV et lancez un backtest SMA."
+		},
+		"form": {
+			"title": "Formulaire de Stratégie",
+			"step": "Étape",
+			"of": "sur",
+			"required": "Obligatoire",
+			"or": "OU",
+			"data_source": {
+				"title": "Source de Données",
+				"description": "Choisissez un jeu de données OU importez un fichier CSV",
+				"dataset_selected": "{count} jeu de données sélectionné | {count} jeux de données sélectionnés"
+			},
+			"labels": {
+				"csv_file": "Fichier CSV",
+				"strategy": "Stratégie",
+				"start_date_optional": "Date de début (optionnel)",
+				"end_date_optional": "Date de fin (optionnel)",
+				"datasets": "Sélectionner les Jeux de Données",
+				"datasets_description": "Choisissez parmi les jeux de données de marché pré-chargés",
+				"strategy_params": "Paramètres de stratégie",
+				"analysis_period": "Période d'analyse",
+				"date_range": "Plage de Dates",
+				"start_date": "Date de Début",
+				"end_date": "Date de Fin",
+				"available_date_range": "Plage de Dates Disponible"
+			},
+			"price_type": {
+				"label": "Type de Prix",
+				"close": "Prix de Clôture",
+				"adj_close": "Prix Ajusté",
+				"description": "Choisissez entre le prix de clôture brut ou le prix ajusté pour les dividendes et splits"
+			},
+			"normalization": {
+				"title": "Normalisation",
+				"description": "Normalise la courbe d'équité pour commencer à 1",
+				"enabled": "Normalisation activée - la courbe d'équité commencera à 1"
+			},
+			"buttons": {
+				"run": "Lancer",
+				"reset": "Réinitialiser"
+			},
+			"placeholders": {
+				"select_start_date": "Sélectionner la date de début",
+				"select_end_date": "Sélectionner la date de fin"
+			},
+			"csv": {
+				"drop_hint": "Glissez-déposez votre fichier ou cliquez pour sélectionner.",
+				"selected_file": "Fichier sélectionné : {name}",
+				"max_files": "Sélectionnez jusqu'à 10 fichiers CSV",
+				"files_selected": "fichier(s) sélectionné(s)",
+				"datasets_selected": "jeu(x) de données sélectionné(s)"
+			},
+			"monte_carlo": {
+				"title": "Simulation Monte Carlo",
+				"runs": "Nombre d'Exécutions (1-200)",
+				"runs_description": "Définir à 1 pour un backtest régulier, >1 pour une simulation Monte Carlo (maximum 200 runs)",
+				"method": "Méthode de Perturbation",
+				"bootstrap": "Bootstrap",
+				"gaussian": "Gaussien",
+				"sample_fraction": "Fraction d'Échantillon (0.1-2.0)",
+				"gaussian_scale": "Échelle Gaussienne (0.1-5.0)",
+				"method_required": "Veuillez sélectionner une méthode de perturbation pour la simulation Monte Carlo"
+			},
+			"strategy": {
+				"names": {
+					"sma_crossover": "Croisement SMA",
+					"rsi": "Stratégie RSI"
+				},
+				"params": {
+					"sma_crossover": {
+						"sma_short": "SMA courte",
+						"sma_long": "SMA longue"
+					},
+					"rsi": {
+						"period": "Période RSI",
+						"overbought": "Surachat",
+						"oversold": "Survente"
+					}
+				}
+			}
+		},
+		"results": {
+			"title": "Résultats",
+			"monte_carlo": {
+				"title": "Résultats de Simulation Monte Carlo",
+				"description": "Affichage de l'enveloppe d'équité avec bandes de confiance",
+				"progress_title": "Progression de la Simulation Monte Carlo",
+				"progress_label": "Simulation Monte Carlo en cours"
+			}
+		},
+		"loading": "Chargement...",
+		"metrics": {
+			"pnl": "P&L",
+			"drawdown": "Drawdown Max",
+			"sharpe": "Ratio de Sharpe"
+		},
+		"distributions": {
+			"mean": "Moyenne",
+			"median": "Médiane",
+			"std": "Écart-type",
+			"volatility": "Volatilité",
+			"p5": "5e percentile",
+			"p25": "25e percentile",
+			"p75": "75e percentile",
+			"p95": "95e percentile",
+			"statistics": "Statistiques de Distribution",
+			"showing_median": "Affichage des valeurs médianes avec plages de distribution",
+			"percentile_short": "%ile"
+		},
+		"errors": {
+			"backtest": "Erreur lors du backtest"
+		},
+		"chart": {
+			"title": "Courbe d'équité",
+			"subtitle": "Performance de la stratégie",
+			"trend": {
+				"positive": "Tendance positive",
+				"negative": "Tendance négative"
+			},
+			"empty": {
+				"title": "Aucune donnée disponible",
+				"subtitle": "Lancez un backtest pour voir les résultats"
+			},
+			"legend": "Équité",
+			"multi_title": "Graphique Multi-Lignes",
+			"multi_analysis": "Analyse comparative",
+			"aggregated": "Données Agrégées",
+			"series_visible": "séries visibles",
+			"series_total": "séries au total",
+			"no_data": "Aucune donnée à afficher",
+			"resolution": {
+				"1m": "1m",
+				"5m": "5m",
+				"1h": "1h",
+				"1d": "1j"
+			},
+			"range": {
+				"1W": "1 semaine",
+				"1M": "1 mois",
+				"YTD": "YTD",
+				"All": "Tout"
+			},
+			"monte_carlo": {
+				"title": "Enveloppe d'Équité Monte Carlo",
+				"description": "Résultats de distribution de simulation",
+				"no_data": "Aucune donnée Monte Carlo disponible",
+				"simulation": "Simulation Monte Carlo",
+				"data_points": "points de données",
+				"percentiles": {
+					"5th": "5e Percentile",
+					"25th": "25e Percentile",
+					"median": "Médiane",
+					"75th": "75e Percentile",
+					"95th": "95e Percentile"
+				}
+			}
+		}
+	},
+	"errors": {
+		"invalid_csv": "Le fichier doit être au format CSV",
+		"no_csv_file": "Veuillez sélectionner un fichier CSV",
+		"invalid_params": "Paramètres invalides",
+		"csv_too_large": "Le fichier doit être ≤ 5MB",
+		"invalid_sma_params": "Paramètres SMA invalides",
+		"invalid_rsi_params": "Paramètres RSI invalides",
+		"backtest_failed": "Échec du backtest",
+		"auth_login_failed": "Échec de la connexion",
+		"auth_register_failed": "Échec de l'inscription",
+		"network_error": "Erreur réseau",
+		"request_timeout": "Délai de la requête dépassé",
+		"retrying": "Nouvelle tentative…",
+		"date_validation": {
+			"start_date_invalid": "La date de début est invalide",
+			"end_date_invalid": "La date de fin est invalide",
+			"end_before_start": "La date de fin ne peut pas être antérieure à la date de début",
+			"date_outside_range": "La date sélectionnée est en dehors de la plage disponible",
+			"available_range": "Plage disponible : {minDate} à {maxDate}",
+			"invalid_date_range": "Plage de dates invalide"
+		}
+	},
+	"todo": {
+		"title": "Liste des Tâches",
+		"add": "Ajouter",
+		"add_new": "Nouvelle Tâche",
+		"task": "Tâche",
+		"task_placeholder": "Décrivez votre tâche...",
+		"empty": "Aucune tâche pour le moment",
+		"priority": {
+			"label": "Priorité",
+			"select": "Sélectionner une priorité",
+			"low": "Faible",
+			"medium": "Moyenne",
+			"high": "Élevée"
+		}
+	},
+	"common": {
+		"cancel": "Annuler",
+		"save": "Enregistrer",
+		"delete": "Supprimer",
+		"edit": "Modifier",
+		"loading": "Chargement...",
+		"refresh": "Actualiser",
+		"retry": "Réessayer",
+		"previous": "Précédent",
+		"next": "Suivant",
+		"select_language": "Sélectionner la langue"
+	},
+	"history": {
+		"title": "Historique des Backtests",
+		"description": "Consultez et gérez vos précédents backtests",
+		"filter_by_strategy": "Filtrer par stratégie",
+		"all_strategies": "Toutes les stratégies",
+		"backtest_history": "Historique des Backtests",
+		"no_history": "Aucun historique de backtest trouvé",
+		"run_first_backtest": "Lancez votre premier backtest",
+		"view_details": "Voir les détails",
+		"rerun": "Relancer",
+		"confirm_delete": "Êtes-vous sûr de vouloir supprimer ce backtest ?",
+		"date_range": "Période",
+		"total_return": "Rendement Total",
+		"sharpe_ratio": "Ratio de Sharpe",
+		"max_drawdown": "Drawdown Max",
+		"created_at": "Créé le",
+		"parameters": "Paramètres",
+		"datasets": "Jeux de données",
+		"showing": "Affichage de",
+		"of": "sur",
+		"results": "résultats",
+		"stats": {
+			"total_backtests": "Total Backtests",
+			"avg_return": "Rendement Moyen",
+			"avg_sharpe": "Sharpe Moyen",
+			"monte_carlo_runs": "Runs Monte Carlo"
+		},
+		"status": {
+			"completed": "Terminé",
+			"running": "En cours",
+			"failed": "Échoué"
+		}
+	}
 }

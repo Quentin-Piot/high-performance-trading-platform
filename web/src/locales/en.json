@@ -1,528 +1,528 @@
 {
-  "nav": {
-    "title": "High Performance",
-    "subtitle": "Trading Platform",
-    "home": "Home",
-    "simulate": "Simulate",
-    "history": "History",
-    "legacy": "Legacy",
-    "login": "Login",
-    "register": "Register"
-  },
-  "auth": {
-    "logout": "Logout",
-    "email": "Email",
-    "password": "Password",
-    "confirmPassword": "Confirm Password",
-    "forgotPassword": "Forgot Password?",
-    "rememberMe": "Remember me",
-    "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?",
-    "signUp": "Sign up",
-    "signIn": "Sign in",
-    "createAccount": "Create Account",
-    "loginWithGoogle": "Login with Google",
-    "registerWithGoogle": "Register with Google",
-    "titles": {
-      "login": "Login",
-      "register": "Register"
-    },
-    "buttons": {
-      "googleLogin": "Continue with Google",
-      "loading": "Loading...",
-      "login": "Login",
-      "register": "Register"
-    },
-    "labels": {
-      "orContinueWithEmail": "Or continue with email",
-      "email": "Email",
-      "password": "Password"
-    },
-    "placeholders": {
-      "email": "Enter your email",
-      "password": "Enter your password"
-    },
-    "login": {
-      "title": "Login to your account",
-      "subtitle": "Access your high-performance trading platform",
-      "welcome": "Welcome to HPTP",
-      "description": "Sign in to access your backtests, strategies, and advanced market analysis.",
-      "features": {
-        "secure": "Secure and reliable",
-        "fast": "Fast and performant",
-        "customizable": "Customizable",
-        "realtime": "Real-time data",
-        "advanced": "Advanced analytics",
-        "portfolio": "Portfolio management"
-      },
-      "backToHome": "Back to home"
-    },
-    "register": {
-      "title": "Create your trading account",
-      "subtitle": "Join the high-performance trading platform",
-      "welcome": "Join HPTP",
-      "description": "Create your account and discover a modern trading platform with advanced analysis tools.",
-      "features": {
-        "encrypted": "Encrypted and protected data",
-        "support": "Responsive customer support",
-        "free": "Free to get started",
-        "backtesting": "Advanced backtesting",
-        "strategies": "Custom strategies",
-        "analytics": "Detailed analytics"
-      },
-      "backToHome": "Back to home"
-    },
-    "password": {
-      "requirements": "Password requirements:",
-      "minLength": "At least 8 characters",
-      "hasUppercase": "One uppercase letter",
-      "hasLowercase": "One lowercase letter",
-      "hasNumber": "One number",
-      "hasSymbol": "One symbol",
-      "strength": "Password strength:",
-      "minCharacters": "Minimum 6 characters.",
-      "validation": {
-        "title": "Password requirements",
-        "minLength": "Password must be at least 8 characters long",
-        "hasUppercase": "Password must contain at least one uppercase letter",
-        "hasLowercase": "Password must contain at least one lowercase letter",
-        "hasNumber": "Password must contain at least one number",
-        "hasSymbol": "Password must contain at least one symbol"
-      },
-      "strength": {
-        "weak": "Weak",
-        "fair": "Fair",
-        "good": "Good",
-        "strong": "Strong"
-      }
-    },
-    "errors": {
-      "invalidCredentials": "Invalid email or password",
-      "invalidPassword": "Please meet all password requirements",
-      "authFailed": "Authentication failed",
-      "googleAuthFailed": "Google authentication failed"
-    },
-    "links": {
-      "createAccount": "Create an account",
-      "alreadyHaveAccount": "Already have an account?"
-    }
-  },
-  "landing": {
-    "title": "High-Performance Trading Platform",
-    "subtitle": "Technical demo of a modern trading platform. Educational project combining Vue.js and FastAPI.",
-    "cta": {
-      "startBacktest": "Start Backtest",
-      "login": "Login",
-      "register": "Register"
-    },
-    "legacy": {
-      "text": "Prefer the previous dashboard? Visit the legacy homepage.",
-      "open": "Open Legacy Dashboard"
-    },
-    "sections": {
-      "simulation": {
-        "title": "Backtest Simulation",
-        "description": "Fast backtests, clear parameters, reliable results.",
-        "text": "Upload your CSV price data, set SMA parameters, and run a server-powered backtest. Results show equity curve, PnL, and max drawdown with robust error handling and responsive UI."
-      },
-      "auth": {
-        "title": "Authentication",
-        "description": "Simplified and secure authentication flow.",
-        "text": "Register and login to store tokens in Pinia. Requests use an authenticated API client. For testing, the simulate page can be accessed without login."
-      },
-      "visualization": {
-        "title": "Visualization",
-        "description": "Clear visualizations, readable themes, relevant details.",
-        "text": "Equity curve rendered with Lightweight Charts. Metrics for PnL and drawdown with clear, minimal design."
-      }
-    },
-    "final": {
-      "ready": "Ready to start?",
-      "startSimulation": "Start a simulation"
-    },
-    "architecture": {
-      "open": "Open Architecture Details",
-      "dialog": {
-        "title": "System Architecture Overview",
-        "description": "High-level choices for stack, infrastructure, data, and alignment."
-      },
-      "sections": {
-        "stack": {
-          "title": "Application Stack (Full Stack)",
-          "points": {
-            "0": "Frontend: Vue.js + Vite with shadcn/vue for professional, accessible UI.",
-            "1": "Backend: FastAPI with Uvicorn focused on performance and async.",
-            "2": "Reverse Proxy: Nginx routing /api to FastAPI."
-          }
-        },
-        "infra": {
-          "title": "Infrastructure & Deployment (IaC & DevOps)",
-          "points": {
-            "0": "Full Infrastructure-as-Code with Terraform (VPC, ECS, Route 53, ACM, CloudFront).",
-            "1": "CI/CD automation with GitHub Actions and Pytest validation.",
-            "2": "High-performance FastAPI backend with parallel Monte Carlo workers.",
-            "3": "Secure frontend deployment on CloudFront with HTTPS and Cognito Auth.",
-            "4": "Centralized monitoring and logging via CloudWatch.",
-            "5": "Robust IAM, OAuth2, and JWT-based security model.",
-            "6": "Designed for scalability, maintainability, and production resilience.",
-            "7": "VPC with private subnets for enhanced security and isolation."
-          }
-        },
-        "data_cache": {
-          "title": "Backend Services & Data",
-          "points": {
-            "0": "Database: PostgreSQL 16 for robust data persistence.",
-            "1": "Comprehensive testing suite with Pytest for API and unit tests.",
-            "2": "Asynchronous Monte Carlo workers for parallel simulations."
-          }
-        },
-        "alignment": {
-          "title": "Architect/Lead Alignment",
-          "points": {
-            "0": "System Design: Path from single EC2 to cloud-native (ECS, RDS, ALB).",
-            "1": "Technical Expertise: Clean Architecture and DDD reflected in API and data design.",
-            "2": "High-Performance/Fintech: FastAPI + Redis/Rust roadmap fit financial workloads."
-          }
-        }
-      },
-      "frontend": {
-        "title": "Frontend (Vue) Architecture",
-        "description": "Project structure, UI components, and i18n for a clean UX.",
-        "points_title": "Highlights",
-        "experience": "Production-ready components and modern DX"
-      },
-      "backend": {
-        "title": "Backend (FastAPI) & Architecture",
-        "description": "Performance, Clean Architecture, DDD, and scale-out options.",
-        "points_title": "Highlights"
-      },
-      "infra_dialog": {
-        "title": "Infrastructure (AWS & Terraform)",
-        "description": "Infrastructure as Code, multi-container deployment, cloud evolution."
-      }
-    },
-    "project": {
-      "title": "Project Architecture",
-      "description": "Modern full-stack trading platform built with cutting-edge technologies",
-      "frontend": {
-        "title": "Frontend",
-        "description": "Vue.js 3 with TypeScript, Vite, and modern UI components",
-        "click_to_architecture": "Click to view frontend architecture"
-      },
-      "backend": {
-        "title": "Backend API",
-        "description": "FastAPI with Python, PostgreSQL database, and robust data processing",
-        "click_to_system_design": "Click to view system design"
-      },
-      "infrastructure": {
-        "title": "AWS Infrastructure",
-        "description": "ECS Fargate, CloudFront CDN, S3 storage, and Application Load Balancer",
-        "click_to_iac_cloud": "Click to view IaC & Cloud"
-      },
-      "frontend.click_to_architecture": "Click to view frontend architecture",
-      "backend.click_to_system_design": "Click to view system design",
-      "infrastructure.click_to_iac_cloud": "Click to view IaC & Cloud",
-      "features": {
-        "title": "Key Features",
-        "items": [
-          "Real-time backtesting with Monte Carlo simulations",
-          "Interactive charts with Lightweight Charts library",
-          "Secure authentication and session management",
-          "Responsive design with dark/light theme support",
-          "Scalable cloud infrastructure on AWS"
-        ]
-      }
-    }
-  },
-  "backtest": {
-    "steps": {
-      "data_selection": {
-        "title": "Data Selection",
-        "short_desc": "Choose your market data",
-        "subtitle": "Import a CSV file or select a dataset",
-        "description": "Select market data for your backtest. You can import a CSV file or choose from our pre-loaded datasets.",
-        "help": "Select a CSV file with Date, Open, High, Low, Close, Volume columns or choose a pre-loaded dataset."
-      },
-      "strategy": {
-        "title": "Strategy Configuration",
-        "short_desc": "Define your trading strategy",
-        "subtitle": "Choose and configure your strategy",
-        "description": "Select a trading strategy and configure its parameters.",
-        "help": "Choose a strategy (SMA Crossover or RSI) and adjust parameters according to your needs."
-      },
-      "advanced": {
-        "title": "Advanced Settings",
-        "short_desc": "Advanced options and Monte Carlo",
-        "subtitle": "Advanced backtest configuration",
-        "description": "Configure advanced parameters like analysis period and Monte Carlo simulations.",
-        "help": "Define the analysis period and configure Monte Carlo simulations for more robust analysis."
-      },
-      "review": {
-        "title": "Review and Launch",
-        "short_desc": "Review and launch the backtest",
-        "subtitle": "Review your settings",
-        "description": "Review all your parameters before launching the backtest.",
-        "help": "Make sure all parameters are correct before launching the backtest."
-      }
-    },
-    "help": {
-      "data_selection": "Select a CSV file with Date, Open, High, Low, Close, Volume columns or choose a pre-loaded dataset.",
-      "strategy_config": "Choose a strategy (SMA Crossover or RSI) and adjust parameters according to your needs.",
-      "advanced_config": "Define the analysis period and configure Monte Carlo simulations for more robust analysis.",
-      "review_launch": "Make sure all parameters are correct before launching the backtest."
-    },
-    "success": {
-      "data_selected": "Data selected successfully",
-      "strategy_configured": "Strategy configured successfully",
-      "advanced_configured": "Advanced settings configured successfully"
-    }
-  },
-  "simulate": {
-    "header": {
-      "title": "Backtest Simulation",
-      "subtitle": "Upload a CSV and run an SMA backtest."
-    },
-    "form": {
-      "title": "Strategy Form",
-      "step": "Step",
-      "of": "of",
-      "required": "Required",
-      "or": "OR",
-      "data_source": {
-        "title": "Data Source",
-        "description": "Choose a dataset OR upload a CSV file",
-        "dataset_selected": "{count} dataset selected | {count} datasets selected"
-      },
-      "labels": {
-        "csv_file": "CSV File",
-        "strategy": "Strategy",
-        "start_date_optional": "Start Date (optional)",
-        "end_date_optional": "End Date (optional)",
-        "datasets": "Select Datasets",
-        "datasets_description": "Choose from pre-loaded market datasets",
-        "strategy_params": "Strategy Parameters",
-        "analysis_period": "Analysis Period",
-        "date_range": "Date Range",
-        "start_date": "Start Date",
-        "end_date": "End Date",
-        "available_date_range": "Available Date Range"
-      },
-      "price_type": {
-        "label": "Price Type",
-        "close": "Close Price",
-        "adj_close": "Adjusted Close",
-        "description": "Choose between raw closing price or adjusted price for dividends and splits"
-      },
-      "normalization": {
-        "title": "Normalization",
-        "description": "Normalize the equity curve to start at 1",
-        "enabled": "Normalization enabled - equity curve will start at 1"
-      },
-      "buttons": {
-        "run": "Run",
-        "reset": "Reset"
-      },
-      "placeholders": {
-        "select_start_date": "Select start date",
-        "select_end_date": "Select end date"
-      },
-      "csv": {
-        "drop_hint": "Drag and drop your file or click to select.",
-        "selected_file": "Selected file: {name}",
-        "max_files": "Select up to 10 CSV files",
-        "files_selected": "file(s) selected",
-        "datasets_selected": "dataset(s) selected"
-      },
-      "monte_carlo": {
-        "title": "Monte Carlo Simulation",
-        "runs": "Number of Runs (1-200)",
-        "runs_description": "Set to 1 for regular backtest, >1 for Monte Carlo simulation (maximum 200 runs)",
-        "method": "Perturbation Method",
-        "bootstrap": "Bootstrap",
-        "gaussian": "Gaussian",
-        "sample_fraction": "Sample Fraction (0.1-2.0)",
-        "gaussian_scale": "Gaussian Scale (0.1-5.0)",
-        "method_required": "Please select a perturbation method for Monte Carlo simulation"
-      },
-      "strategy": {
-        "names": {
-          "sma_crossover": "SMA Crossover",
-          "rsi": "RSI Strategy"
-        },
-        "params": {
-          "sma_crossover": {
-            "sma_short": "Short SMA",
-            "sma_long": "Long SMA"
-          },
-          "rsi": {
-            "period": "RSI Period",
-            "overbought": "Overbought",
-            "oversold": "Oversold"
-          }
-        }
-      }
-    },
-    "results": {
-      "title": "Results",
-      "monte_carlo": {
-        "title": "Monte Carlo Simulation Results",
-        "description": "Showing equity envelope with confidence bands",
-        "progress_title": "Monte Carlo Simulation Progress",
-        "progress_label": "Monte Carlo simulation running"
-      }
-    },
-    "loading": "Loading...",
-    "metrics": {
-      "pnl": "P&L",
-      "drawdown": "Max Drawdown",
-      "sharpe": "Sharpe Ratio"
-    },
-    "errors": {
-      "backtest": "Error during backtest"
-    },
-    "chart": {
-      "title": "Equity Curve",
-      "subtitle": "Strategy Performance",
-      "trend": {
-        "positive": "Positive trend",
-        "negative": "Negative trend"
-      },
-      "empty": {
-        "title": "No data available",
-        "subtitle": "Run a backtest to see results"
-      },
-      "legend": "Equity",
-      "multi_title": "Multi-Line Chart",
-      "multi_analysis": "Comparative analysis",
-      "aggregated": "Aggregated Data",
-      "series_visible": "series visible",
-      "series_total": "series total",
-      "no_data": "No data to display",
-      "resolution": {
-        "1m": "1m",
-        "5m": "5m",
-        "1h": "1h",
-        "1d": "1d"
-      },
-      "range": {
-        "1W": "1W",
-        "1M": "1M",
-        "YTD": "YTD",
-        "All": "All"
-      },
-      "monte_carlo": {
-        "title": "Monte Carlo Equity Envelope",
-        "description": "Simulation results distribution",
-        "no_data": "No Monte Carlo data available",
-        "simulation": "Monte Carlo Simulation",
-        "data_points": "data points",
-        "percentiles": {
-          "5th": "5th Percentile",
-          "25th": "25th Percentile",
-          "median": "Median",
-          "75th": "75th Percentile",
-          "95th": "95th Percentile"
-        },
-        "progress_label": "Monte Carlo simulation running"
-      }
-    },
+	"nav": {
+		"title": "High Performance",
+		"subtitle": "Trading Platform",
+		"home": "Home",
+		"simulate": "Simulate",
+		"history": "History",
+		"legacy": "Legacy",
+		"login": "Login",
+		"register": "Register"
+	},
+	"auth": {
+		"logout": "Logout",
+		"email": "Email",
+		"password": "Password",
+		"confirmPassword": "Confirm Password",
+		"forgotPassword": "Forgot Password?",
+		"rememberMe": "Remember me",
+		"noAccount": "Don't have an account?",
+		"hasAccount": "Already have an account?",
+		"signUp": "Sign up",
+		"signIn": "Sign in",
+		"createAccount": "Create Account",
+		"loginWithGoogle": "Login with Google",
+		"registerWithGoogle": "Register with Google",
+		"titles": {
+			"login": "Login",
+			"register": "Register"
+		},
+		"buttons": {
+			"googleLogin": "Continue with Google",
+			"loading": "Loading...",
+			"login": "Login",
+			"register": "Register"
+		},
+		"labels": {
+			"orContinueWithEmail": "Or continue with email",
+			"email": "Email",
+			"password": "Password"
+		},
+		"placeholders": {
+			"email": "Enter your email",
+			"password": "Enter your password"
+		},
+		"login": {
+			"title": "Login to your account",
+			"subtitle": "Access your high-performance trading platform",
+			"welcome": "Welcome to HPTP",
+			"description": "Sign in to access your backtests, strategies, and advanced market analysis.",
+			"features": {
+				"secure": "Secure and reliable",
+				"fast": "Fast and performant",
+				"customizable": "Customizable",
+				"realtime": "Real-time data",
+				"advanced": "Advanced analytics",
+				"portfolio": "Portfolio management"
+			},
+			"backToHome": "Back to home"
+		},
+		"register": {
+			"title": "Create your trading account",
+			"subtitle": "Join the high-performance trading platform",
+			"welcome": "Join HPTP",
+			"description": "Create your account and discover a modern trading platform with advanced analysis tools.",
+			"features": {
+				"encrypted": "Encrypted and protected data",
+				"support": "Responsive customer support",
+				"free": "Free to get started",
+				"backtesting": "Advanced backtesting",
+				"strategies": "Custom strategies",
+				"analytics": "Detailed analytics"
+			},
+			"backToHome": "Back to home"
+		},
+		"password": {
+			"requirements": "Password requirements:",
+			"minLength": "At least 8 characters",
+			"hasUppercase": "One uppercase letter",
+			"hasLowercase": "One lowercase letter",
+			"hasNumber": "One number",
+			"hasSymbol": "One symbol",
+			"strength": "Password strength:",
+			"minCharacters": "Minimum 6 characters.",
+			"validation": {
+				"title": "Password requirements",
+				"minLength": "Password must be at least 8 characters long",
+				"hasUppercase": "Password must contain at least one uppercase letter",
+				"hasLowercase": "Password must contain at least one lowercase letter",
+				"hasNumber": "Password must contain at least one number",
+				"hasSymbol": "Password must contain at least one symbol"
+			},
+			"strength": {
+				"weak": "Weak",
+				"fair": "Fair",
+				"good": "Good",
+				"strong": "Strong"
+			}
+		},
+		"errors": {
+			"invalidCredentials": "Invalid email or password",
+			"invalidPassword": "Please meet all password requirements",
+			"authFailed": "Authentication failed",
+			"googleAuthFailed": "Google authentication failed"
+		},
+		"links": {
+			"createAccount": "Create an account",
+			"alreadyHaveAccount": "Already have an account?"
+		}
+	},
+	"landing": {
+		"title": "High-Performance Trading Platform",
+		"subtitle": "Technical demo of a modern trading platform. Educational project combining Vue.js and FastAPI.",
+		"cta": {
+			"startBacktest": "Start Backtest",
+			"login": "Login",
+			"register": "Register"
+		},
+		"legacy": {
+			"text": "Prefer the previous dashboard? Visit the legacy homepage.",
+			"open": "Open Legacy Dashboard"
+		},
+		"sections": {
+			"simulation": {
+				"title": "Backtest Simulation",
+				"description": "Fast backtests, clear parameters, reliable results.",
+				"text": "Upload your CSV price data, set SMA parameters, and run a server-powered backtest. Results show equity curve, PnL, and max drawdown with robust error handling and responsive UI."
+			},
+			"auth": {
+				"title": "Authentication",
+				"description": "Simplified and secure authentication flow.",
+				"text": "Register and login to store tokens in Pinia. Requests use an authenticated API client. For testing, the simulate page can be accessed without login."
+			},
+			"visualization": {
+				"title": "Visualization",
+				"description": "Clear visualizations, readable themes, relevant details.",
+				"text": "Equity curve rendered with Lightweight Charts. Metrics for PnL and drawdown with clear, minimal design."
+			}
+		},
+		"final": {
+			"ready": "Ready to start?",
+			"startSimulation": "Start a simulation"
+		},
+		"architecture": {
+			"open": "Open Architecture Details",
+			"dialog": {
+				"title": "System Architecture Overview",
+				"description": "High-level choices for stack, infrastructure, data, and alignment."
+			},
+			"sections": {
+				"stack": {
+					"title": "Application Stack (Full Stack)",
+					"points": {
+						"0": "Frontend: Vue.js + Vite with shadcn/vue for professional, accessible UI.",
+						"1": "Backend: FastAPI with Uvicorn focused on performance and async.",
+						"2": "Reverse Proxy: Nginx routing /api to FastAPI."
+					}
+				},
+				"infra": {
+					"title": "Infrastructure & Deployment (IaC & DevOps)",
+					"points": {
+						"0": "Full Infrastructure-as-Code with Terraform (VPC, ECS, Route 53, ACM, CloudFront).",
+						"1": "CI/CD automation with GitHub Actions and Pytest validation.",
+						"2": "High-performance FastAPI backend with parallel Monte Carlo workers.",
+						"3": "Secure frontend deployment on CloudFront with HTTPS and Cognito Auth.",
+						"4": "Centralized monitoring and logging via CloudWatch.",
+						"5": "Robust IAM, OAuth2, and JWT-based security model.",
+						"6": "Designed for scalability, maintainability, and production resilience.",
+						"7": "VPC with private subnets for enhanced security and isolation."
+					}
+				},
+				"data_cache": {
+					"title": "Backend Services & Data",
+					"points": {
+						"0": "Database: PostgreSQL 16 for robust data persistence.",
+						"1": "Comprehensive testing suite with Pytest for API and unit tests.",
+						"2": "Asynchronous Monte Carlo workers for parallel simulations."
+					}
+				},
+				"alignment": {
+					"title": "Architect/Lead Alignment",
+					"points": {
+						"0": "System Design: Path from single EC2 to cloud-native (ECS, RDS, ALB).",
+						"1": "Technical Expertise: Clean Architecture and DDD reflected in API and data design.",
+						"2": "High-Performance/Fintech: FastAPI + Redis/Rust roadmap fit financial workloads."
+					}
+				}
+			},
+			"frontend": {
+				"title": "Frontend (Vue) Architecture",
+				"description": "Project structure, UI components, and i18n for a clean UX.",
+				"points_title": "Highlights",
+				"experience": "Production-ready components and modern DX"
+			},
+			"backend": {
+				"title": "Backend (FastAPI) & Architecture",
+				"description": "Performance, Clean Architecture, DDD, and scale-out options.",
+				"points_title": "Highlights"
+			},
+			"infra_dialog": {
+				"title": "Infrastructure (AWS & Terraform)",
+				"description": "Infrastructure as Code, multi-container deployment, cloud evolution."
+			}
+		},
+		"project": {
+			"title": "Project Architecture",
+			"description": "Modern full-stack trading platform built with cutting-edge technologies",
+			"frontend": {
+				"title": "Frontend",
+				"description": "Vue.js 3 with TypeScript, Vite, and modern UI components",
+				"click_to_architecture": "Click to view frontend architecture"
+			},
+			"backend": {
+				"title": "Backend API",
+				"description": "FastAPI with Python, PostgreSQL database, and robust data processing",
+				"click_to_system_design": "Click to view system design"
+			},
+			"infrastructure": {
+				"title": "AWS Infrastructure",
+				"description": "ECS Fargate, CloudFront CDN, S3 storage, and Application Load Balancer",
+				"click_to_iac_cloud": "Click to view IaC & Cloud"
+			},
+			"frontend.click_to_architecture": "Click to view frontend architecture",
+			"backend.click_to_system_design": "Click to view system design",
+			"infrastructure.click_to_iac_cloud": "Click to view IaC & Cloud",
+			"features": {
+				"title": "Key Features",
+				"items": [
+					"Real-time backtesting with Monte Carlo simulations",
+					"Interactive charts with Lightweight Charts library",
+					"Secure authentication and session management",
+					"Responsive design with dark/light theme support",
+					"Scalable cloud infrastructure on AWS"
+				]
+			}
+		}
+	},
+	"backtest": {
+		"steps": {
+			"data_selection": {
+				"title": "Data Selection",
+				"short_desc": "Choose your market data",
+				"subtitle": "Import a CSV file or select a dataset",
+				"description": "Select market data for your backtest. You can import a CSV file or choose from our pre-loaded datasets.",
+				"help": "Select a CSV file with Date, Open, High, Low, Close, Volume columns or choose a pre-loaded dataset."
+			},
+			"strategy": {
+				"title": "Strategy Configuration",
+				"short_desc": "Define your trading strategy",
+				"subtitle": "Choose and configure your strategy",
+				"description": "Select a trading strategy and configure its parameters.",
+				"help": "Choose a strategy (SMA Crossover or RSI) and adjust parameters according to your needs."
+			},
+			"advanced": {
+				"title": "Advanced Settings",
+				"short_desc": "Advanced options and Monte Carlo",
+				"subtitle": "Advanced backtest configuration",
+				"description": "Configure advanced parameters like analysis period and Monte Carlo simulations.",
+				"help": "Define the analysis period and configure Monte Carlo simulations for more robust analysis."
+			},
+			"review": {
+				"title": "Review and Launch",
+				"short_desc": "Review and launch the backtest",
+				"subtitle": "Review your settings",
+				"description": "Review all your parameters before launching the backtest.",
+				"help": "Make sure all parameters are correct before launching the backtest."
+			}
+		},
+		"help": {
+			"data_selection": "Select a CSV file with Date, Open, High, Low, Close, Volume columns or choose a pre-loaded dataset.",
+			"strategy_config": "Choose a strategy (SMA Crossover or RSI) and adjust parameters according to your needs.",
+			"advanced_config": "Define the analysis period and configure Monte Carlo simulations for more robust analysis.",
+			"review_launch": "Make sure all parameters are correct before launching the backtest."
+		},
+		"success": {
+			"data_selected": "Data selected successfully",
+			"strategy_configured": "Strategy configured successfully",
+			"advanced_configured": "Advanced settings configured successfully"
+		}
+	},
+	"simulate": {
+		"header": {
+			"title": "Backtest Simulation",
+			"subtitle": "Upload a CSV and run an SMA backtest."
+		},
+		"form": {
+			"title": "Strategy Form",
+			"step": "Step",
+			"of": "of",
+			"required": "Required",
+			"or": "OR",
+			"data_source": {
+				"title": "Data Source",
+				"description": "Choose a dataset OR upload a CSV file",
+				"dataset_selected": "{count} dataset selected | {count} datasets selected"
+			},
+			"labels": {
+				"csv_file": "CSV File",
+				"strategy": "Strategy",
+				"start_date_optional": "Start Date (optional)",
+				"end_date_optional": "End Date (optional)",
+				"datasets": "Select Datasets",
+				"datasets_description": "Choose from pre-loaded market datasets",
+				"strategy_params": "Strategy Parameters",
+				"analysis_period": "Analysis Period",
+				"date_range": "Date Range",
+				"start_date": "Start Date",
+				"end_date": "End Date",
+				"available_date_range": "Available Date Range"
+			},
+			"price_type": {
+				"label": "Price Type",
+				"close": "Close Price",
+				"adj_close": "Adjusted Close",
+				"description": "Choose between raw closing price or adjusted price for dividends and splits"
+			},
+			"normalization": {
+				"title": "Normalization",
+				"description": "Normalize the equity curve to start at 1",
+				"enabled": "Normalization enabled - equity curve will start at 1"
+			},
+			"buttons": {
+				"run": "Run",
+				"reset": "Reset"
+			},
+			"placeholders": {
+				"select_start_date": "Select start date",
+				"select_end_date": "Select end date"
+			},
+			"csv": {
+				"drop_hint": "Drag and drop your file or click to select.",
+				"selected_file": "Selected file: {name}",
+				"max_files": "Select up to 10 CSV files",
+				"files_selected": "file(s) selected",
+				"datasets_selected": "dataset(s) selected"
+			},
+			"monte_carlo": {
+				"title": "Monte Carlo Simulation",
+				"runs": "Number of Runs (1-200)",
+				"runs_description": "Set to 1 for regular backtest, >1 for Monte Carlo simulation (maximum 200 runs)",
+				"method": "Perturbation Method",
+				"bootstrap": "Bootstrap",
+				"gaussian": "Gaussian",
+				"sample_fraction": "Sample Fraction (0.1-2.0)",
+				"gaussian_scale": "Gaussian Scale (0.1-5.0)",
+				"method_required": "Please select a perturbation method for Monte Carlo simulation"
+			},
+			"strategy": {
+				"names": {
+					"sma_crossover": "SMA Crossover",
+					"rsi": "RSI Strategy"
+				},
+				"params": {
+					"sma_crossover": {
+						"sma_short": "Short SMA",
+						"sma_long": "Long SMA"
+					},
+					"rsi": {
+						"period": "RSI Period",
+						"overbought": "Overbought",
+						"oversold": "Oversold"
+					}
+				}
+			}
+		},
+		"results": {
+			"title": "Results",
+			"monte_carlo": {
+				"title": "Monte Carlo Simulation Results",
+				"description": "Showing equity envelope with confidence bands",
+				"progress_title": "Monte Carlo Simulation Progress",
+				"progress_label": "Monte Carlo simulation running"
+			}
+		},
+		"loading": "Loading...",
+		"metrics": {
+			"pnl": "P&L",
+			"drawdown": "Max Drawdown",
+			"sharpe": "Sharpe Ratio"
+		},
+		"errors": {
+			"backtest": "Error during backtest"
+		},
+		"chart": {
+			"title": "Equity Curve",
+			"subtitle": "Strategy Performance",
+			"trend": {
+				"positive": "Positive trend",
+				"negative": "Negative trend"
+			},
+			"empty": {
+				"title": "No data available",
+				"subtitle": "Run a backtest to see results"
+			},
+			"legend": "Equity",
+			"multi_title": "Multi-Line Chart",
+			"multi_analysis": "Comparative analysis",
+			"aggregated": "Aggregated Data",
+			"series_visible": "series visible",
+			"series_total": "series total",
+			"no_data": "No data to display",
+			"resolution": {
+				"1m": "1m",
+				"5m": "5m",
+				"1h": "1h",
+				"1d": "1d"
+			},
+			"range": {
+				"1W": "1W",
+				"1M": "1M",
+				"YTD": "YTD",
+				"All": "All"
+			},
+			"monte_carlo": {
+				"title": "Monte Carlo Equity Envelope",
+				"description": "Simulation results distribution",
+				"no_data": "No Monte Carlo data available",
+				"simulation": "Monte Carlo Simulation",
+				"data_points": "data points",
+				"percentiles": {
+					"5th": "5th Percentile",
+					"25th": "25th Percentile",
+					"median": "Median",
+					"75th": "75th Percentile",
+					"95th": "95th Percentile"
+				},
+				"progress_label": "Monte Carlo simulation running"
+			}
+		},
 
-    "distributions": {
-      "mean": "Mean",
-      "median": "Median",
-      "std": "Standard Deviation",
-      "volatility": "Volatility",
-      "p5": "5th percentile",
-      "p25": "25th percentile",
-      "p75": "75th percentile",
-      "p95": "95th percentile",
-      "statistics": "Distribution Statistics",
-      "showing_median": "Showing median values with distribution ranges",
-      "percentile_short": "%ile"
-    }
-  },
-  "errors": {
-    "invalid_csv": "The file must be a CSV",
-    "no_csv_file": "Please select a CSV file",
-    "invalid_params": "Invalid parameters",
-    "csv_too_large": "The file must be ≤ 5MB",
-    "invalid_sma_params": "SMA parameters are invalid",
-    "invalid_rsi_params": "RSI parameters are invalid",
-    "backtest_failed": "Backtest failed",
-    "auth_login_failed": "Login failed",
-    "auth_register_failed": "Registration failed",
-    "network_error": "Network error",
-    "request_timeout": "Request timeout",
-    "retrying": "Retrying…",
-    "date_validation": {
-      "start_date_invalid": "Start date is invalid",
-      "end_date_invalid": "End date is invalid",
-      "end_before_start": "End date cannot be before start date",
-      "date_outside_range": "Selected date is outside available range",
-      "available_range": "Available range: {minDate} to {maxDate}",
-      "invalid_date_range": "Invalid date range"
-    }
-  },
-  "todo": {
-    "title": "Task List",
-    "add": "Add",
-    "add_new": "New Task",
-    "task": "Task",
-    "task_placeholder": "Describe your task...",
-    "empty": "No tasks yet",
-    "priority": {
-      "label": "Priority",
-      "select": "Select priority",
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High"
-    }
-  },
-  "common": {
-    "cancel": "Cancel",
-    "save": "Save",
-    "delete": "Delete",
-    "edit": "Edit",
-    "loading": "Loading...",
-    "refresh": "Refresh",
-    "retry": "Retry",
-    "previous": "Previous",
-    "next": "Next",
-    "language": "Language",
-    "selectLanguage": "Select language",
-    "select_language": "Select language"
-  },
-  "history": {
-    "title": "Backtest History",
-    "description": "View and manage your previous backtest runs",
-    "filter_by_strategy": "Filter by strategy",
-    "all_strategies": "All strategies",
-    "backtest_history": "Backtest History",
-    "no_history": "No backtest history found",
-    "run_first_backtest": "Run your first backtest",
-    "view_details": "View Details",
-    "rerun": "Rerun",
-    "confirm_delete": "Are you sure you want to delete this backtest?",
-    "date_range": "Date Range",
-    "total_return": "Total Return",
-    "sharpe_ratio": "Sharpe Ratio",
-    "max_drawdown": "Max Drawdown",
-    "created_at": "Created",
-    "parameters": "Parameters",
-    "datasets": "Datasets",
-    "showing": "Showing",
-    "of": "of",
-    "results": "results",
-    "stats": {
-      "total_backtests": "Total Backtests",
-      "avg_return": "Avg Return",
-      "avg_sharpe": "Avg Sharpe",
-      "monte_carlo_runs": "Monte Carlo Runs"
-    },
-    "status": {
-      "completed": "Completed",
-      "running": "Running",
-      "failed": "Failed"
-    }
-  }
+		"distributions": {
+			"mean": "Mean",
+			"median": "Median",
+			"std": "Standard Deviation",
+			"volatility": "Volatility",
+			"p5": "5th percentile",
+			"p25": "25th percentile",
+			"p75": "75th percentile",
+			"p95": "95th percentile",
+			"statistics": "Distribution Statistics",
+			"showing_median": "Showing median values with distribution ranges",
+			"percentile_short": "%ile"
+		}
+	},
+	"errors": {
+		"invalid_csv": "The file must be a CSV",
+		"no_csv_file": "Please select a CSV file",
+		"invalid_params": "Invalid parameters",
+		"csv_too_large": "The file must be ≤ 5MB",
+		"invalid_sma_params": "SMA parameters are invalid",
+		"invalid_rsi_params": "RSI parameters are invalid",
+		"backtest_failed": "Backtest failed",
+		"auth_login_failed": "Login failed",
+		"auth_register_failed": "Registration failed",
+		"network_error": "Network error",
+		"request_timeout": "Request timeout",
+		"retrying": "Retrying…",
+		"date_validation": {
+			"start_date_invalid": "Start date is invalid",
+			"end_date_invalid": "End date is invalid",
+			"end_before_start": "End date cannot be before start date",
+			"date_outside_range": "Selected date is outside available range",
+			"available_range": "Available range: {minDate} to {maxDate}",
+			"invalid_date_range": "Invalid date range"
+		}
+	},
+	"todo": {
+		"title": "Task List",
+		"add": "Add",
+		"add_new": "New Task",
+		"task": "Task",
+		"task_placeholder": "Describe your task...",
+		"empty": "No tasks yet",
+		"priority": {
+			"label": "Priority",
+			"select": "Select priority",
+			"low": "Low",
+			"medium": "Medium",
+			"high": "High"
+		}
+	},
+	"common": {
+		"cancel": "Cancel",
+		"save": "Save",
+		"delete": "Delete",
+		"edit": "Edit",
+		"loading": "Loading...",
+		"refresh": "Refresh",
+		"retry": "Retry",
+		"previous": "Previous",
+		"next": "Next",
+		"language": "Language",
+		"selectLanguage": "Select language",
+		"select_language": "Select language"
+	},
+	"history": {
+		"title": "Backtest History",
+		"description": "View and manage your previous backtest runs",
+		"filter_by_strategy": "Filter by strategy",
+		"all_strategies": "All strategies",
+		"backtest_history": "Backtest History",
+		"no_history": "No backtest history found",
+		"run_first_backtest": "Run your first backtest",
+		"view_details": "View Details",
+		"rerun": "Rerun",
+		"confirm_delete": "Are you sure you want to delete this backtest?",
+		"date_range": "Date Range",
+		"total_return": "Total Return",
+		"sharpe_ratio": "Sharpe Ratio",
+		"max_drawdown": "Max Drawdown",
+		"created_at": "Created",
+		"parameters": "Parameters",
+		"datasets": "Datasets",
+		"showing": "Showing",
+		"of": "of",
+		"results": "results",
+		"stats": {
+			"total_backtests": "Total Backtests",
+			"avg_return": "Avg Return",
+			"avg_sharpe": "Avg Sharpe",
+			"monte_carlo_runs": "Monte Carlo Runs"
+		},
+		"status": {
+			"completed": "Completed",
+			"running": "Running",
+			"failed": "Failed"
+		}
+	}
 }

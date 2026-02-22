@@ -8,79 +8,79 @@ import ArchitectureDialog from "@/components/landing/ArchitectureDialog.vue";
 const { t } = useI18n();
 const { navigate } = useRouter();
 function goToSimulate() {
-    navigate("/simulate");
+	navigate("/simulate");
 }
 const architectureCards = [
-    {
-        id: "frontend",
-        icon: Zap,
-        gradient: "from-green-400 to-emerald-600",
-        glowColor: "rgba(16, 185, 129, 0.6)",
-        sections: [
-            {
-                icon: Zap,
-                titleKey: "landing.architecture.sections.stack.title",
-                points: [
-                    "landing.architecture.sections.stack.points.0",
-                    "landing.architecture.sections.stack.points.1",
-                    "landing.architecture.sections.stack.points.2",
-                ],
-            },
-            {
-                icon: TrendingUp,
-                title: "Expérience Utilisateur",
-                points: ["landing.architecture.frontend.experience"],
-            },
-        ],
-    },
-    {
-        id: "backend",
-        icon: BarChart3,
-        gradient: "from-purple-400 to-purple-600",
-        glowColor: "rgba(168, 85, 247, 0.6)",
-        sections: [
-            {
-                icon: BarChart3,
-                titleKey: "landing.architecture.sections.data_cache.title",
-                points: [
-                    "landing.architecture.sections.data_cache.points.0",
-                    "landing.architecture.sections.data_cache.points.1",
-                    "landing.architecture.sections.data_cache.points.2",
-                ],
-            },
-            {
-                icon: TrendingUp,
-                titleKey: "landing.architecture.sections.alignment.title",
-                points: [
-                    "landing.architecture.sections.alignment.points.0",
-                    "landing.architecture.sections.alignment.points.1",
-                    "landing.architecture.sections.alignment.points.2",
-                ],
-            },
-        ],
-    },
-    {
-        id: "infrastructure",
-        icon: Shield,
-        gradient: "from-orange-400 to-red-600",
-        glowColor: "rgba(249, 115, 22, 0.6)",
-        sections: [
-            {
-                icon: Shield,
-                titleKey: "landing.architecture.sections.infra.title",
-                points: [
-                    "landing.architecture.sections.infra.points.0",
-                    "landing.architecture.sections.infra.points.1",
-                    "landing.architecture.sections.infra.points.2",
-                    "landing.architecture.sections.infra.points.3",
-                    "landing.architecture.sections.infra.points.4",
-                    "landing.architecture.sections.infra.points.5",
-                    "landing.architecture.sections.infra.points.6",
-                    "landing.architecture.sections.infra.points.7",
-                ],
-            },
-        ],
-    },
+	{
+		id: "frontend",
+		icon: Zap,
+		gradient: "from-green-400 to-emerald-600",
+		glowColor: "rgba(16, 185, 129, 0.6)",
+		sections: [
+			{
+				icon: Zap,
+				titleKey: "landing.architecture.sections.stack.title",
+				points: [
+					"landing.architecture.sections.stack.points.0",
+					"landing.architecture.sections.stack.points.1",
+					"landing.architecture.sections.stack.points.2",
+				],
+			},
+			{
+				icon: TrendingUp,
+				title: "Expérience Utilisateur",
+				points: ["landing.architecture.frontend.experience"],
+			},
+		],
+	},
+	{
+		id: "backend",
+		icon: BarChart3,
+		gradient: "from-purple-400 to-purple-600",
+		glowColor: "rgba(168, 85, 247, 0.6)",
+		sections: [
+			{
+				icon: BarChart3,
+				titleKey: "landing.architecture.sections.data_cache.title",
+				points: [
+					"landing.architecture.sections.data_cache.points.0",
+					"landing.architecture.sections.data_cache.points.1",
+					"landing.architecture.sections.data_cache.points.2",
+				],
+			},
+			{
+				icon: TrendingUp,
+				titleKey: "landing.architecture.sections.alignment.title",
+				points: [
+					"landing.architecture.sections.alignment.points.0",
+					"landing.architecture.sections.alignment.points.1",
+					"landing.architecture.sections.alignment.points.2",
+				],
+			},
+		],
+	},
+	{
+		id: "infrastructure",
+		icon: Shield,
+		gradient: "from-orange-400 to-red-600",
+		glowColor: "rgba(249, 115, 22, 0.6)",
+		sections: [
+			{
+				icon: Shield,
+				titleKey: "landing.architecture.sections.infra.title",
+				points: [
+					"landing.architecture.sections.infra.points.0",
+					"landing.architecture.sections.infra.points.1",
+					"landing.architecture.sections.infra.points.2",
+					"landing.architecture.sections.infra.points.3",
+					"landing.architecture.sections.infra.points.4",
+					"landing.architecture.sections.infra.points.5",
+					"landing.architecture.sections.infra.points.6",
+					"landing.architecture.sections.infra.points.7",
+				],
+			},
+		],
+	},
 ];
 </script>
 <template>

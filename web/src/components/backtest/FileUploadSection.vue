@@ -53,67 +53,67 @@ class="ml-2 p-1 hover:bg-red-100 rounded-full transition-colors"
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Label } from '@/components/ui/label'
-import { Upload, FileSpreadsheet, CheckCircle, X } from 'lucide-vue-next'
+import { ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { Label } from "@/components/ui/label";
+import { Upload, FileSpreadsheet, CheckCircle, X } from "lucide-vue-next";
 interface Props {
-  selectedFiles: File[]
-  error?: string | null
+	selectedFiles: File[];
+	error?: string | null;
 }
 interface Emits {
-  (e: 'update:selectedFiles', files: File[]): void
-  (e: 'update:error', error: string | null): void
+	(e: "update:selectedFiles", files: File[]): void;
+	(e: "update:error", error: string | null): void;
 }
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-const { t } = useI18n()
-const dragActive = ref(false)
-const inputEl = ref<HTMLInputElement | null>(null)
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+const { t } = useI18n();
+const dragActive = ref(false);
+const inputEl = ref<HTMLInputElement | null>(null);
 function onFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const files = Array.from(input.files || [])
-  addFiles(files)
+	const input = e.target as HTMLInputElement;
+	const files = Array.from(input.files || []);
+	addFiles(files);
 }
 function addFiles(files: File[]) {
-  emit('update:error', null)
-  const validFiles = files.filter(f => {
-    if (!isCsvFile(f)) {
-      emit('update:error', t('errors.invalid_csv'))
-      return false
-    }
-    return true
-  })
-  if (validFiles.length > 0) {
-    emit('update:selectedFiles', [validFiles[0]])
-  }
+	emit("update:error", null);
+	const validFiles = files.filter((f) => {
+		if (!isCsvFile(f)) {
+			emit("update:error", t("errors.invalid_csv"));
+			return false;
+		}
+		return true;
+	});
+	if (validFiles.length > 0) {
+		emit("update:selectedFiles", [validFiles[0]]);
+	}
 }
 function removeFile(index: number) {
-  const newFiles = props.selectedFiles.filter((_, i) => i !== index)
-  emit('update:selectedFiles', newFiles)
+	const newFiles = props.selectedFiles.filter((_, i) => i !== index);
+	emit("update:selectedFiles", newFiles);
 }
 function isCsvFile(f: File) {
-  return f.type === 'text/csv' || f.name.toLowerCase().endsWith('.csv')
+	return f.type === "text/csv" || f.name.toLowerCase().endsWith(".csv");
 }
 function onZoneClick() {
-  inputEl.value?.click()
+	inputEl.value?.click();
 }
 function onDragOver(e: DragEvent) {
-  e.preventDefault()
-  dragActive.value = true
+	e.preventDefault();
+	dragActive.value = true;
 }
 function onDragEnter(e: DragEvent) {
-  e.preventDefault()
-  dragActive.value = true
+	e.preventDefault();
+	dragActive.value = true;
 }
 function onDragLeave(e: DragEvent) {
-  e.preventDefault()
-  dragActive.value = false
+	e.preventDefault();
+	dragActive.value = false;
 }
 function onDrop(e: DragEvent) {
-  e.preventDefault()
-  dragActive.value = false
-  const files = Array.from(e.dataTransfer?.files || [])
-  addFiles(files)
+	e.preventDefault();
+	dragActive.value = false;
+	const files = Array.from(e.dataTransfer?.files || []);
+	addFiles(files);
 }
 </script>

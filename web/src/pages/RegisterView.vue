@@ -1,38 +1,38 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { useI18n } from 'vue-i18n'
+import { useI18n } from "vue-i18n";
 import AuthForm from "@/components/auth/AuthForm.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "@/router";
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Globe, Home } from 'lucide-vue-next'
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Globe, Home } from "lucide-vue-next";
 import { useLocale } from "@/composables/useLocale";
 const auth = useAuthStore();
 const { navigate } = useRouter();
-const { t } = useI18n()
+const { t } = useI18n();
 const { selectedLocale, setLocale } = useLocale();
 function goHome() {
-  navigate('/')
+	navigate("/");
 }
 onMounted(async () => {
-    auth.rehydrate();
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("auth") || urlParams.has("error")) {
-        const success = await auth.handleGoogleCallback();
-        if (success) {
-            navigate("/simulate");
-            return;
-        }
-    }
-    if (auth.isAuthenticated) navigate("/simulate");
+	auth.rehydrate();
+	const urlParams = new URLSearchParams(window.location.search);
+	if (urlParams.has("auth") || urlParams.has("error")) {
+		const success = await auth.handleGoogleCallback();
+		if (success) {
+			navigate("/simulate");
+			return;
+		}
+	}
+	if (auth.isAuthenticated) navigate("/simulate");
 });
 </script>
 <template>

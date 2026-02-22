@@ -92,25 +92,28 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { MultiLineToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { TrendingUp } from 'lucide-vue-next'
+import { useI18n } from "vue-i18n";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+	MultiLineToggleGroup,
+	ToggleGroupItem,
+} from "@/components/ui/toggle-group";
+import { TrendingUp } from "lucide-vue-next";
 interface Props {
-  monteCarloRuns: number
-  monteCarloMethod: string
-  sampleFraction: number
-  gaussianScale: number
-  isMonteCarloEnabled: boolean
+	monteCarloRuns: number;
+	monteCarloMethod: string;
+	sampleFraction: number;
+	gaussianScale: number;
+	isMonteCarloEnabled: boolean;
 }
 interface Emits {
-  (e: 'update:monteCarloRuns', value: number): void
-  (e: 'update:monteCarloMethod', value: string): void
-  (e: 'update:sampleFraction', value: number): void
-  (e: 'update:gaussianScale', value: number): void
+	(e: "update:monteCarloRuns", value: number): void;
+	(e: "update:monteCarloMethod", value: string): void;
+	(e: "update:sampleFraction", value: number): void;
+	(e: "update:gaussianScale", value: number): void;
 }
-defineProps<Props>()
-defineEmits<Emits>()
-const { t } = useI18n()
+defineProps<Props>();
+defineEmits<Emits>();
+const { t } = useI18n();
 </script>

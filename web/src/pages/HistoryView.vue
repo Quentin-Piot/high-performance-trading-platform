@@ -566,85 +566,88 @@ import { ref, onMounted, watch } from "vue";
 import { useRouter } from "@/router";
 import { useI18n } from "vue-i18n";
 import {
-    BACKTEST_STRATEGIES,
-    type StrategyId,
+	BACKTEST_STRATEGIES,
+	type StrategyId,
 } from "@/config/backtestStrategies";
 import {
-    BarChart3,
-    TrendingUp,
-    Activity,
-    Zap,
-    RefreshCw,
-    AlertCircle,
-    Play,
-    Trash2,
-    ChevronLeft,
-    ChevronRight,
+	BarChart3,
+	TrendingUp,
+	Activity,
+	Zap,
+	RefreshCw,
+	AlertCircle,
+	Play,
+	Trash2,
+	ChevronLeft,
+	ChevronRight,
 } from "lucide-vue-next";
 import BaseLayout from "@/components/layouts/BaseLayout.vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { fetchJson } from "@/services/apiClient";
 
 type HistoryStatus = "completed" | "running" | "failed" | string;
-type StrategyParams = Record<string, string | number | boolean | null | undefined>;
+type StrategyParams = Record<
+	string,
+	string | number | boolean | null | undefined
+>;
 
 interface HistoryItem {
-    id: string;
-    strategy: StrategyId;
-    status: HistoryStatus;
-    monte_carlo_runs: number;
-    monte_carlo_method?: string | null;
-    sample_fraction?: number | null;
-    gaussian_scale?: number | null;
-    price_type?: string | null;
-    start_date?: string | null;
-    end_date?: string | null;
-    total_return: number | null;
-    sharpe_ratio: number | null;
-    max_drawdown: number | null;
-    created_at: string;
-    strategy_params?: StrategyParams | null;
-    datasets_used?: string[] | null;
+	id: string;
+	strategy: StrategyId;
+	status: HistoryStatus;
+	monte_carlo_runs: number;
+	monte_carlo_method?: string | null;
+	sample_fraction?: number | null;
+	gaussian_scale?: number | null;
+	price_type?: string | null;
+	start_date?: string | null;
+	end_date?: string | null;
+	total_return: number | null;
+	sharpe_ratio: number | null;
+	max_drawdown: number | null;
+	created_at: string;
+	strategy_params?: StrategyParams | null;
+	datasets_used?: string[] | null;
 }
 
 interface HistoryStats {
-    total_backtests: number;
-    avg_return: number | null;
-    avg_sharpe: number | null;
-    total_monte_carlo_runs: number;
+	total_backtests: number;
+	avg_return: number | null;
+	avg_sharpe: number | null;
+	total_monte_carlo_runs: number;
 }
 
 interface HistoryListResponse {
-    items: HistoryItem[];
-    page: number;
-    per_page: number;
-    total: number;
-    has_prev: boolean;
-    has_next: boolean;
+	items: HistoryItem[];
+	page: number;
+	per_page: number;
+	total: number;
+	has_prev: boolean;
+	has_next: boolean;
 }
 
 const getErrorMessage = (err: unknown) =>
-    err instanceof Error ? err.message : null;
+	err instanceof Error ? err.message : null;
 
 const { t } = useI18n();
 const { navigate } = useRouter();
@@ -654,147 +657,147 @@ const history = ref<HistoryItem[]>([]);
 const stats = ref<HistoryStats | null>(null);
 const selectedStrategy = ref("all");
 const pagination = ref({
-    page: 1,
-    per_page: 10,
-    total: 0,
-    has_prev: false,
-    has_next: false,
+	page: 1,
+	per_page: 10,
+	total: 0,
+	has_prev: false,
+	has_next: false,
 });
 const loadHistory = async (page = 1) => {
-    loading.value = true;
-    error.value = null;
-    try {
-        const params = new URLSearchParams({
-            page: page.toString(),
-            per_page: pagination.value.per_page.toString(),
-        });
-        if (selectedStrategy.value && selectedStrategy.value !== "all") {
-            params.append("strategy", selectedStrategy.value);
-        }
-        const response = await fetchJson<HistoryListResponse>(`/history/?${params}`);
-        history.value = response.items || [];
-        pagination.value = {
-            page: response.page || pagination.value.page,
-            per_page: response.per_page || pagination.value.per_page,
-            total: response.total || pagination.value.total,
-            has_prev: response.has_prev || pagination.value.has_prev,
-            has_next: response.has_next || pagination.value.has_next,
-        };
-    } catch (err: unknown) {
-        error.value = getErrorMessage(err) || t("history.error_loading");
-    } finally {
-        loading.value = false;
-    }
+	loading.value = true;
+	error.value = null;
+	try {
+		const params = new URLSearchParams({
+			page: page.toString(),
+			per_page: pagination.value.per_page.toString(),
+		});
+		if (selectedStrategy.value && selectedStrategy.value !== "all") {
+			params.append("strategy", selectedStrategy.value);
+		}
+		const response = await fetchJson<HistoryListResponse>(
+			`/history/?${params}`,
+		);
+		history.value = response.items || [];
+		pagination.value = {
+			page: response.page || pagination.value.page,
+			per_page: response.per_page || pagination.value.per_page,
+			total: response.total || pagination.value.total,
+			has_prev: response.has_prev || pagination.value.has_prev,
+			has_next: response.has_next || pagination.value.has_next,
+		};
+	} catch (err: unknown) {
+		error.value = getErrorMessage(err) || t("history.error_loading");
+	} finally {
+		loading.value = false;
+	}
 };
 const loadStats = async () => {
-    try {
-        const response = await fetchJson<HistoryStats>("/history/stats");
-        stats.value = response;
-    } catch {}
+	try {
+		const response = await fetchJson<HistoryStats>("/history/stats");
+		stats.value = response;
+	} catch {}
 };
 const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+	return new Date(dateString).toLocaleDateString();
 };
 const getStrategyVariant = (strategyId: StrategyId) => {
-    const variants: Record<StrategyId, "default" | "secondary" | "outline"> = {
-        sma_crossover: "default",
-        rsi: "secondary",
-    };
-    return variants[strategyId] || ("default" as const);
+	const variants: Record<StrategyId, "default" | "secondary" | "outline"> = {
+		sma_crossover: "default",
+		rsi: "secondary",
+	};
+	return variants[strategyId] || ("default" as const);
 };
 const getStatusVariant = (status: string) => {
-    const variants = {
-        completed: "default" as const,
-        running: "secondary" as const,
-        failed: "destructive" as const,
-    };
-    return variants[status as keyof typeof variants] || ("outline" as const);
+	const variants = {
+		completed: "default" as const,
+		running: "secondary" as const,
+		failed: "destructive" as const,
+	};
+	return variants[status as keyof typeof variants] || ("outline" as const);
 };
 const getStrategyLabel = (strategyId: StrategyId) => {
-    const strategyConfig = BACKTEST_STRATEGIES[strategyId];
-    return strategyConfig?.name || strategyId;
+	const strategyConfig = BACKTEST_STRATEGIES[strategyId];
+	return strategyConfig?.name || strategyId;
 };
 const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-        completed: t("history.status.completed"),
-        running: t("history.status.running"),
-        failed: t("history.status.failed"),
-    };
-    return labels[status] || status;
+	const labels: Record<string, string> = {
+		completed: t("history.status.completed"),
+		running: t("history.status.running"),
+		failed: t("history.status.failed"),
+	};
+	return labels[status] || status;
 };
 const getReturnColor = (returnValue: number) => {
-    if (returnValue > 0) return "text-trading-green";
-    if (returnValue < 0) return "text-trading-red";
-    return "text-muted-foreground";
+	if (returnValue > 0) return "text-trading-green";
+	if (returnValue < 0) return "text-trading-red";
+	return "text-muted-foreground";
 };
 const formatStrategyParams = (params: StrategyParams | null | undefined) => {
-    if (!params) return "N/A";
-    return Object.entries(params)
-        .filter(
-            ([, value]) =>
-                value !== null && value !== undefined && value !== "",
-        )
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(", ");
+	if (!params) return "N/A";
+	return Object.entries(params)
+		.filter(
+			([, value]) => value !== null && value !== undefined && value !== "",
+		)
+		.map(([key, value]) => `${key}: ${value}`)
+		.join(", ");
 };
 const rerunBacktest = (item: HistoryItem) => {
-    const queryParams: Record<string, string | number | boolean | undefined> = {
-        strategy: item.strategy,
-        startDate: item.start_date,
-        endDate: item.end_date,
-        monteCarloRuns: item.monte_carlo_runs,
-        monteCarloMethod: item.monte_carlo_method,
-        sampleFraction: item.sample_fraction,
-        gaussianScale: item.gaussian_scale,
-        priceType: item.price_type,
-        datasets:
-            item.datasets_used && item.datasets_used.length > 0
-                ? item.datasets_used.join(",")
-                : undefined,
-    };
-    const strategyConfig = BACKTEST_STRATEGIES[item.strategy];
-    if (strategyConfig && item.strategy_params) {
-        for (const p of strategyConfig.params) {
-            if (
-                item.strategy_params[p.key] !== null &&
-                item.strategy_params[p.key] !== undefined
-            ) {
-                queryParams[p.key] = item.strategy_params[p.key];
-            }
-        }
-    }
-    const filteredQueryParams = Object.fromEntries(
-        Object.entries(queryParams).filter(
-            ([, value]) =>
-                value !== null && value !== undefined && value !== "",
-        ),
-    );
-    const queryString = new URLSearchParams(
-        Object.entries(filteredQueryParams).map(([key, value]) => [
-            key,
-            String(value),
-        ]),
-    ).toString();
-    navigate(`/simulate?${queryString}`);
+	const queryParams: Record<string, string | number | boolean | undefined> = {
+		strategy: item.strategy,
+		startDate: item.start_date,
+		endDate: item.end_date,
+		monteCarloRuns: item.monte_carlo_runs,
+		monteCarloMethod: item.monte_carlo_method,
+		sampleFraction: item.sample_fraction,
+		gaussianScale: item.gaussian_scale,
+		priceType: item.price_type,
+		datasets:
+			item.datasets_used && item.datasets_used.length > 0
+				? item.datasets_used.join(",")
+				: undefined,
+	};
+	const strategyConfig = BACKTEST_STRATEGIES[item.strategy];
+	if (strategyConfig && item.strategy_params) {
+		for (const p of strategyConfig.params) {
+			if (
+				item.strategy_params[p.key] !== null &&
+				item.strategy_params[p.key] !== undefined
+			) {
+				queryParams[p.key] = item.strategy_params[p.key];
+			}
+		}
+	}
+	const filteredQueryParams = Object.fromEntries(
+		Object.entries(queryParams).filter(
+			([, value]) => value !== null && value !== undefined && value !== "",
+		),
+	);
+	const queryString = new URLSearchParams(
+		Object.entries(filteredQueryParams).map(([key, value]) => [
+			key,
+			String(value),
+		]),
+	).toString();
+	navigate(`/simulate?${queryString}`);
 };
 const confirmDelete = async (id: string) => {
-    try {
-        await fetchJson(`/history/${id}`, { method: "DELETE" });
-        await loadHistory();
-        await loadStats();
-    } catch (err: unknown) {
-        error.value = getErrorMessage(err) || t("history.error_deleting");
-    }
+	try {
+		await fetchJson(`/history/${id}`, { method: "DELETE" });
+		await loadHistory();
+		await loadStats();
+	} catch (err: unknown) {
+		error.value = getErrorMessage(err) || t("history.error_deleting");
+	}
 };
 const navigateToSimulate = () => {
-    navigate("/simulate");
+	navigate("/simulate");
 };
 watch(selectedStrategy, () => {
-    pagination.value.page = 1;
-    loadHistory();
+	pagination.value.page = 1;
+	loadHistory();
 });
 onMounted(() => {
-    loadHistory();
-    loadStats();
+	loadHistory();
+	loadStats();
 });
 </script>

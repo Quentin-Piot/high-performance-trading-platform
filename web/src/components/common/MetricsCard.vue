@@ -1,27 +1,33 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
-const props = defineProps<{ label: string; value: number | null | undefined; percentage?: boolean }>()
+import { computed } from "vue";
+import { TrendingUp, TrendingDown, Minus } from "lucide-vue-next";
+const props = defineProps<{
+	label: string;
+	value: number | null | undefined;
+	percentage?: boolean;
+}>();
 const formattedValue = computed(() => {
-  if (props.value === null || props.value === undefined) return '—'
-  const p = props.percentage ? (props.value * 100) : props.value
-  const s = p.toFixed(2) + (props.percentage ? '%' : '')
-  return s.startsWith('-') ? s : '+' + s
-})
-const isPositive = computed(() => (props.value ?? 0) >= 0)
-const isNeutral = computed(() => props.value === null || props.value === 0)
+	if (props.value === null || props.value === undefined) return "—";
+	const p = props.percentage ? props.value * 100 : props.value;
+	const s = p.toFixed(2) + (props.percentage ? "%" : "");
+	return s.startsWith("-") ? s : "+" + s;
+});
+const isPositive = computed(() => (props.value ?? 0) >= 0);
+const isNeutral = computed(() => props.value === null || props.value === 0);
 const trendIcon = computed(() => {
-  if (isNeutral.value) return Minus
-  return isPositive.value ? TrendingUp : TrendingDown
-})
+	if (isNeutral.value) return Minus;
+	return isPositive.value ? TrendingUp : TrendingDown;
+});
 const colorClasses = computed(() => {
-  if (isNeutral.value) return 'text-muted-foreground'
-  return isPositive.value ? 'text-trading-green' : 'text-trading-red'
-})
+	if (isNeutral.value) return "text-muted-foreground";
+	return isPositive.value ? "text-trading-green" : "text-trading-red";
+});
 const bgGradient = computed(() => {
-  if (isNeutral.value) return 'from-muted/20 to-muted/10'
-  return isPositive.value ? 'from-trading-green/10 to-trading-green/5' : 'from-trading-red/10 to-trading-red/5'
-})
+	if (isNeutral.value) return "from-muted/20 to-muted/10";
+	return isPositive.value
+		? "from-trading-green/10 to-trading-green/5"
+		: "from-trading-red/10 to-trading-red/5";
+});
 </script>
 <template>
   <div class="group relative overflow-hidden rounded-xl border-0 p-6 shadow-medium hover-lift transition-smooth bg-gradient-to-br from-card via-card to-secondary/20 animate-fade-in">

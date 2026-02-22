@@ -38,21 +38,21 @@
 import { useI18n } from "vue-i18n";
 import { Label } from "@/components/ui/label";
 import {
-    MultiLineToggleGroup,
-    ToggleGroupItem,
+	MultiLineToggleGroup,
+	ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 import { Database } from "lucide-vue-next";
 import { AVAILABLE_DATASETS } from "@/config/datasets";
 interface Props {
-    selectedDatasets: string[];
+	selectedDatasets: string[];
 }
 interface Emits {
-    (e: "update:selectedDatasets", datasets: string[]): void;
+	(e: "update:selectedDatasets", datasets: string[]): void;
 }
 defineProps<Props>();
 const emit = defineEmits<Emits>();
 const { t } = useI18n();
 function onDatasetsChange(newDatasets: string[]) {
-    emit("update:selectedDatasets", newDatasets);
+	emit("update:selectedDatasets", newDatasets);
 }
 </script>

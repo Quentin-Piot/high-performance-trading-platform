@@ -1,12 +1,12 @@
 export interface BacktestResponse {
-  timestamps: string[]
-  equity_curve: number[]
-  pnl: number
-  drawdown: number
-  sharpe: number
+	timestamps: string[];
+	equity_curve: number[];
+	pnl: number;
+	drawdown: number;
+	sharpe: number;
 }
 
 export interface EquityPoint {
-  time: number
-  value: number
+	time: number;
+	value: number;
 }

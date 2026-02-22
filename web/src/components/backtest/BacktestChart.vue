@@ -1,100 +1,110 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, watchEffect } from 'vue'
-import { createChart, ColorType } from 'lightweight-charts'
-import { TrendingUp, Activity, BarChart3, Clock } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
-import { formatProcessingTime } from '@/utils/timeFormatter'
-const { t } = useI18n()
-type LinePoint = { time: number; value: number }
-const props = defineProps<{ 
-  series?: LinePoint[]
-  processingTime?: string | null
-}>()
-const el = ref<HTMLDivElement | null>(null)
-type LineSeriesApi = { setData: (data: LinePoint[]) => void }
+import { ref, onMounted, onUnmounted, computed, watch, watchEffect } from "vue";
+import { createChart, ColorType } from "lightweight-charts";
+import { TrendingUp, Activity, BarChart3, Clock } from "lucide-vue-next";
+import { useI18n } from "vue-i18n";
+import { formatProcessingTime } from "@/utils/timeFormatter";
+const { t } = useI18n();
+type LinePoint = { time: number; value: number };
+const props = defineProps<{
+	series?: LinePoint[];
+	processingTime?: string | null;
+}>();
+const el = ref<HTMLDivElement | null>(null);
+type LineSeriesApi = { setData: (data: LinePoint[]) => void };
 type ChartApi = {
-  addLineSeries: (opts: { color: string; lineWidth: number }) => LineSeriesApi
-  applyOptions: (opts: { width?: number }) => void
-  remove: () => void
-}
-let lineSeries: LineSeriesApi | null = null
-let chart: ChartApi | null = null
-const loaded = ref(false)
-let ro: ResizeObserver | null = null
-const hasData = computed(() => (props.series?.length ?? 0) > 0)
+	addLineSeries: (opts: { color: string; lineWidth: number }) => LineSeriesApi;
+	applyOptions: (opts: { width?: number }) => void;
+	remove: () => void;
+};
+let lineSeries: LineSeriesApi | null = null;
+let chart: ChartApi | null = null;
+const loaded = ref(false);
+let ro: ResizeObserver | null = null;
+const hasData = computed(() => (props.series?.length ?? 0) > 0);
 const isPositiveTrend = computed(() => {
-  const s = props.series ?? []
-  if (!hasData.value || s.length < 2) return true
-  const first = s[0]?.value
-  const last = s[s.length - 1]?.value
-  return (last ?? first ?? 0) >= (first ?? 0)
-})
-const pointCount = computed(() => props.series?.length ?? 0)
+	const s = props.series ?? [];
+	if (!hasData.value || s.length < 2) return true;
+	const first = s[0]?.value;
+	const last = s[s.length - 1]?.value;
+	return (last ?? first ?? 0) >= (first ?? 0);
+});
+const pointCount = computed(() => props.series?.length ?? 0);
 function setSeries(data?: LinePoint[]) {
-  if (!lineSeries || !data) return
-  lineSeries.setData(data)
+	if (!lineSeries || !data) return;
+	lineSeries.setData(data);
 }
 onMounted(() => {
-  if (!el.value) return
-  const rootEl = el.value!
-  const width = Math.max(320, rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600)
-  const textColor = '#d1d4dc'
-  const gridColor = '#2a2e39'
-  rootEl.style.color = textColor
-  chart = createChart(rootEl, {
-    layout: { 
-      background: { type: ColorType.Solid, color: 'transparent' }, 
-      textColor
-    },
-    width,
-    height: 400,
-    rightPriceScale: { 
-      borderVisible: false
-    },
-    timeScale: { 
-      borderVisible: false, 
-      timeVisible: true, 
-      secondsVisible: false
-    },
-    grid: { 
-      vertLines: { color: gridColor }, 
-      horzLines: { color: gridColor }
-    }
-  })
-  if (!chart) return
-  const lineColor = isPositiveTrend.value ? '#26a69a' : '#ef5350'
-  lineSeries = chart.addLineSeries({
-    color: lineColor,
-    lineWidth: 2
-  })
-  setSeries(props.series)
-  if (props.series && props.series.length > 0) {
-    (chart as any).timeScale().fitContent()
-  }
-  loaded.value = true
-  ro = new ResizeObserver(() => {
-    if (rootEl && chart) {
-      const w = Math.max(320, rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600)
-      chart.applyOptions({ width: w })
-    }
-  })
-  ro.observe(rootEl)
-})
+	if (!el.value) return;
+	const rootEl = el.value!;
+	const width = Math.max(
+		320,
+		rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
+	);
+	const textColor = "#d1d4dc";
+	const gridColor = "#2a2e39";
+	rootEl.style.color = textColor;
+	chart = createChart(rootEl, {
+		layout: {
+			background: { type: ColorType.Solid, color: "transparent" },
+			textColor,
+		},
+		width,
+		height: 400,
+		rightPriceScale: {
+			borderVisible: false,
+		},
+		timeScale: {
+			borderVisible: false,
+			timeVisible: true,
+			secondsVisible: false,
+		},
+		grid: {
+			vertLines: { color: gridColor },
+			horzLines: { color: gridColor },
+		},
+	});
+	if (!chart) return;
+	const lineColor = isPositiveTrend.value ? "#26a69a" : "#ef5350";
+	lineSeries = chart.addLineSeries({
+		color: lineColor,
+		lineWidth: 2,
+	});
+	setSeries(props.series);
+	if (props.series && props.series.length > 0) {
+		(chart as any).timeScale().fitContent();
+	}
+	loaded.value = true;
+	ro = new ResizeObserver(() => {
+		if (rootEl && chart) {
+			const w = Math.max(
+				320,
+				rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
+			);
+			chart.applyOptions({ width: w });
+		}
+	});
+	ro.observe(rootEl);
+});
 onUnmounted(() => {
-  chart?.remove()
-  if (ro && el.value) ro.unobserve(el.value)
-  chart = null
-  lineSeries = null
-})
-watch(() => props.series, (data: LinePoint[] | undefined) => setSeries(data), { deep: true })
+	chart?.remove();
+	if (ro && el.value) ro.unobserve(el.value);
+	chart = null;
+	lineSeries = null;
+});
+watch(
+	() => props.series,
+	(data: LinePoint[] | undefined) => setSeries(data),
+	{ deep: true },
+);
 watchEffect(() => {
-  if (lineSeries && props.series && props.series.length) {
-    lineSeries.setData(props.series)
-    if (chart && props.series.length > 0) {
-      (chart as any).timeScale().fitContent()
-    }
-  }
-})
+	if (lineSeries && props.series && props.series.length) {
+		lineSeries.setData(props.series);
+		if (chart && props.series.length > 0) {
+			(chart as any).timeScale().fitContent();
+		}
+	}
+});
 </script>
 <template>
   <div class="relative">

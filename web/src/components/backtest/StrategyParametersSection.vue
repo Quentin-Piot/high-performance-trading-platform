@@ -27,28 +27,28 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Settings } from 'lucide-vue-next'
+import { useI18n } from "vue-i18n";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Settings } from "lucide-vue-next";
 interface StrategyParam {
-  key: string
-  type: 'int' | 'float'
-  min?: number
-  max?: number
+	key: string;
+	type: "int" | "float";
+	min?: number;
+	max?: number;
 }
 interface StrategyConfig {
-  params: StrategyParam[]
+	params: StrategyParam[];
 }
 interface Props {
-  strategy: string
-  params: Record<string, number>
-  currentCfg: StrategyConfig
+	strategy: string;
+	params: Record<string, number>;
+	currentCfg: StrategyConfig;
 }
 interface Emits {
-  (e: 'update:params', params: Record<string, number>): void
+	(e: "update:params", params: Record<string, number>): void;
 }
-defineProps<Props>()
-defineEmits<Emits>()
-const { t } = useI18n()
+defineProps<Props>();
+defineEmits<Emits>();
+const { t } = useI18n();
 </script>

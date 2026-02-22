@@ -1,52 +1,56 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-vue-next'
+import { computed } from "vue";
+import { TrendingUp, TrendingDown, BarChart3, Activity } from "lucide-vue-next";
 interface DistributionData {
-  mean: number
-  std: number
-  p5: number
-  p25: number
-  median: number
-  p75: number
-  p95: number
+	mean: number;
+	std: number;
+	p5: number;
+	p25: number;
+	median: number;
+	p75: number;
+	p95: number;
 }
-const props = defineProps<{ 
-  label: string
-  distribution: DistributionData | null
-  percentage?: boolean 
-}>()
-const hasData = computed(() => props.distribution !== null)
+const props = defineProps<{
+	label: string;
+	distribution: DistributionData | null;
+	percentage?: boolean;
+}>();
+const hasData = computed(() => props.distribution !== null);
 const formatValue = (value: number | null) => {
-  if (value === null || value === undefined) return '—'
-  const p = props.percentage ? (value * 100) : value
-  const s = p.toFixed(2) + (props.percentage ? '%' : '')
-  return s.startsWith('-') ? s : '+' + s
-}
-const medianValue = computed(() => props.distribution?.median ?? null)
-const isPositive = computed(() => (medianValue.value ?? 0) >= 0)
-const isNeutral = computed(() => medianValue.value === null || medianValue.value === 0)
+	if (value === null || value === undefined) return "—";
+	const p = props.percentage ? value * 100 : value;
+	const s = p.toFixed(2) + (props.percentage ? "%" : "");
+	return s.startsWith("-") ? s : "+" + s;
+};
+const medianValue = computed(() => props.distribution?.median ?? null);
+const isPositive = computed(() => (medianValue.value ?? 0) >= 0);
+const isNeutral = computed(
+	() => medianValue.value === null || medianValue.value === 0,
+);
 const trendIcon = computed(() => {
-  if (isNeutral.value) return Activity
-  return isPositive.value ? TrendingUp : TrendingDown
-})
+	if (isNeutral.value) return Activity;
+	return isPositive.value ? TrendingUp : TrendingDown;
+});
 const colorClasses = computed(() => {
-  if (isNeutral.value) return 'text-muted-foreground'
-  return isPositive.value ? 'text-trading-green' : 'text-trading-red'
-})
+	if (isNeutral.value) return "text-muted-foreground";
+	return isPositive.value ? "text-trading-green" : "text-trading-red";
+});
 const bgGradient = computed(() => {
-  if (isNeutral.value) return 'from-muted/20 to-muted/10'
-  return isPositive.value ? 'from-trading-green/10 to-trading-green/5' : 'from-trading-red/10 to-trading-red/5'
-})
+	if (isNeutral.value) return "from-muted/20 to-muted/10";
+	return isPositive.value
+		? "from-trading-green/10 to-trading-green/5"
+		: "from-trading-red/10 to-trading-red/5";
+});
 const confidenceRange = computed(() => {
-  if (!hasData.value || !props.distribution) return null
-  const p25 = formatValue(props.distribution.p25)
-  const p75 = formatValue(props.distribution.p75)
-  return `${p25} to ${p75}`
-})
+	if (!hasData.value || !props.distribution) return null;
+	const p25 = formatValue(props.distribution.p25);
+	const p75 = formatValue(props.distribution.p75);
+	return `${p25} to ${p75}`;
+});
 const volatility = computed(() => {
-  if (!hasData.value || !props.distribution) return null
-  return formatValue(props.distribution.std)
-})
+	if (!hasData.value || !props.distribution) return null;
+	return formatValue(props.distribution.std);
+});
 </script>
 <template>
   <div class="group relative overflow-hidden rounded-xl border-0 p-6 shadow-medium hover-lift transition-smooth bg-gradient-to-br from-card via-card to-secondary/20 animate-fade-in">

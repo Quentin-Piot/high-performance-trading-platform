@@ -1,37 +1,34 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import {
-    Dialog,
-    DialogTrigger,
-    DialogScrollContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
+	Dialog,
+	DialogTrigger,
+	DialogScrollContent,
+	DialogHeader,
+	DialogTitle,
+	DialogDescription,
 } from "@/components/ui/dialog";
 import type { Component } from "vue";
 interface Section {
-    icon: Component;
-    titleKey?: string;
-    title?: string;
-    points: string[];
+	icon: Component;
+	titleKey?: string;
+	title?: string;
+	points: string[];
 }
 interface Props {
-    cardId: string;
-    icon: Component;
-    gradient: string;
-    glowColor: string;
-    sections: Section[];
+	cardId: string;
+	icon: Component;
+	gradient: string;
+	glowColor: string;
+	sections: Section[];
 }
 const props = defineProps<Props>();
 const { t } = useI18n();
 const getCtaColor = () => {
-    if (props.gradient.includes("green"))
-        return "text-trading-green";
-    if (props.gradient.includes("purple"))
-        return "text-trading-purple";
-    if (props.gradient.includes("orange"))
-        return "text-trading-orange";
-    return "text-trading-blue";
+	if (props.gradient.includes("green")) return "text-trading-green";
+	if (props.gradient.includes("purple")) return "text-trading-purple";
+	if (props.gradient.includes("orange")) return "text-trading-orange";
+	return "text-trading-blue";
 };
 </script>
 <template>

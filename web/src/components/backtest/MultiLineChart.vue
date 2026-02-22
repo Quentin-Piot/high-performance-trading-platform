@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import {
-    createChart,
-    ColorType,
-    type ChartApi,
-    type LineSeriesApi,
+	createChart,
+	ColorType,
+	type ChartApi,
+	type LineSeriesApi,
 } from "lightweight-charts";
 import { TrendingUp, Activity, BarChart3, Eye, EyeOff } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
@@ -12,16 +12,16 @@ import type { BacktestResult } from "@/services/backtestService";
 const { t } = useI18n();
 type LinePoint = { time: number; value: number };
 interface ChartSeries {
-    id: string;
-    name: string;
-    data: LinePoint[];
-    color: string;
-    visible: boolean;
+	id: string;
+	name: string;
+	data: LinePoint[];
+	color: string;
+	visible: boolean;
 }
 const props = defineProps<{
-    results?: BacktestResult[];
-    aggregatedData?: LinePoint[];
-    activeRange?: "1W" | "1M" | "YTD" | "All";
+	results?: BacktestResult[];
+	aggregatedData?: LinePoint[];
+	activeRange?: "1W" | "1M" | "YTD" | "All";
 }>();
 const el = ref<HTMLDivElement | null>(null);
 let chart: ChartApi | null = null;
@@ -29,191 +29,198 @@ const loaded = ref(false);
 let ro: ResizeObserver | null = null;
 const seriesMap = new Map<string, LineSeriesApi>();
 const colors = [
-    "#26a69a",
-    "#2962ff",
-    "#ff6d00",
-    "#ef5350",
-    "#ab47bc",
-    "#00acc1",
-    "#ff7043",
-    "#9ccc65",
-    "#ec407a",
-    "#5c6bc0",
+	"#26a69a",
+	"#2962ff",
+	"#ff6d00",
+	"#ef5350",
+	"#ab47bc",
+	"#00acc1",
+	"#ff7043",
+	"#9ccc65",
+	"#ec407a",
+	"#5c6bc0",
 ];
 const seriesVisibility = ref<Record<string, boolean>>({});
 function applyTimeRangeFilter(data: LinePoint[]): LinePoint[] {
-    if (!props.activeRange || props.activeRange === "All" || data.length === 0) {
-        return data;
-    }
-    const times = data.map(d => d.time);
-    const maxTime = Math.max(...times);
-    let cutoff = maxTime;
-    if (props.activeRange === "1W") cutoff = maxTime - 7 * 86400;
-    else if (props.activeRange === "1M") cutoff = maxTime - 30 * 86400;
-    else if (props.activeRange === "YTD") {
-        const d = new Date(maxTime * 1000);
-        const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
-        cutoff = jan1;
-    }
-    return data.filter(d => d.time >= cutoff);
+	if (!props.activeRange || props.activeRange === "All" || data.length === 0) {
+		return data;
+	}
+	const times = data.map((d) => d.time);
+	const maxTime = Math.max(...times);
+	let cutoff = maxTime;
+	if (props.activeRange === "1W") cutoff = maxTime - 7 * 86400;
+	else if (props.activeRange === "1M") cutoff = maxTime - 30 * 86400;
+	else if (props.activeRange === "YTD") {
+		const d = new Date(maxTime * 1000);
+		const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
+		cutoff = jan1;
+	}
+	return data.filter((d) => d.time >= cutoff);
 }
 const chartSeries = computed<ChartSeries[]>(() => {
-    const series: ChartSeries[] = [];
-    if (props.results) {
-        props.results.forEach((result, index) => {
-            let data = result.timestamps.map((timestamp, i) => ({
-                time: Math.floor(new Date(timestamp).getTime() / 1000),
-                value: result.equity_curve[i] || 0,
-            }));
-            data = applyTimeRangeFilter(data);
-            const seriesId = `result-${index}`;
-            series.push({
-                id: seriesId,
-                name: result.filename.replace(/\.(csv|CSV)$/, ""),
-                data,
-                color: colors[index % colors.length] || "#10b981",
-                visible: seriesVisibility.value[seriesId] !== false,
-            });
-        });
-    }
-    if (props.aggregatedData && props.aggregatedData.length > 0) {
-        const aggregatedId = "aggregated";
-        const filteredAggregatedData = applyTimeRangeFilter(props.aggregatedData);
-        series.push({
-            id: aggregatedId,
-            name: t("simulate.chart.aggregated"),
-            data: filteredAggregatedData,
-            color: "#fdd835",
-            visible: seriesVisibility.value[aggregatedId] !== false,
-        });
-    }
-    return series;
+	const series: ChartSeries[] = [];
+	if (props.results) {
+		props.results.forEach((result, index) => {
+			let data = result.timestamps.map((timestamp, i) => ({
+				time: Math.floor(new Date(timestamp).getTime() / 1000),
+				value: result.equity_curve[i] || 0,
+			}));
+			data = applyTimeRangeFilter(data);
+			const seriesId = `result-${index}`;
+			series.push({
+				id: seriesId,
+				name: result.filename.replace(/\.(csv|CSV)$/, ""),
+				data,
+				color: colors[index % colors.length] || "#10b981",
+				visible: seriesVisibility.value[seriesId] !== false,
+			});
+		});
+	}
+	if (props.aggregatedData && props.aggregatedData.length > 0) {
+		const aggregatedId = "aggregated";
+		const filteredAggregatedData = applyTimeRangeFilter(props.aggregatedData);
+		series.push({
+			id: aggregatedId,
+			name: t("simulate.chart.aggregated"),
+			data: filteredAggregatedData,
+			color: "#fdd835",
+			visible: seriesVisibility.value[aggregatedId] !== false,
+		});
+	}
+	return series;
 });
 watch(
-    () => props.results,
-    () => {
-        if (props.results) {
-            props.results.forEach((_, index) => {
-                const seriesId = `result-${index}`;
-                if (!(seriesId in seriesVisibility.value)) {
-                    seriesVisibility.value[seriesId] = true;
-                }
-            });
-        }
-        if (props.aggregatedData && !("aggregated" in seriesVisibility.value)) {
-            seriesVisibility.value["aggregated"] = true;
-        }
-    },
-    { immediate: true },
+	() => props.results,
+	() => {
+		if (props.results) {
+			props.results.forEach((_, index) => {
+				const seriesId = `result-${index}`;
+				if (!(seriesId in seriesVisibility.value)) {
+					seriesVisibility.value[seriesId] = true;
+				}
+			});
+		}
+		if (props.aggregatedData && !("aggregated" in seriesVisibility.value)) {
+			seriesVisibility.value["aggregated"] = true;
+		}
+	},
+	{ immediate: true },
 );
 const hasData = computed(() => chartSeries.value.length > 0);
 const visibleSeries = computed(() =>
-    chartSeries.value.filter((s) => s.visible),
+	chartSeries.value.filter((s) => s.visible),
 );
 function toggleSeriesVisibility(seriesId: string) {
-    seriesVisibility.value[seriesId] = !seriesVisibility.value[seriesId];
-    updateChartSeries();
+	seriesVisibility.value[seriesId] = !seriesVisibility.value[seriesId];
+	updateChartSeries();
 }
 function updateChartSeries() {
-    if (!chart) return;
-    seriesMap.forEach((series) => {
-        try {
-            (chart as any)?.removeSeries(series);
-        } catch {}
-    });
-    seriesMap.clear();
-    visibleSeries.value.forEach((series) => {
-        if (chart) {
-            const lineSeries = chart.addLineSeries({
-                color: series.color,
-                lineWidth: series.id === "aggregated" ? 4 : 2,
-                crosshairMarkerVisible: true,
-                crosshairMarkerRadius: 4,
-                priceLineVisible: false,
-            } as any);
-            lineSeries.setData(series.data);
-            seriesMap.set(series.id, lineSeries);
-        }
-    });
+	if (!chart) return;
+	seriesMap.forEach((series) => {
+		try {
+			(chart as any)?.removeSeries(series);
+		} catch {}
+	});
+	seriesMap.clear();
+	visibleSeries.value.forEach((series) => {
+		if (chart) {
+			const lineSeries = chart.addLineSeries({
+				color: series.color,
+				lineWidth: series.id === "aggregated" ? 4 : 2,
+				crosshairMarkerVisible: true,
+				crosshairMarkerRadius: 4,
+				priceLineVisible: false,
+			} as any);
+			lineSeries.setData(series.data);
+			seriesMap.set(series.id, lineSeries);
+		}
+	});
 }
 onMounted(() => {
-    if (!el.value) return;
-    const rootEl = el.value!;
-    const width = Math.max(
-        320,
-        rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
-    );
-    const textColor = "#d1d4dc";
-    const gridColor = "#2a2e39";
-    rootEl.style.color = textColor;
-    chart = createChart(rootEl, {
-        layout: {
-            background: { type: ColorType.Solid, color: "transparent" },
-            textColor,
-        },
-        width,
-        height: 400,
-        rightPriceScale: {
-            borderVisible: false,
-        },
-        timeScale: {
-            borderVisible: false,
-            timeVisible: true,
-            secondsVisible: false,
-        },
-        grid: {
-            vertLines: { color: gridColor },
-            horzLines: { color: gridColor },
-        },
-    });
-    if (!chart) return;
-    updateChartSeries();
-    if (chartSeries.value.length > 0 && chartSeries.value.some(s => s.data.length > 0)) {
-        (chart as any).timeScale().fitContent();
-    }
-    loaded.value = true;
-    ro = new ResizeObserver(() => {
-        if (rootEl && chart) {
-            const w = Math.max(
-                320,
-                rootEl.clientWidth ||
-                    rootEl.getBoundingClientRect().width ||
-                    600,
-            );
-            chart.applyOptions({ width: w });
-        }
-    });
-    ro.observe(rootEl);
+	if (!el.value) return;
+	const rootEl = el.value!;
+	const width = Math.max(
+		320,
+		rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
+	);
+	const textColor = "#d1d4dc";
+	const gridColor = "#2a2e39";
+	rootEl.style.color = textColor;
+	chart = createChart(rootEl, {
+		layout: {
+			background: { type: ColorType.Solid, color: "transparent" },
+			textColor,
+		},
+		width,
+		height: 400,
+		rightPriceScale: {
+			borderVisible: false,
+		},
+		timeScale: {
+			borderVisible: false,
+			timeVisible: true,
+			secondsVisible: false,
+		},
+		grid: {
+			vertLines: { color: gridColor },
+			horzLines: { color: gridColor },
+		},
+	});
+	if (!chart) return;
+	updateChartSeries();
+	if (
+		chartSeries.value.length > 0 &&
+		chartSeries.value.some((s) => s.data.length > 0)
+	) {
+		(chart as any).timeScale().fitContent();
+	}
+	loaded.value = true;
+	ro = new ResizeObserver(() => {
+		if (rootEl && chart) {
+			const w = Math.max(
+				320,
+				rootEl.clientWidth || rootEl.getBoundingClientRect().width || 600,
+			);
+			chart.applyOptions({ width: w });
+		}
+	});
+	ro.observe(rootEl);
 });
 onUnmounted(() => {
-    chart?.remove();
-    if (ro && el.value) ro.unobserve(el.value);
-    chart = null;
-    seriesMap.clear();
+	chart?.remove();
+	if (ro && el.value) ro.unobserve(el.value);
+	chart = null;
+	seriesMap.clear();
 });
 watch(
-    () => [props.results, props.aggregatedData],
-    () => {
-        if (chart && loaded.value) {
-            updateChartSeries();
-            if (chartSeries.value.length > 0 && chartSeries.value.some(s => s.data.length > 0)) {
-                (chart as any).timeScale().fitContent();
-            }
-        }
-    },
-    { deep: true },
+	() => [props.results, props.aggregatedData],
+	() => {
+		if (chart && loaded.value) {
+			updateChartSeries();
+			if (
+				chartSeries.value.length > 0 &&
+				chartSeries.value.some((s) => s.data.length > 0)
+			) {
+				(chart as any).timeScale().fitContent();
+			}
+		}
+	},
+	{ deep: true },
 );
 watch(
-    () => seriesVisibility.value,
-    () => {
-        if (chart && loaded.value) {
-            updateChartSeries();
-            if (chartSeries.value.length > 0 && chartSeries.value.some(s => s.data.length > 0 && s.visible)) {
-                (chart as any).timeScale().fitContent();
-            }
-        }
-    },
-    { deep: true },
+	() => seriesVisibility.value,
+	() => {
+		if (chart && loaded.value) {
+			updateChartSeries();
+			if (
+				chartSeries.value.length > 0 &&
+				chartSeries.value.some((s) => s.data.length > 0 && s.visible)
+			) {
+				(chart as any).timeScale().fitContent();
+			}
+		}
+	},
+	{ deep: true },
 );
 </script>
 <template>

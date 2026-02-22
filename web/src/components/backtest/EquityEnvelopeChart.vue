@@ -1,156 +1,165 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { createChart, ColorType } from 'lightweight-charts'
-import { BarChart3, Clock } from 'lucide-vue-next'
-import { formatProcessingTime } from '@/utils/timeFormatter'
-import Progress from '@/components/ui/progress/Progress.vue'
-import { useI18n } from 'vue-i18n'
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { createChart, ColorType } from "lightweight-charts";
+import { BarChart3, Clock } from "lucide-vue-next";
+import { formatProcessingTime } from "@/utils/timeFormatter";
+import Progress from "@/components/ui/progress/Progress.vue";
+import { useI18n } from "vue-i18n";
 const props = defineProps({
-  equityEnvelope: {
-    type: Object,
-    required: false,
-    default: () => ({ timestamps: [], p5: [], p25: [], median: [], p75: [], p95: [] })
-  },
-  activeRange: {
-    type: String,
-    required: false,
-    default: 'All',
-    validator: (value) => ['1W', '1M', 'YTD', 'All'].includes(value)
-  },
-  processingTime: {
-    type: String,
-    required: false,
-    default: null
-  },
-  progressValue: {
-    type: Number,
-    required: false,
-    default: 0
-  }
-})
-const { t } = useI18n()
-const el = ref(null)
-let chart = null
-let p5Series = null
-let p25Series = null
-let medianSeries = null
-let p75Series = null
-let p95Series = null
-let ro = null
+	equityEnvelope: {
+		type: Object,
+		required: false,
+		default: () => ({
+			timestamps: [],
+			p5: [],
+			p25: [],
+			median: [],
+			p75: [],
+			p95: [],
+		}),
+	},
+	activeRange: {
+		type: String,
+		required: false,
+		default: "All",
+		validator: (value) => ["1W", "1M", "YTD", "All"].includes(value),
+	},
+	processingTime: {
+		type: String,
+		required: false,
+		default: null,
+	},
+	progressValue: {
+		type: Number,
+		required: false,
+		default: 0,
+	},
+});
+const { t } = useI18n();
+const el = ref(null);
+let chart = null;
+let p5Series = null;
+let p25Series = null;
+let medianSeries = null;
+let p75Series = null;
+let p95Series = null;
+let ro = null;
 const hasData = computed(() => {
-  return !!(props.equityEnvelope?.timestamps?.length && 
-           props.equityEnvelope?.median?.length && 
-           props.equityEnvelope?.p25?.length && 
-           props.equityEnvelope?.p75?.length)
-})
-const pointCount = computed(() => props.equityEnvelope?.timestamps.length ?? 0)
+	return !!(
+		props.equityEnvelope?.timestamps?.length &&
+		props.equityEnvelope?.median?.length &&
+		props.equityEnvelope?.p25?.length &&
+		props.equityEnvelope?.p75?.length
+	);
+});
+const pointCount = computed(() => props.equityEnvelope?.timestamps.length ?? 0);
 function convertToChartData(timestamps, values) {
-  let data = timestamps.map((timestamp, index) => ({
-    time: new Date(timestamp).getTime() / 1000, 
-    value: values[index]
-  }))
-  if (props.activeRange && props.activeRange !== "All" && data.length > 0) {
-    const times = data.map(d => d.time)
-    const maxTime = Math.max(...times)
-    let cutoff = maxTime
-    if (props.activeRange === "1W") cutoff = maxTime - 7 * 86400
-    else if (props.activeRange === "1M") cutoff = maxTime - 30 * 86400
-    else if (props.activeRange === "YTD") {
-      const d = new Date(maxTime * 1000)
-      const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000
-      cutoff = jan1
-    }
-    data = data.filter(d => d.time >= cutoff)
-  }
-  return data
+	let data = timestamps.map((timestamp, index) => ({
+		time: new Date(timestamp).getTime() / 1000,
+		value: values[index],
+	}));
+	if (props.activeRange && props.activeRange !== "All" && data.length > 0) {
+		const times = data.map((d) => d.time);
+		const maxTime = Math.max(...times);
+		let cutoff = maxTime;
+		if (props.activeRange === "1W") cutoff = maxTime - 7 * 86400;
+		else if (props.activeRange === "1M") cutoff = maxTime - 30 * 86400;
+		else if (props.activeRange === "YTD") {
+			const d = new Date(maxTime * 1000);
+			const jan1 = Date.UTC(d.getUTCFullYear(), 0, 1) / 1000;
+			cutoff = jan1;
+		}
+		data = data.filter((d) => d.time >= cutoff);
+	}
+	return data;
 }
 function updateSeries() {
-  if (!props.equityEnvelope || !chart) return
-  const { timestamps, p5, p25, median, p75, p95 } = props.equityEnvelope
-  const p5Data = convertToChartData(timestamps, p5)
-  const p25Data = convertToChartData(timestamps, p25)
-  const medianData = convertToChartData(timestamps, median)
-  const p75Data = convertToChartData(timestamps, p75)
-  const p95Data = convertToChartData(timestamps, p95)
-  if (p5Series) p5Series.setData(p5Data)
-  if (p25Series) p25Series.setData(p25Data)
-  if (medianSeries) medianSeries.setData(medianData)
-  if (p75Series) p75Series.setData(p75Data)
-  if (p95Series) p95Series.setData(p95Data)
-  if (hasData.value) {
-    chart.timeScale().fitContent()
-  }
+	if (!props.equityEnvelope || !chart) return;
+	const { timestamps, p5, p25, median, p75, p95 } = props.equityEnvelope;
+	const p5Data = convertToChartData(timestamps, p5);
+	const p25Data = convertToChartData(timestamps, p25);
+	const medianData = convertToChartData(timestamps, median);
+	const p75Data = convertToChartData(timestamps, p75);
+	const p95Data = convertToChartData(timestamps, p95);
+	if (p5Series) p5Series.setData(p5Data);
+	if (p25Series) p25Series.setData(p25Data);
+	if (medianSeries) medianSeries.setData(medianData);
+	if (p75Series) p75Series.setData(p75Data);
+	if (p95Series) p95Series.setData(p95Data);
+	if (hasData.value) {
+		chart.timeScale().fitContent();
+	}
 }
 onMounted(() => {
-  if (!el.value) return
-  const rootEl = el.value
-  const width = Math.max(320, rootEl.clientWidth || 600)
-  const textColor = '#d1d4dc'
-  const gridColor = '#2a2e39'
-  chart = createChart(rootEl, {
-    layout: { 
-      background: { type: ColorType.Solid, color: 'transparent' }, 
-      textColor
-    },
-    width,
-    height: 400,
-    rightPriceScale: { 
-      borderVisible: false
-    },
-    timeScale: { 
-      borderVisible: false, 
-      timeVisible: true, 
-      secondsVisible: false
-    },
-    grid: { 
-      vertLines: { color: gridColor }, 
-      horzLines: { color: gridColor }
-    }
-  })
-  p5Series = chart.addLineSeries({
-    color: 'rgba(239, 83, 80, 0.5)',
-    lineWidth: 1
-  })
-  p25Series = chart.addLineSeries({
-    color: 'rgba(255, 112, 67, 0.7)',
-    lineWidth: 2
-  })
-  medianSeries = chart.addLineSeries({
-    color: '#26a69a',
-    lineWidth: 2
-  })
-  p75Series = chart.addLineSeries({
-    color: 'rgba(38, 166, 154, 0.7)',
-    lineWidth: 2
-  })
-  p95Series = chart.addLineSeries({
-    color: 'rgba(38, 166, 154, 0.5)',
-    lineWidth: 1
-  })
-  updateSeries()
-  if (hasData.value) {
-    chart.timeScale().fitContent()
-  }
-  ro = new ResizeObserver(() => {
-    if (rootEl && chart) {
-      const w = Math.max(320, rootEl.clientWidth || 600)
-      chart.applyOptions({ width: w })
-    }
-  })
-  ro.observe(rootEl)
-})
+	if (!el.value) return;
+	const rootEl = el.value;
+	const width = Math.max(320, rootEl.clientWidth || 600);
+	const textColor = "#d1d4dc";
+	const gridColor = "#2a2e39";
+	chart = createChart(rootEl, {
+		layout: {
+			background: { type: ColorType.Solid, color: "transparent" },
+			textColor,
+		},
+		width,
+		height: 400,
+		rightPriceScale: {
+			borderVisible: false,
+		},
+		timeScale: {
+			borderVisible: false,
+			timeVisible: true,
+			secondsVisible: false,
+		},
+		grid: {
+			vertLines: { color: gridColor },
+			horzLines: { color: gridColor },
+		},
+	});
+	p5Series = chart.addLineSeries({
+		color: "rgba(239, 83, 80, 0.5)",
+		lineWidth: 1,
+	});
+	p25Series = chart.addLineSeries({
+		color: "rgba(255, 112, 67, 0.7)",
+		lineWidth: 2,
+	});
+	medianSeries = chart.addLineSeries({
+		color: "#26a69a",
+		lineWidth: 2,
+	});
+	p75Series = chart.addLineSeries({
+		color: "rgba(38, 166, 154, 0.7)",
+		lineWidth: 2,
+	});
+	p95Series = chart.addLineSeries({
+		color: "rgba(38, 166, 154, 0.5)",
+		lineWidth: 1,
+	});
+	updateSeries();
+	if (hasData.value) {
+		chart.timeScale().fitContent();
+	}
+	ro = new ResizeObserver(() => {
+		if (rootEl && chart) {
+			const w = Math.max(320, rootEl.clientWidth || 600);
+			chart.applyOptions({ width: w });
+		}
+	});
+	ro.observe(rootEl);
+});
 onUnmounted(() => {
-  chart?.remove()
-  if (ro && el.value) ro.unobserve(el.value)
-  chart = null
-  p5Series = null
-  p25Series = null
-  medianSeries = null
-  p75Series = null
-  p95Series = null
-})
-watch(() => props.equityEnvelope, updateSeries, { deep: true })
-watch(() => props.activeRange, updateSeries)
+	chart?.remove();
+	if (ro && el.value) ro.unobserve(el.value);
+	chart = null;
+	p5Series = null;
+	p25Series = null;
+	medianSeries = null;
+	p75Series = null;
+	p95Series = null;
+});
+watch(() => props.equityEnvelope, updateSeries, { deep: true });
+watch(() => props.activeRange, updateSeries);
 </script>
 <template>
   <div class="w-full">

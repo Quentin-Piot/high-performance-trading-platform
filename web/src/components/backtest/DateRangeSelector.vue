@@ -127,26 +127,29 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, AlertCircle } from "lucide-vue-next";
-import { calculateDateRangeWithCsvFiles, type DateRange } from "@/services/frontendDateValidationService";
+import {
+	calculateDateRangeWithCsvFiles,
+	type DateRange,
+} from "@/services/frontendDateValidationService";
 interface Props {
-    startDate: string;
-    endDate: string;
-    startDateValue?: DateValue;
-    endDateValue?: DateValue;
-    selectedDatasets: string[];
-    dateValidationError?: string | null;
+	startDate: string;
+	endDate: string;
+	startDateValue?: DateValue;
+	endDateValue?: DateValue;
+	selectedDatasets: string[];
+	dateValidationError?: string | null;
 }
 interface Emits {
-    (e: "update:startDate", date: string): void;
-    (e: "update:endDate", date: string): void;
-    (e: "update:startDateValue", date: DateValue | undefined): void;
-    (e: "update:endDateValue", date: DateValue | undefined): void;
+	(e: "update:startDate", date: string): void;
+	(e: "update:endDate", date: string): void;
+	(e: "update:startDateValue", date: DateValue | undefined): void;
+	(e: "update:endDateValue", date: DateValue | undefined): void;
 }
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
@@ -155,162 +158,170 @@ const startDateError = ref<string | null>(null);
 const endDateError = ref<string | null>(null);
 const availableDateRange = ref<DateRange | null>(null);
 const startDateValue = computed({
-    get: () => {
-        if (props.startDateValue) return props.startDateValue;
-        if (!props.startDate) return undefined;
-        const parts = props.startDate.split("-").map(Number);
-        if (parts.length !== 3 || parts.some(isNaN)) return undefined;
-        const [year, month, day] = parts;
-        if (year === undefined || month === undefined || day === undefined)
-            return undefined;
-        return new CalendarDate(year, month, day);
-    },
-    set: (value: DateValue | undefined) => {
-        emit("update:startDateValue", value);
-        if (value) {
-            const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
-            emit("update:startDate", dateStr);
-        }
-    },
+	get: () => {
+		if (props.startDateValue) return props.startDateValue;
+		if (!props.startDate) return undefined;
+		const parts = props.startDate.split("-").map(Number);
+		if (parts.length !== 3 || parts.some(isNaN)) return undefined;
+		const [year, month, day] = parts;
+		if (year === undefined || month === undefined || day === undefined)
+			return undefined;
+		return new CalendarDate(year, month, day);
+	},
+	set: (value: DateValue | undefined) => {
+		emit("update:startDateValue", value);
+		if (value) {
+			const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
+			emit("update:startDate", dateStr);
+		}
+	},
 });
 const endDateValue = computed({
-    get: () => {
-        if (props.endDateValue) return props.endDateValue;
-        if (!props.endDate) return undefined;
-        const parts = props.endDate.split("-").map(Number);
-        if (parts.length !== 3 || parts.some(isNaN)) return undefined;
-        const [year, month, day] = parts;
-        if (year === undefined || month === undefined || day === undefined)
-            return undefined;
-        return new CalendarDate(year, month, day);
-    },
-    set: (value: DateValue | undefined) => {
-        emit("update:endDateValue", value);
-        if (value) {
-            const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
-            emit("update:endDate", dateStr);
-        }
-    },
+	get: () => {
+		if (props.endDateValue) return props.endDateValue;
+		if (!props.endDate) return undefined;
+		const parts = props.endDate.split("-").map(Number);
+		if (parts.length !== 3 || parts.some(isNaN)) return undefined;
+		const [year, month, day] = parts;
+		if (year === undefined || month === undefined || day === undefined)
+			return undefined;
+		return new CalendarDate(year, month, day);
+	},
+	set: (value: DateValue | undefined) => {
+		emit("update:endDateValue", value);
+		if (value) {
+			const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
+			emit("update:endDate", dateStr);
+		}
+	},
 });
 const minDateValue = computed(() => {
-    if (!availableDateRange.value) return undefined;
-    const parts = availableDateRange.value.minDate.split("-").map(Number);
-    if (parts.length !== 3 || parts.some(isNaN)) return undefined;
-    const [year, month, day] = parts;
-    return new CalendarDate(year, month, day);
+	if (!availableDateRange.value) return undefined;
+	const parts = availableDateRange.value.minDate.split("-").map(Number);
+	if (parts.length !== 3 || parts.some(isNaN)) return undefined;
+	const [year, month, day] = parts;
+	return new CalendarDate(year, month, day);
 });
 const maxDateValue = computed(() => {
-    if (!availableDateRange.value) return undefined;
-    const parts = availableDateRange.value.maxDate.split("-").map(Number);
-    if (parts.length !== 3 || parts.some(isNaN)) return undefined;
-    const [year, month, day] = parts;
-    return new CalendarDate(year, month, day);
+	if (!availableDateRange.value) return undefined;
+	const parts = availableDateRange.value.maxDate.split("-").map(Number);
+	if (parts.length !== 3 || parts.some(isNaN)) return undefined;
+	const [year, month, day] = parts;
+	return new CalendarDate(year, month, day);
 });
 const maxStartDateValue = computed(() => {
-    if (endDateValue.value && maxDateValue.value) {
-        return endDateValue.value.compare(maxDateValue.value) <= 0 ? endDateValue.value : maxDateValue.value;
-    }
-    return maxDateValue.value;
+	if (endDateValue.value && maxDateValue.value) {
+		return endDateValue.value.compare(maxDateValue.value) <= 0
+			? endDateValue.value
+			: maxDateValue.value;
+	}
+	return maxDateValue.value;
 });
 const minEndDateValue = computed(() => {
-    if (startDateValue.value && minDateValue.value) {
-        return startDateValue.value.compare(minDateValue.value) >= 0 ? startDateValue.value : minDateValue.value;
-    }
-    return minDateValue.value;
+	if (startDateValue.value && minDateValue.value) {
+		return startDateValue.value.compare(minDateValue.value) >= 0
+			? startDateValue.value
+			: minDateValue.value;
+	}
+	return minDateValue.value;
 });
 function isStartDateDisabled(date: DateValue): boolean {
-    if (!availableDateRange.value) return false;
-    const dateStr = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
-    const dateObj = new Date(dateStr);
-    const minDate = new Date(availableDateRange.value.minDate);
-    const maxDate = new Date(availableDateRange.value.maxDate);
-    if (dateObj < minDate || dateObj > maxDate) return true;
-    if (endDateValue.value) {
-        const endDateStr = `${endDateValue.value.year}-${String(endDateValue.value.month).padStart(2, "0")}-${String(endDateValue.value.day).padStart(2, "0")}`;
-        const endDateObj = new Date(endDateStr);
-        if (dateObj > endDateObj) return true;
-    }
-    return false;
+	if (!availableDateRange.value) return false;
+	const dateStr = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
+	const dateObj = new Date(dateStr);
+	const minDate = new Date(availableDateRange.value.minDate);
+	const maxDate = new Date(availableDateRange.value.maxDate);
+	if (dateObj < minDate || dateObj > maxDate) return true;
+	if (endDateValue.value) {
+		const endDateStr = `${endDateValue.value.year}-${String(endDateValue.value.month).padStart(2, "0")}-${String(endDateValue.value.day).padStart(2, "0")}`;
+		const endDateObj = new Date(endDateStr);
+		if (dateObj > endDateObj) return true;
+	}
+	return false;
 }
 function isEndDateDisabled(date: DateValue): boolean {
-    if (!availableDateRange.value) return false;
-    const dateStr = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
-    const dateObj = new Date(dateStr);
-    const minDate = new Date(availableDateRange.value.minDate);
-    const maxDate = new Date(availableDateRange.value.maxDate);
-    if (dateObj < minDate || dateObj > maxDate) return true;
-    if (startDateValue.value) {
-        const startDateStr = `${startDateValue.value.year}-${String(startDateValue.value.month).padStart(2, "0")}-${String(startDateValue.value.day).padStart(2, "0")}`;
-        const startDateObj = new Date(startDateStr);
-        if (dateObj < startDateObj) return true;
-    }
-    return false;
+	if (!availableDateRange.value) return false;
+	const dateStr = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
+	const dateObj = new Date(dateStr);
+	const minDate = new Date(availableDateRange.value.minDate);
+	const maxDate = new Date(availableDateRange.value.maxDate);
+	if (dateObj < minDate || dateObj > maxDate) return true;
+	if (startDateValue.value) {
+		const startDateStr = `${startDateValue.value.year}-${String(startDateValue.value.month).padStart(2, "0")}-${String(startDateValue.value.day).padStart(2, "0")}`;
+		const startDateObj = new Date(startDateStr);
+		if (dateObj < startDateObj) return true;
+	}
+	return false;
 }
 function formatDate(date: DateValue): string {
-    return `${String(date.day).padStart(2, "0")}/${String(date.month).padStart(2, "0")}/${date.year}`;
+	return `${String(date.day).padStart(2, "0")}/${String(date.month).padStart(2, "0")}/${date.year}`;
 }
 function formatDateString(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR');
+	const date = new Date(dateStr);
+	return date.toLocaleDateString("fr-FR");
 }
 function onStartDateChange(value: DateValue | undefined) {
-    startDateError.value = null;
-    if (value && availableDateRange.value) {
-        const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
-        const dateObj = new Date(dateStr);
-        const minDate = new Date(availableDateRange.value.minDate);
-        const maxDate = new Date(availableDateRange.value.maxDate);
-        if (dateObj < minDate) {
-            startDateError.value = t("errors.date_validation.date_outside_range");
-            return;
-        }
-        if (dateObj > maxDate) {
-            startDateError.value = t("errors.date_validation.date_outside_range");
-            return;
-        }
-        if (endDateValue.value) {
-            const endDateStr = `${endDateValue.value.year}-${String(endDateValue.value.month).padStart(2, "0")}-${String(endDateValue.value.day).padStart(2, "0")}`;
-            const endDateObj = new Date(endDateStr);
-            if (dateObj > endDateObj) {
-                startDateError.value = t("errors.date_validation.end_before_start");
-                return;
-            }
-        }
-    }
-    startDateValue.value = value;
+	startDateError.value = null;
+	if (value && availableDateRange.value) {
+		const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
+		const dateObj = new Date(dateStr);
+		const minDate = new Date(availableDateRange.value.minDate);
+		const maxDate = new Date(availableDateRange.value.maxDate);
+		if (dateObj < minDate) {
+			startDateError.value = t("errors.date_validation.date_outside_range");
+			return;
+		}
+		if (dateObj > maxDate) {
+			startDateError.value = t("errors.date_validation.date_outside_range");
+			return;
+		}
+		if (endDateValue.value) {
+			const endDateStr = `${endDateValue.value.year}-${String(endDateValue.value.month).padStart(2, "0")}-${String(endDateValue.value.day).padStart(2, "0")}`;
+			const endDateObj = new Date(endDateStr);
+			if (dateObj > endDateObj) {
+				startDateError.value = t("errors.date_validation.end_before_start");
+				return;
+			}
+		}
+	}
+	startDateValue.value = value;
 }
 function onEndDateChange(value: DateValue | undefined) {
-    endDateError.value = null;
-    if (value && availableDateRange.value) {
-        const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
-        const dateObj = new Date(dateStr);
-        const minDate = new Date(availableDateRange.value.minDate);
-        const maxDate = new Date(availableDateRange.value.maxDate);
-        if (dateObj < minDate) {
-            endDateError.value = t("errors.date_validation.date_outside_range");
-            return;
-        }
-        if (dateObj > maxDate) {
-            endDateError.value = t("errors.date_validation.date_outside_range");
-            return;
-        }
-        if (startDateValue.value) {
-            const startDateStr = `${startDateValue.value.year}-${String(startDateValue.value.month).padStart(2, "0")}-${String(startDateValue.value.day).padStart(2, "0")}`;
-            const startDateObj = new Date(startDateStr);
-            if (dateObj < startDateObj) {
-                endDateError.value = t("errors.date_validation.end_before_start");
-                return;
-            }
-        }
-    }
-    endDateValue.value = value;
+	endDateError.value = null;
+	if (value && availableDateRange.value) {
+		const dateStr = `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
+		const dateObj = new Date(dateStr);
+		const minDate = new Date(availableDateRange.value.minDate);
+		const maxDate = new Date(availableDateRange.value.maxDate);
+		if (dateObj < minDate) {
+			endDateError.value = t("errors.date_validation.date_outside_range");
+			return;
+		}
+		if (dateObj > maxDate) {
+			endDateError.value = t("errors.date_validation.date_outside_range");
+			return;
+		}
+		if (startDateValue.value) {
+			const startDateStr = `${startDateValue.value.year}-${String(startDateValue.value.month).padStart(2, "0")}-${String(startDateValue.value.day).padStart(2, "0")}`;
+			const startDateObj = new Date(startDateStr);
+			if (dateObj < startDateObj) {
+				endDateError.value = t("errors.date_validation.end_before_start");
+				return;
+			}
+		}
+	}
+	endDateValue.value = value;
 }
-watch(() => props.selectedDatasets, async (newDatasets) => {
-    if (newDatasets.length > 0) {
-        const range = await calculateDateRangeWithCsvFiles(newDatasets, []);
-        availableDateRange.value = range;
-    } else {
-        availableDateRange.value = null;
-    }
-}, { immediate: true });
+watch(
+	() => props.selectedDatasets,
+	async (newDatasets) => {
+		if (newDatasets.length > 0) {
+			const range = await calculateDateRangeWithCsvFiles(newDatasets, []);
+			availableDateRange.value = range;
+		} else {
+			availableDateRange.value = null;
+		}
+	},
+	{ immediate: true },
+);
 </script>

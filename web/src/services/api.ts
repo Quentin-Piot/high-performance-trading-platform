@@ -1,36 +1,36 @@
 import axios from "axios";
 import { BASE_URL } from "./apiClient";
 export const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
+	baseURL: BASE_URL,
+	timeout: 10000,
 });
 export type PriceTick = { time: number; price: number };
 export type OrderBookLevel = { price: number; qty: number };
 export type OrderBook = { bids: OrderBookLevel[]; asks: OrderBookLevel[] };
 export type Trade = {
-  id: string;
-  time: number;
-  symbol: string;
-  side: "BUY" | "SELL";
-  qty: number;
-  price: number;
-  balanceAfter: number;
-  realizedPnl?: number;
+	id: string;
+	time: number;
+	symbol: string;
+	side: "BUY" | "SELL";
+	qty: number;
+	price: number;
+	balanceAfter: number;
+	realizedPnl?: number;
 };
 export type Position = { symbol: string; qty: number; avgPrice: number };
 export const endpoints = {
-  prices: "/prices",
-  trades: "/trades",
-  triggerTrade: "/trade",
+	prices: "/prices",
+	trades: "/trades",
+	triggerTrade: "/trade",
 };
 export async function fetchPrices(): Promise<PriceTick[]> {
-  return [];
+	return [];
 }
 export async function fetchTrades(): Promise<Trade[]> {
-  return [];
+	return [];
 }
 export async function postTrade(
-  payload: Omit<Trade, "id" | "time">,
+	payload: Omit<Trade, "id" | "time">,
 ): Promise<Trade> {
-  return { id: crypto.randomUUID(), time: Date.now(), ...payload };
+	return { id: crypto.randomUUID(), time: Date.now(), ...payload };
 }

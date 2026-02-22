@@ -1,32 +1,32 @@
 export function formatProcessingTime(
-  processingTime: string | null,
+	processingTime: string | null,
 ): string | null {
-  if (!processingTime) return null;
+	if (!processingTime) return null;
 
-  const match = processingTime.match(/^(\d+(?:\.\d+)?)s?$/);
-  if (!match) return processingTime;
+	const match = processingTime.match(/^(\d+(?:\.\d+)?)s?$/);
+	if (!match) return processingTime;
 
-  const seconds = parseFloat(match[1]);
+	const seconds = parseFloat(match[1]);
 
-  if (seconds < 1) {
-    const milliseconds = Math.round(seconds * 1000);
-    return `${milliseconds}ms`;
-  }
+	if (seconds < 1) {
+		const milliseconds = Math.round(seconds * 1000);
+		return `${milliseconds}ms`;
+	}
 
-  if (seconds < 10) {
-    return `${seconds.toFixed(2)}s`;
-  }
+	if (seconds < 10) {
+		return `${seconds.toFixed(2)}s`;
+	}
 
-  if (seconds < 60) {
-    return `${seconds.toFixed(1)}s`;
-  }
+	if (seconds < 60) {
+		return `${seconds.toFixed(1)}s`;
+	}
 
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.round(seconds % 60);
+	const minutes = Math.floor(seconds / 60);
+	const remainingSeconds = Math.round(seconds % 60);
 
-  if (remainingSeconds === 0) {
-    return `${minutes}m`;
-  }
+	if (remainingSeconds === 0) {
+		return `${minutes}m`;
+	}
 
-  return `${minutes}m ${remainingSeconds}s`;
+	return `${minutes}m ${remainingSeconds}s`;
 }
