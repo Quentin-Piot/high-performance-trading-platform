@@ -604,12 +604,54 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { fetchJson } from "@/services/apiClient";
+
+type HistoryStatus = "completed" | "running" | "failed" | string;
+type StrategyParams = Record<string, string | number | boolean | null | undefined>;
+
+interface HistoryItem {
+    id: string;
+    strategy: StrategyId;
+    status: HistoryStatus;
+    monte_carlo_runs: number;
+    monte_carlo_method?: string | null;
+    sample_fraction?: number | null;
+    gaussian_scale?: number | null;
+    price_type?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    total_return: number | null;
+    sharpe_ratio: number | null;
+    max_drawdown: number | null;
+    created_at: string;
+    strategy_params?: StrategyParams | null;
+    datasets_used?: string[] | null;
+}
+
+interface HistoryStats {
+    total_backtests: number;
+    avg_return: number | null;
+    avg_sharpe: number | null;
+    total_monte_carlo_runs: number;
+}
+
+interface HistoryListResponse {
+    items: HistoryItem[];
+    page: number;
+    per_page: number;
+    total: number;
+    has_prev: boolean;
+    has_next: boolean;
+}
+
+const getErrorMessage = (err: unknown) =>
+    err instanceof Error ? err.message : null;
+
 const { t } = useI18n();
 const { navigate } = useRouter();
 const loading = ref(false);
 const error = ref<string | null>(null);
-const history = ref<any[]>([]);
-const stats = ref<any>(null);
+const history = ref<HistoryItem[]>([]);
+const stats = ref<HistoryStats | null>(null);
 const selectedStrategy = ref("all");
 const pagination = ref({
     page: 1,
@@ -629,7 +671,7 @@ const loadHistory = async (page = 1) => {
         if (selectedStrategy.value && selectedStrategy.value !== "all") {
             params.append("strategy", selectedStrategy.value);
         }
-        const response = await fetchJson<any>(`/history/?${params}`);
+        const response = await fetchJson<HistoryListResponse>(`/history/?${params}`);
         history.value = response.items || [];
         pagination.value = {
             page: response.page || pagination.value.page,
@@ -638,15 +680,15 @@ const loadHistory = async (page = 1) => {
             has_prev: response.has_prev || pagination.value.has_prev,
             has_next: response.has_next || pagination.value.has_next,
         };
-    } catch (err: any) {
-        error.value = err.message || t("history.error_loading");
+    } catch (err: unknown) {
+        error.value = getErrorMessage(err) || t("history.error_loading");
     } finally {
         loading.value = false;
     }
 };
 const loadStats = async () => {
     try {
-        const response = await fetchJson<any>("/history/stats");
+        const response = await fetchJson<HistoryStats>("/history/stats");
         stats.value = response;
     } catch {}
 };
@@ -685,7 +727,7 @@ const getReturnColor = (returnValue: number) => {
     if (returnValue < 0) return "text-trading-red";
     return "text-muted-foreground";
 };
-const formatStrategyParams = (params: any) => {
+const formatStrategyParams = (params: StrategyParams | null | undefined) => {
     if (!params) return "N/A";
     return Object.entries(params)
         .filter(
@@ -695,8 +737,8 @@ const formatStrategyParams = (params: any) => {
         .map(([key, value]) => `${key}: ${value}`)
         .join(", ");
 };
-const rerunBacktest = (item: any) => {
-    const queryParams: Record<string, string | number | undefined> = {
+const rerunBacktest = (item: HistoryItem) => {
+    const queryParams: Record<string, string | number | boolean | undefined> = {
         strategy: item.strategy,
         startDate: item.start_date,
         endDate: item.end_date,
@@ -740,8 +782,8 @@ const confirmDelete = async (id: string) => {
         await fetchJson(`/history/${id}`, { method: "DELETE" });
         await loadHistory();
         await loadStats();
-    } catch (err: any) {
-        error.value = err.message || t("history.error_deleting");
+    } catch (err: unknown) {
+        error.value = getErrorMessage(err) || t("history.error_deleting");
     }
 };
 const navigateToSimulate = () => {
