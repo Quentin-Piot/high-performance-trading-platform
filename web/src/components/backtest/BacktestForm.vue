@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted } from "vue";
+import { ref, computed, reactive, watch, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useBacktestStore } from "@/stores/backtestStore";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,9 @@ const startDateValue = ref<DateValue>();
 const endDateValue = ref<DateValue>();
 const error = ref<string | null>(null);
 const dateValidationError = ref<string | null>(null);
+let autoSubmitTimer: ReturnType<typeof setTimeout> | null = null;
+let dateValidationTimer: ReturnType<typeof setTimeout> | null = null;
+let dateRangeSyncRequestId = 0;
 
 const monteCarloRuns = ref<number>(25);
 const monteCarloMethod = ref<"bootstrap" | "gaussian" | "">("bootstrap");
@@ -207,7 +210,8 @@ onMounted(async () => {
             }
         }
 
-        setTimeout(async () => {
+        if (autoSubmitTimer) clearTimeout(autoSubmitTimer);
+        autoSubmitTimer = setTimeout(async () => {
             if (canSubmit.value) {
                 await onSubmit();
             } else {
@@ -225,7 +229,8 @@ watch([startDate, endDate, selectedDatasets], () => {
     if (!startDate.value || !endDate.value) {
         return;
     }
-    setTimeout(() => {
+    if (dateValidationTimer) clearTimeout(dateValidationTimer);
+    dateValidationTimer = setTimeout(() => {
         const validation = validateDateRange(
             startDate.value,
             endDate.value,
@@ -239,6 +244,7 @@ watch([startDate, endDate, selectedDatasets], () => {
 });
 
 watch([selectedDatasets, selectedFiles], async ([newDatasets, newFiles]) => {
+    const requestId = ++dateRangeSyncRequestId;
     if (newDatasets.length === 0 && newFiles.length === 0) {
         return;
     }
@@ -247,9 +253,16 @@ watch([selectedDatasets, selectedFiles], async ([newDatasets, newFiles]) => {
         newFiles,
     );
     if (fullRange) {
+        if (requestId !== dateRangeSyncRequestId) return;
         startDate.value = fullRange.minDate;
         endDate.value = fullRange.maxDate;
     }
+});
+
+onUnmounted(() => {
+    if (autoSubmitTimer) clearTimeout(autoSubmitTimer);
+    if (dateValidationTimer) clearTimeout(dateValidationTimer);
+    dateRangeSyncRequestId += 1;
 });
 
 const validation = computed(() => currentCfg.value.validate(params));
