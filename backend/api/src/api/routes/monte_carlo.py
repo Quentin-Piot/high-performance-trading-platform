@@ -1,6 +1,7 @@
 """
 Monte Carlo simulation API endpoints.
 """
+
 import asyncio
 import logging
 import time
@@ -34,14 +35,22 @@ from utils.date_validation import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/monte-carlo", tags=["monte-carlo"])
+
+
 class SymbolDateRangeResponse(BaseModel):
     """Response model for symbol date range information"""
+
     symbol: str
     min_date: datetime
     max_date: datetime
+
+
 class AllSymbolsDateRangesResponse(BaseModel):
     """Response model for all symbols date ranges"""
+
     symbols: list[SymbolDateRangeResponse]
+
+
 @router.post("/run")
 async def run_monte_carlo_sync(
     symbol: str = Query(
@@ -89,6 +98,7 @@ async def run_monte_carlo_sync(
         from io import BytesIO
 
         import pandas as pd
+
         if strategy in {"sma_crossover", "sma"}:
             if sma_short is None or sma_long is None:
                 raise HTTPException(
@@ -140,9 +150,8 @@ async def run_monte_carlo_sync(
                     detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
                 )
             import os
-            current_dir = os.path.dirname(
-                os.path.dirname(os.path.dirname(__file__))
-            )
+
+            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             datasets_path = os.path.join(current_dir, "datasets")
             data_file = symbol_to_file[symbol_lower]
             file_path = os.path.join(datasets_path, data_file)
@@ -169,11 +178,12 @@ async def run_monte_carlo_sync(
         filtered_df.to_csv(csv_buffer, index=False)
         csv_bytes = csv_buffer.getvalue()
         from services.mc_backtest_service import run_monte_carlo_on_df
+
         strategy_name = strategy_params_dict.get("strategy", "sma_crossover")
         result = run_monte_carlo_on_df(
             csv_data=csv_bytes,
-            filename=file.filename if file else f"{symbol}.csv",
-            strategy_name=strategy_name,
+            filename=file.filename if file else f"{symbol}.csv",  # pyright: ignore[reportArgumentType]
+            strategy_name=strategy_name,  # pyright: ignore[reportArgumentType]
             strategy_params=strategy_params_dict,
             runs=num_runs,
             method="bootstrap",
@@ -183,6 +193,7 @@ async def run_monte_carlo_sync(
 
         if normalize and result.equity_envelope:
             envelope = result.equity_envelope
+
             def normalize_series(series: list[float]) -> list[float]:
                 if not series or series[0] == 0:
                     return series
@@ -190,6 +201,7 @@ async def run_monte_carlo_sync(
                 return [value / first_value for value in series]
 
             from domain.schemas.backtest import EquityEnvelope
+
             normalized_envelope = EquityEnvelope(
                 timestamps=envelope.timestamps,
                 p5=normalize_series(envelope.p5),
@@ -231,11 +243,11 @@ async def run_monte_carlo_sync(
                     if result.metrics_distribution:
                         metrics = result.metrics_distribution
                         if "pnl" in metrics:
-                            total_return = float(metrics["pnl"]["mean"])
+                            total_return = float(metrics["pnl"]["mean"])  # pyright: ignore[reportIndexIssue]
                         if "sharpe" in metrics:
-                            sharpe_ratio = float(metrics["sharpe"]["mean"])
+                            sharpe_ratio = float(metrics["sharpe"]["mean"])  # pyright: ignore[reportIndexIssue]
                         if "drawdown" in metrics:
-                            max_drawdown = float(metrics["drawdown"]["mean"])
+                            max_drawdown = float(metrics["drawdown"]["mean"])  # pyright: ignore[reportIndexIssue]
                     history_entry = await history_repo.create_history_entry(
                         user_id=user.id,
                         strategy=strategy,
@@ -277,6 +289,8 @@ async def run_monte_carlo_sync(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Simulation failed: {str(e)}",
         ) from e
+
+
 @router.post("/async")
 async def submit_async_job(
     symbol: str = Query(
@@ -315,6 +329,7 @@ async def submit_async_job(
     """
     try:
         from workers.simple_worker import get_simple_worker
+
         worker = get_simple_worker()
         if strategy in {"sma_crossover", "sma"}:
             if sma_short is None or sma_long is None:
@@ -354,6 +369,7 @@ async def submit_async_job(
             import pandas as pd
 
             from utils.date_validation import validate_date_range_for_symbol
+
             validation_result = validate_date_range_for_symbol(
                 symbol, start_date, end_date
             )
@@ -377,9 +393,7 @@ async def submit_async_job(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
                 )
-            current_dir = os.path.dirname(
-                os.path.dirname(os.path.dirname(__file__))
-            )
+            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             datasets_path = os.path.join(current_dir, "datasets")
             csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
             if not os.path.exists(csv_file_path):
@@ -406,7 +420,7 @@ async def submit_async_job(
                 )
         job_id = worker.submit_job(
             csv_data=csv_data,
-            filename=file.filename if file else f"{symbol}_data.csv",
+            filename=file.filename if file else f"{symbol}_data.csv",  # pyright: ignore[reportArgumentType]
             strategy_name=strategy,
             strategy_params=strategy_params_dict,
             runs=num_runs,
@@ -426,11 +440,14 @@ async def submit_async_job(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to submit job: {str(e)}",
         ) from e
+
+
 @router.get("/async/{job_id}")
 async def get_async_job_status(job_id: str) -> dict[str, Any]:
     """Get status of an asynchronous job."""
     try:
         from workers.simple_worker import get_simple_worker
+
         worker = get_simple_worker()
         job_status = worker.get_job_status(job_id)
         if not job_status:
@@ -448,11 +465,14 @@ async def get_async_job_status(job_id: str) -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get job status: {str(e)}",
         ) from e
+
+
 @router.delete("/async/{job_id}")
 async def cancel_async_job(job_id: str) -> dict[str, Any]:
     """Cancel an asynchronous job."""
     try:
         from workers.simple_worker import get_simple_worker
+
         worker = get_simple_worker()
         success = worker.cancel_job(job_id)
         if not success:
@@ -473,11 +493,14 @@ async def cancel_async_job(job_id: str) -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel job: {str(e)}",
         ) from e
+
+
 @router.get("/async")
 async def list_async_jobs() -> dict[str, Any]:
     """List all asynchronous jobs."""
     try:
         from workers.simple_worker import get_simple_worker
+
         worker = get_simple_worker()
         jobs = worker.list_jobs()
         return {"jobs": jobs, "total": len(jobs)}
@@ -487,6 +510,8 @@ async def list_async_jobs() -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list jobs: {str(e)}",
         ) from e
+
+
 @router.get("/symbols/date-ranges", response_model=AllSymbolsDateRangesResponse)
 async def get_symbols_date_ranges() -> AllSymbolsDateRangesResponse:
     """
@@ -511,6 +536,8 @@ async def get_symbols_date_ranges() -> AllSymbolsDateRangesResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get date ranges: {str(e)}",
         ) from e
+
+
 @router.websocket("/ws/{job_id}")
 async def websocket_job_progress(websocket: WebSocket, job_id: str):
     """
@@ -520,6 +547,7 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
     await websocket.accept()
     try:
         from workers.simple_worker import get_simple_worker
+
         worker = get_simple_worker()
         logger.info("WebSocket connection established", extra={"job_id": job_id})
         # get_job_status est synchrone; ne pas utiliser await ici

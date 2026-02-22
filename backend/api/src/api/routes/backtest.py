@@ -1,5 +1,8 @@
+import logging
 import os
 import time
+from collections.abc import Sequence
+from datetime import datetime
 from io import BytesIO
 
 import pandas as pd
@@ -28,7 +31,33 @@ from services.backtest_service import (
     run_sma_crossover,
 )
 
+logger = logging.getLogger(__name__)
+
+SYMBOL_TO_FILE = {
+    "aapl": "AAPL.csv",
+    "amzn": "AMZN.csv",
+    "fb": "FB.csv",
+    "googl": "GOOGL.csv",
+    "msft": "MSFT.csv",
+    "nflx": "NFLX.csv",
+    "nvda": "NVDA.csv",
+}
+
+
+class LocalDatasetFile:
+    """Wraps locally loaded CSV bytes to satisfy the same interface as FastAPI's UploadFile."""
+
+    def __init__(self, content: bytes, filename: str):
+        self.content = content
+        self.filename = filename
+
+    async def read(self) -> bytes:
+        return self.content
+
+
 router = APIRouter(tags=["backtest"])
+
+
 @router.get("/backtest", response_model=BacktestResponse)
 async def backtest_get(
     symbol: str = Query(
@@ -69,26 +98,15 @@ async def backtest_get(
     Supports both regular backtests and Monte Carlo simulations.
     """
     start_time = time.time()
-    symbol_to_file = {
-        "aapl": "AAPL.csv",
-        "amzn": "AMZN.csv",
-        "fb": "FB.csv",
-        "googl": "GOOGL.csv",
-        "msft": "MSFT.csv",
-        "nflx": "NFLX.csv",
-        "nvda": "NVDA.csv",
-    }
     symbol_lower = symbol.lower()
-    if symbol_lower not in symbol_to_file:
+    if symbol_lower not in SYMBOL_TO_FILE:
         raise HTTPException(
             status_code=400,
-            detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
+            detail=f"Symbol {symbol} not supported. Available symbols: {list(SYMBOL_TO_FILE.keys())}",
         )
-    current_dir = os.path.dirname(
-        os.path.dirname(os.path.dirname(__file__))
-    )
+    current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     datasets_path = os.path.join(current_dir, "datasets")
-    csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
+    csv_file_path = os.path.join(datasets_path, SYMBOL_TO_FILE[symbol_lower])
     if not os.path.exists(csv_file_path):
         raise HTTPException(
             status_code=404, detail=f"Dataset file not found for symbol {symbol}"
@@ -98,7 +116,6 @@ async def backtest_get(
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         try:
-            from datetime import datetime
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             end_dt = datetime.strptime(end_date, "%Y-%m-%d")
         except ValueError as e:
@@ -115,16 +132,9 @@ async def backtest_get(
     csv_buffer = BytesIO()
     df.to_csv(csv_buffer, index=False)
     csv_data = csv_buffer.getvalue()
-    class MockUploadFile:
-        def __init__(self, content: bytes, filename: str):
-            self.content = content
-            self.filename = filename
-            self._file = BytesIO(content)
-        async def read(self) -> bytes:
-            return self.content
-        def seek(self, offset: int) -> None:
-            self._file.seek(offset)
-    mock_file = MockUploadFile(csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv")
+    mock_file = LocalDatasetFile(
+        csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
+    )
     files = [mock_file]
     strat = strategy.strip().lower()
     if strat in {"sma_crossover", "sma"}:
@@ -158,6 +168,8 @@ async def backtest_get(
     elapsed_time = time.time() - start_time
     result.processing_time = f"{elapsed_time:.2f}s"
     return result
+
+
 @router.post("/backtest", response_model=BacktestResponse)
 async def backtest_post(
     symbol: str | None = Query(
@@ -203,27 +215,15 @@ async def backtest_post(
     start_time = time.time()
     files = []
     if symbol and start_date and end_date:
-        symbol_to_file = {
-            "aapl": "AAPL.csv",
-            "amzn": "AMZN.csv",
-            "fb": "FB.csv",
-            "googl": "GOOGL.csv",
-            "msft": "MSFT.csv",
-            "nflx": "NFLX.csv",
-            "nvda": "NVDA.csv",
-        }
         symbol_lower = symbol.lower()
-        if symbol_lower not in symbol_to_file:
+        if symbol_lower not in SYMBOL_TO_FILE:
             raise HTTPException(
                 status_code=400,
-                detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
+                detail=f"Symbol {symbol} not supported. Available symbols: {list(SYMBOL_TO_FILE.keys())}",
             )
-        import os
-        current_dir = os.path.dirname(
-            os.path.dirname(os.path.dirname(__file__))
-        )
+        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         datasets_path = os.path.join(current_dir, "datasets")
-        csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
+        csv_file_path = os.path.join(datasets_path, SYMBOL_TO_FILE[symbol_lower])
         if not os.path.exists(csv_file_path):
             raise HTTPException(
                 status_code=404, detail=f"Dataset file not found for symbol {symbol}"
@@ -233,7 +233,6 @@ async def backtest_post(
         if "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
             try:
-                from datetime import datetime
                 start_dt = datetime.strptime(start_date, "%Y-%m-%d")
                 end_dt = datetime.strptime(end_date, "%Y-%m-%d")
             except ValueError as e:
@@ -250,16 +249,7 @@ async def backtest_post(
         csv_buffer = BytesIO()
         df.to_csv(csv_buffer, index=False)
         csv_data = csv_buffer.getvalue()
-        class MockUploadFile:
-            def __init__(self, content: bytes, filename: str):
-                self.content = content
-                self.filename = filename
-                self._file = BytesIO(content)
-            async def read(self) -> bytes:
-                return self.content
-            def seek(self, offset: int) -> None:
-                self._file.seek(offset)
-        mock_file = MockUploadFile(
+        mock_file = LocalDatasetFile(
             csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
         )
         files = [mock_file]
@@ -289,7 +279,6 @@ async def backtest_post(
             )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
-    print("Calling run_regular_backtest")
     result = await run_regular_backtest(
         files=files,
         strategy=strat,
@@ -322,11 +311,11 @@ async def backtest_post(
                 total_return = None
                 sharpe_ratio = None
                 max_drawdown = None
-                if hasattr(result, "pnl"):
+                if isinstance(result, SingleBacktestResponse):
                     total_return = float(result.pnl)
                     sharpe_ratio = float(result.sharpe)
                     max_drawdown = float(result.drawdown)
-                elif hasattr(result, "results") and result.results:
+                elif isinstance(result, MultiBacktestResponse) and result.results:
                     first_result = result.results[0]
                     total_return = float(first_result.pnl)
                     sharpe_ratio = float(first_result.sharpe)
@@ -357,10 +346,12 @@ async def backtest_post(
                         status="completed",
                     )
         except Exception as e:
-            print(f"Warning: Failed to save backtest to history: {str(e)}")
+            logger.warning(f"Failed to save backtest to history: {e}")
     return result
+
+
 async def run_regular_backtest(
-    files: list[UploadFile],
+    files: Sequence[UploadFile | LocalDatasetFile],
     strategy: str,
     strategy_params: dict,
     include_aggregated: bool,
@@ -382,6 +373,8 @@ async def run_regular_backtest(
                     strategy_params["overbought"],
                     strategy_params["oversold"],
                 )
+            else:
+                raise ValueError(f"Unknown strategy: {strategy}")
 
             equity_curve = list(map(float, result.equity.values.tolist()))
             if normalize and equity_curve and equity_curve[0] != 0:

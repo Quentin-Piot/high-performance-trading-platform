@@ -3,6 +3,7 @@ Simple Monte Carlo worker that runs alongside the main backend without Redis/que
 This worker provides asynchronous Monte Carlo execution capabilities while running
 in the same process as the main backend, without requiring external queue systems.
 """
+
 import logging
 import threading
 import time
@@ -14,8 +15,23 @@ from uuid import uuid4
 from services.mc_backtest_service import run_monte_carlo_on_df
 
 logger = logging.getLogger(__name__)
+
+
+def _serialize_metric(dist) -> dict:
+    return {
+        "mean": dist.mean,
+        "std": dist.std,
+        "p5": dist.p5,
+        "p25": dist.p25,
+        "median": dist.median,
+        "p75": dist.p75,
+        "p95": dist.p95,
+    }
+
+
 class SimpleMonteCarloJob:
     """Simple job representation for the sideloaded worker."""
+
     def __init__(
         self,
         job_id: str,
@@ -37,21 +53,24 @@ class SimpleMonteCarloJob:
         self.method = method
         self.method_params = method_params or {}
         self.callback = callback
-        self.status = "pending"
-        self.progress = 0.0
-        self.result = None
-        self.error = None
-        self.created_at = datetime.now(UTC)
-        self.started_at = None
-        self.completed_at = None
+        self.status: str = "pending"
+        self.progress: float = 0.0
+        self.result: dict | None = None
+        self.error: str | None = None
+        self.created_at: datetime = datetime.now(UTC)
+        self.started_at: datetime | None = None
+        self.completed_at: datetime | None = None
+
+
 class SimpleMonteCarloWorker:
     """Simple Monte Carlo worker that runs in the same process without external dependencies."""
+
     def __init__(self, max_concurrent_jobs: int = 2):
         self.max_concurrent_jobs = max_concurrent_jobs
         self.jobs: dict[str, SimpleMonteCarloJob] = {}
-        self.running = False
         self.executor = ThreadPoolExecutor(max_workers=max_concurrent_jobs)
         self._lock = threading.Lock()
+
     def submit_job(
         self,
         csv_data: bytes,
@@ -81,6 +100,7 @@ class SimpleMonteCarloWorker:
         self.executor.submit(self._execute_job, job)
         logger.info(f"Submitted Monte Carlo job {job_id} with {runs} runs")
         return job_id
+
     def get_job_status(self, job_id: str) -> dict | None:
         """Get the status of a job."""
         with self._lock:
@@ -101,6 +121,7 @@ class SimpleMonteCarloWorker:
                 "runs": job.runs,
                 "filename": job.filename,
             }
+
     def list_jobs(self, limit: int = 50) -> list[dict]:
         """List all jobs with their status."""
         with self._lock:
@@ -122,6 +143,7 @@ class SimpleMonteCarloWorker:
             }
             for job in jobs[:limit]
         ]
+
     def cancel_job(self, job_id: str) -> bool:
         """Cancel a job (limited capability - can only mark as cancelled)."""
         with self._lock:
@@ -133,6 +155,7 @@ class SimpleMonteCarloWorker:
             job.status = "cancelled"
             job.completed_at = datetime.now(UTC)
             return True
+
     def cleanup_old_jobs(self, max_age_hours: int = 24) -> int:
         """Clean up old completed jobs."""
         cutoff_time = datetime.now(UTC).timestamp() - (max_age_hours * 3600)
@@ -152,6 +175,7 @@ class SimpleMonteCarloWorker:
         if removed_count > 0:
             logger.info(f"Cleaned up {removed_count} old jobs")
         return removed_count
+
     def get_stats(self) -> dict:
         """Get worker statistics."""
         with self._lock:
@@ -166,6 +190,7 @@ class SimpleMonteCarloWorker:
             "max_concurrent_jobs": self.max_concurrent_jobs,
         }
         return stats
+
     def _execute_job(self, job: SimpleMonteCarloJob) -> None:
         """Execute a Monte Carlo job in a thread."""
         try:
@@ -173,11 +198,13 @@ class SimpleMonteCarloWorker:
                 job.status = "running"
                 job.started_at = datetime.now(UTC)
             logger.info(f"Starting execution of job {job.job_id}")
+
             def progress_callback(processed: int, total: int):
                 progress = processed / total if total > 0 else 0.0
                 with self._lock:
                     job.progress = progress
                 logger.debug(f"Job {job.job_id} progress: {progress:.1%}")
+
             result = run_monte_carlo_on_df(
                 csv_data=job.csv_data,
                 filename=job.filename,
@@ -197,33 +224,8 @@ class SimpleMonteCarloWorker:
                 "runs": result.runs,
                 "successful_runs": result.successful_runs,
                 "metrics_distribution": {
-                    "pnl": {
-                        "mean": result.metrics_distribution["pnl"].mean,
-                        "std": result.metrics_distribution["pnl"].std,
-                        "p5": result.metrics_distribution["pnl"].p5,
-                        "p25": result.metrics_distribution["pnl"].p25,
-                        "median": result.metrics_distribution["pnl"].median,
-                        "p75": result.metrics_distribution["pnl"].p75,
-                        "p95": result.metrics_distribution["pnl"].p95,
-                    },
-                    "sharpe": {
-                        "mean": result.metrics_distribution["sharpe"].mean,
-                        "std": result.metrics_distribution["sharpe"].std,
-                        "p5": result.metrics_distribution["sharpe"].p5,
-                        "p25": result.metrics_distribution["sharpe"].p25,
-                        "median": result.metrics_distribution["sharpe"].median,
-                        "p75": result.metrics_distribution["sharpe"].p75,
-                        "p95": result.metrics_distribution["sharpe"].p95,
-                    },
-                    "drawdown": {
-                        "mean": result.metrics_distribution["drawdown"].mean,
-                        "std": result.metrics_distribution["drawdown"].std,
-                        "p5": result.metrics_distribution["drawdown"].p5,
-                        "p25": result.metrics_distribution["drawdown"].p25,
-                        "median": result.metrics_distribution["drawdown"].median,
-                        "p75": result.metrics_distribution["drawdown"].p75,
-                        "p95": result.metrics_distribution["drawdown"].p95,
-                    },
+                    key: _serialize_metric(dist)
+                    for key, dist in result.metrics_distribution.items()
                 },
             }
             if result.equity_envelope:
@@ -252,12 +254,7 @@ class SimpleMonteCarloWorker:
                     )
         except Exception as e:
             error_msg = f"Job execution failed: {str(e)}"
-            logger.error(f"Job {job.job_id} failed: {error_msg}")
-            print(f"DEBUG: Worker job {job.job_id} exception: {str(e)}")
-            import traceback
-            print(
-                f"DEBUG: Worker job {job.job_id} traceback: {traceback.format_exc()}"
-            )
+            logger.error(f"Job {job.job_id} failed: {error_msg}", exc_info=True)
             with self._lock:
                 job.status = "failed"
                 job.error = error_msg
@@ -269,12 +266,16 @@ class SimpleMonteCarloWorker:
                     logger.warning(
                         f"Error callback failed for job {job.job_id}: {callback_error}"
                     )
+
     def shutdown(self):
         """Shutdown the worker and cleanup resources."""
         logger.info("Shutting down simple Monte Carlo worker")
-        self.running = False
         self.executor.shutdown(wait=True)
+
+
 _worker_instance: SimpleMonteCarloWorker | None = None
+
+
 def get_simple_worker() -> SimpleMonteCarloWorker:
     """Get the global simple worker instance."""
     global _worker_instance
@@ -282,8 +283,11 @@ def get_simple_worker() -> SimpleMonteCarloWorker:
         _worker_instance = SimpleMonteCarloWorker(max_concurrent_jobs=2)
         logger.info("Initialized simple Monte Carlo worker")
     return _worker_instance
+
+
 def start_cleanup_task():
     """Start a background task to periodically cleanup old jobs."""
+
     def cleanup_loop():
         while True:
             try:
@@ -293,6 +297,7 @@ def start_cleanup_task():
             except Exception as e:
                 logger.error(f"Cleanup task error: {e}")
                 time.sleep(300)
+
     cleanup_thread = threading.Thread(
         target=cleanup_loop, daemon=True, name="SimpleWorkerCleanup"
     )

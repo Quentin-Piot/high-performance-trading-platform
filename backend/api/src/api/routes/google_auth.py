@@ -1,6 +1,7 @@
 """
 Google OAuth authentication routes.
 """
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -19,6 +20,8 @@ from services.google_oauth import GoogleOAuthService, get_google_oauth_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth/google", tags=["Google OAuth"])
+
+
 @router.get("/login")
 async def google_login(
     redirect_url: str = Query(
@@ -43,9 +46,13 @@ async def google_login(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to initiate Google authentication",
         ) from e
+
+
 @router.get("/callback")
 async def google_callback(
-    code: str | None = Query(default=None, description="Authorization code from Google"),
+    code: str | None = Query(
+        default=None, description="Authorization code from Google"
+    ),
     state: str = Query(default="/", description="State parameter (redirect URL)"),
     error: str = Query(default=None, description="Error from Google OAuth"),
     google_service: GoogleOAuthService = Depends(get_google_oauth_service),
@@ -117,6 +124,7 @@ async def google_callback(
                 redirect_url = f"{google_service.settings.frontend_url}{state}"
         logger.debug(f"Redirect URL: {redirect_url}")
         from core.security import create_access_token
+
         access_token = create_access_token(subject=str(db_user.id))
         query_params = f"auth=success&provider=google&email={user_info['email']}&user_id={db_user.id}&token={access_token}"
         if federated_creds:
@@ -127,17 +135,19 @@ async def google_callback(
     except Exception as e:
         logger.error(f"Google OAuth callback error: {e}", exc_info=True)
         logger.error(
-            f"Token data: {token_data if 'token_data' in locals() else 'Not available'}"
+            f"Token data: {token_data if 'token_data' in locals() else 'Not available'}"  # pyright: ignore[reportPossiblyUnboundVariable]
         )
         logger.error(
-            f"User info: {user_info if 'user_info' in locals() else 'Not available'}"
+            f"User info: {user_info if 'user_info' in locals() else 'Not available'}"  # pyright: ignore[reportPossiblyUnboundVariable]
         )
         logger.error(
-            f"Cognito user: {cognito_user if 'cognito_user' in locals() else 'Not available'}"
+            f"Cognito user: {cognito_user if 'cognito_user' in locals() else 'Not available'}"  # pyright: ignore[reportPossiblyUnboundVariable]
         )
         return RedirectResponse(
             url=f"{state}?error=callback_error&message=Authentication failed"
         )
+
+
 @router.get("/user-info")
 async def get_google_user_info(
     current_user: CognitoUser = Depends(get_current_user_optional),
@@ -160,6 +170,8 @@ async def get_google_user_info(
         "email_verified": current_user.email_verified,
         "provider": "google" if current_user.sub.startswith("google_") else "cognito",
     }
+
+
 @router.post("/link-account")
 async def link_google_account(
     current_user: CognitoUser = Depends(get_current_user_optional),
@@ -181,6 +193,8 @@ async def link_google_account(
         "message": "Account linking not yet implemented",
         "current_user": current_user.email,
     }
+
+
 @router.delete("/unlink-account")
 async def unlink_google_account(
     current_user: CognitoUser = Depends(get_current_user_optional),

@@ -10,8 +10,12 @@ from core.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
 class Base(DeclarativeBase):
     pass
+
+
 def _to_async_url(url: str) -> str:
     """Convert synchronous database URL to async format"""
     parsed = urlparse(url)
@@ -20,6 +24,8 @@ def _to_async_url(url: str) -> str:
             "postgresql://", "postgresql+asyncpg://"
         )
     return url
+
+
 ASYNC_DB_URL = _to_async_url(settings.db_url)
 engine = create_async_engine(
     ASYNC_DB_URL,
@@ -40,42 +46,43 @@ engine = create_async_engine(
         },
     },
 )
-SessionLocal = sessionmaker(
-    bind=engine,
+SessionLocal = sessionmaker(  # pyright: ignore[reportCallIssue, reportArgumentType]
+    bind=engine,  # pyright: ignore[reportCallIssue, reportArgumentType]
     class_=AsyncSession,
     expire_on_commit=False,
     autoflush=False,
     autocommit=False,
 )
-@event.listens_for(engine.sync_engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    """Set connection-level settings for performance"""
-    if hasattr(dbapi_connection, "execute"):
-        pass
+
+
 @event.listens_for(engine.sync_engine, "checkout")
 def receive_checkout(dbapi_connection, connection_record, connection_proxy):
     """Log connection checkout for monitoring"""
     logger.debug(
         "Connection checked out from pool",
         extra={
-            "pool_size": engine.pool.size(),
-            "checked_out": engine.pool.checkedout(),
-            "overflow": engine.pool.overflow(),
-            "checked_in": engine.pool.checkedin(),
+            "pool_size": engine.pool.size(),  # pyright: ignore[reportAttributeAccessIssue]
+            "checked_out": engine.pool.checkedout(),  # pyright: ignore[reportAttributeAccessIssue]
+            "overflow": engine.pool.overflow(),  # pyright: ignore[reportAttributeAccessIssue]
+            "checked_in": engine.pool.checkedin(),  # pyright: ignore[reportAttributeAccessIssue]
         },
     )
+
+
 @event.listens_for(engine.sync_engine, "checkin")
 def receive_checkin(dbapi_connection, connection_record):
     """Log connection checkin for monitoring"""
     logger.debug(
         "Connection returned to pool",
         extra={
-            "pool_size": engine.pool.size(),
-            "checked_out": engine.pool.checkedout(),
-            "overflow": engine.pool.overflow(),
-            "checked_in": engine.pool.checkedin(),
+            "pool_size": engine.pool.size(),  # pyright: ignore[reportAttributeAccessIssue]
+            "checked_out": engine.pool.checkedout(),  # pyright: ignore[reportAttributeAccessIssue]
+            "overflow": engine.pool.overflow(),  # pyright: ignore[reportAttributeAccessIssue]
+            "checked_in": engine.pool.checkedin(),  # pyright: ignore[reportAttributeAccessIssue]
         },
     )
+
+
 async def init_db() -> None:
     """Initialize database with performance monitoring"""
     logger.info(
@@ -87,9 +94,11 @@ async def init_db() -> None:
             "pool_timeout": settings.db_pool_timeout,
         },
     )
+
+
 async def get_session():
     """Get database session with performance monitoring"""
-    async with SessionLocal() as session:
+    async with SessionLocal() as session:  # pyright: ignore[reportGeneralTypeIssues]
         try:
             yield session
         except Exception as e:
@@ -101,12 +110,14 @@ async def get_session():
             raise
         finally:
             await session.close()
+
+
 async def get_pool_status() -> dict:
     """Get current connection pool status for monitoring"""
     return {
-        "pool_size": engine.pool.size(),
-        "checked_out": engine.pool.checkedout(),
-        "overflow": engine.pool.overflow(),
-        "checked_in": engine.pool.checkedin(),
-        "total_connections": engine.pool.size() + engine.pool.overflow(),
+        "pool_size": engine.pool.size(),  # pyright: ignore[reportAttributeAccessIssue]
+        "checked_out": engine.pool.checkedout(),  # pyright: ignore[reportAttributeAccessIssue]
+        "overflow": engine.pool.overflow(),  # pyright: ignore[reportAttributeAccessIssue]
+        "checked_in": engine.pool.checkedin(),  # pyright: ignore[reportAttributeAccessIssue]
+        "total_connections": engine.pool.size() + engine.pool.overflow(),  # pyright: ignore[reportAttributeAccessIssue]
     }

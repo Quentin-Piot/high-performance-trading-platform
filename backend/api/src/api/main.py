@@ -1,5 +1,6 @@
 import logging
 import time
+import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -24,12 +25,17 @@ from infrastructure.monitoring import monitoring_service
 
 load_dotenv()
 setup_logging()
+
+
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logging.getLogger("app").info("Startup")
     await init_db()
+
     def db_health_check() -> tuple[str, str, dict[str, Any]]:
         try:
+            with engine.sync_engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
             return "healthy", "Database connection available", {}
         except Exception as e:
             return (
@@ -37,9 +43,12 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 f"Database connection failed: {str(e)}",
                 {"error": str(e)},
             )
+
     monitoring_service.register_health_check("database", db_health_check)
     yield
     logging.getLogger("app").info("Shutdown")
+
+
 app = FastAPI(title="Trading Backtest API", version="0.1.0", lifespan=app_lifespan)
 allowed_origins = ["*"]
 app.add_middleware(
@@ -49,6 +58,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
     await monitoring_service.increment_counter(
@@ -67,6 +78,8 @@ async def value_error_handler(request: Request, exc: ValueError):
         },
     )
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     logger = logging.getLogger("http")
@@ -74,7 +87,6 @@ async def request_logging_middleware(request: Request, call_next):
         "x-correlation-id"
     )
     if not req_id:
-        import uuid
         req_id = uuid.uuid4().hex
     token = REQUEST_ID.set(req_id)
     start = time.monotonic()
@@ -119,13 +131,19 @@ async def request_logging_middleware(request: Request, call_next):
         pass
     REQUEST_ID.reset(token)
     return response
+
+
 @app.get("/")
 async def root():
     return {"message": "OK", "service": "Trading Backtest API"}
+
+
 @app.get("/api/healthz")
 async def healthz():
     """Basic health check endpoint"""
     return {"status": "ok", "timestamp": datetime.now(UTC).isoformat()}
+
+
 @app.get("/api/health")
 async def health_comprehensive():
     """Comprehensive health check with system monitoring"""
@@ -147,6 +165,8 @@ async def health_comprehensive():
                 "error": "Health check system unavailable",
             },
         )
+
+
 @app.get("/api/readyz")
 async def readyz():
     """Readiness check for database connectivity"""
@@ -169,6 +189,8 @@ async def readyz():
                 "error": str(e),
             },
         )
+
+
 @app.get("/api/metrics")
 async def metrics():
     """System metrics endpoint"""
@@ -189,6 +211,8 @@ async def metrics():
                 "timestamp": datetime.now(UTC).isoformat(),
             },
         )
+
+
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     await monitoring_service.increment_counter(
@@ -206,6 +230,8 @@ async def generic_exception_handler(request: Request, exc: Exception):
         },
     )
     return JSONResponse(status_code=500, content={"detail": "internal server error"})
+
+
 @app.get("/routes")
 def list_routes():
     """List all available routes in the application."""
@@ -213,13 +239,19 @@ def list_routes():
     for route in app.routes:
         if isinstance(route, Route):
             routes.append(
-                {"path": route.path, "name": route.name, "methods": list(route.methods)}
+                {
+                    "path": route.path,
+                    "name": route.name,
+                    "methods": list(route.methods or []),
+                }
             )
         elif isinstance(route, WebSocketRoute):
             routes.append(
                 {"path": route.path, "name": route.name, "methods": ["WEBSOCKET"]}
             )
     return routes
+
+
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(backtest_router, prefix="/api/v1")
 app.include_router(google_auth_router, prefix="/api/v1")

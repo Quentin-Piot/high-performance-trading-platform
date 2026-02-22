@@ -1,6 +1,7 @@
 """
 FastAPI router for backtest history management.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,14 +20,20 @@ from infrastructure.repositories.backtest_history_repository import (
 from infrastructure.repositories.user_repository import UserRepository
 
 router = APIRouter(prefix="/history", tags=["backtest-history"])
+
+
 async def get_user_repo(session: AsyncSession = Depends(get_session)) -> UserRepository:
     """Dependency to get user repository."""
     return UserRepository(session)
+
+
 async def get_history_repo(
     session: AsyncSession = Depends(get_session),
 ) -> BacktestHistoryRepository:
     """Dependency to get backtest history repository."""
     return BacktestHistoryRepository(session)
+
+
 @router.get("/", response_model=BacktestHistoryList)
 async def get_user_history(
     page: int = Query(1, ge=1, description="Page number"),
@@ -56,14 +63,14 @@ async def get_user_history(
     response_items = [BacktestHistoryResponse.model_validate(item) for item in items]
     return BacktestHistoryList(
         items=response_items,
-        total=len(
-            response_items
-        ),
+        total=len(response_items),
         page=page,
         per_page=per_page,
         has_next=has_next,
         has_prev=has_prev,
     )
+
+
 @router.get("/stats", response_model=UserStatsResponse)
 async def get_user_stats(
     current_user: SimpleUser = Depends(get_current_user_simple),
@@ -78,6 +85,8 @@ async def get_user_stats(
         )
     stats = await history_repo.get_user_stats(user.id)
     return UserStatsResponse(**stats)
+
+
 @router.get("/{history_id}", response_model=BacktestHistoryResponse)
 async def get_history_detail(
     history_id: int,
@@ -97,6 +106,8 @@ async def get_history_detail(
             status_code=status.HTTP_404_NOT_FOUND, detail="Backtest history not found"
         )
     return BacktestHistoryResponse.model_validate(history)
+
+
 @router.put("/{history_id}/results", response_model=BacktestHistoryResponse)
 async def update_backtest_results(
     history_id: int,
@@ -124,6 +135,8 @@ async def update_backtest_results(
             detail="Not authorized to update this backtest",
         )
     return BacktestHistoryResponse.model_validate(updated_history)
+
+
 @router.delete("/{history_id}")
 async def delete_history(
     history_id: int,
@@ -143,6 +156,8 @@ async def delete_history(
             status_code=status.HTTP_404_NOT_FOUND, detail="Backtest history not found"
         )
     return {"message": "Backtest history deleted successfully"}
+
+
 @router.post("/rerun")
 async def rerun_backtest(
     rerun_request: BacktestRerunRequest,
@@ -184,7 +199,7 @@ async def rerun_backtest(
         monte_carlo_method=original_history.monte_carlo_method,
         sample_fraction=original_history.sample_fraction,
         gaussian_scale=original_history.gaussian_scale,
-        datasets_used=datasets,
+        datasets_used=datasets if isinstance(datasets, list) else None,
         price_type=original_history.price_type,
     )
     return {
