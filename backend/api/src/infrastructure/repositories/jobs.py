@@ -3,6 +3,7 @@ Repository for job database operations.
 This module provides database operations for job persistence, deduplication,
 and status tracking in the Monte Carlo queue system.
 """
+
 import base64
 import logging
 from datetime import datetime, timedelta
@@ -21,11 +22,15 @@ from infrastructure.repositories.db_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
 class JobRepository:
     """Repository for job database operations"""
+
     def __init__(self, session: AsyncSession):
         self.session = session
         self._batch_manager = BatchOperationManager(session)
+
     async def batch_update_job_statuses(
         self, updates: list[dict[str, Any]]
     ) -> dict[str, int]:
@@ -53,6 +58,7 @@ class JobRepository:
                 extra={"update_count": len(updates), "error": str(e)},
             )
             raise DatabaseError(f"Batch update failed: {str(e)}") from e
+
     async def batch_update_job_progress(
         self, updates: list[dict[str, Any]]
     ) -> dict[str, int]:
@@ -84,6 +90,7 @@ class JobRepository:
                 extra={"update_count": len(updates), "error": str(e)},
             )
             raise DatabaseError(f"Batch progress update failed: {str(e)}") from e
+
     @db_retry(max_retries=3, delay=1.0)
     async def create_job(
         self,
@@ -127,27 +134,32 @@ class JobRepository:
                 priority=priority,
                 dedup_key=dedup_key,
             )
+
             async def create_operation():
                 self.session.add(job)
                 await self.session.commit()
                 await self.session.refresh(job)
                 return job
+
             return await execute_with_timeout(
                 self.session,
                 create_operation,
                 timeout=30.0,
                 operation_name="create_job",
             )
+
     async def get_job_by_id(self, job_id: str) -> Job | None:
         """Get job by ID"""
         result = await self.session.execute(select(Job).where(Job.id == job_id))
         return result.scalar_one_or_none()
+
     async def get_job_by_dedup_key(self, dedup_key: str) -> Job | None:
         """Get job by deduplication key"""
         result = await self.session.execute(
             select(Job).where(Job.dedup_key == dedup_key)
         )
         return result.scalar_one_or_none()
+
     async def find_existing_job(self, dedup_key: str) -> Job | None:
         """
         Find existing job with same dedup_key in PENDING or PROCESSING status.
@@ -167,6 +179,7 @@ class JobRepository:
             )
         )
         return result.scalar_one_or_none()
+
     async def get_job_counts_by_status(self) -> dict[str, int]:
         """
         Get job counts grouped by status for metrics.
@@ -186,15 +199,16 @@ class JobRepository:
             all_statuses = ["pending", "processing", "completed", "failed", "retry"]
             for status in all_statuses:
                 if status not in counts:
-                    counts[status] = 0
+                    counts[status] = 0  # pyright: ignore[reportArgumentType]
             logger.debug(
                 "Retrieved job counts by status",
-                extra={"counts": counts, "total_jobs": sum(counts.values())},
+                extra={"counts": counts, "total_jobs": sum(counts.values())},  # pyright: ignore[reportCallIssue, reportArgumentType]
             )
-            return counts
+            return counts  # pyright: ignore[reportReturnType]
         except Exception as e:
             logger.error("Failed to get job counts by status", extra={"error": str(e)})
             raise
+
     async def update_job_progress(
         self,
         job_id: str,
@@ -240,10 +254,11 @@ class JobRepository:
                 update(Job).where(Job.id == job_id).values(**update_data)
             )
             await self.session.commit()
-            return result.rowcount > 0
+            return result.rowcount > 0  # pyright: ignore[reportAttributeAccessIssue]
         except Exception:
             await self.session.rollback()
             return False
+
     @db_retry(max_retries=2, delay=0.5)
     async def update_job_status(
         self,
@@ -284,12 +299,14 @@ class JobRepository:
                     update_data["artifact_url"] = artifact_url
                 if completed_at is not None:
                     update_data["completed_at"] = completed_at
+
                 async def update_operation():
                     result = await self.session.execute(
                         update(Job).where(Job.id == job_id).values(**update_data)
                     )
                     await self.session.commit()
-                    return result.rowcount > 0
+                    return result.rowcount > 0  # pyright: ignore[reportAttributeAccessIssue]
+
                 success = await execute_with_timeout(
                     self.session,
                     update_operation,
@@ -320,6 +337,7 @@ class JobRepository:
                     extra={"job_id": job_id, "status": status, "error": str(e)},
                 )
                 raise DatabaseError(f"Failed to update job status: {str(e)}") from e
+
     async def increment_attempts(self, job_id: str) -> bool:
         """
         Increment job attempt count.
@@ -334,7 +352,8 @@ class JobRepository:
             .values(attempts=Job.attempts + 1, updated_at=datetime.utcnow())
         )
         await self.session.commit()
-        return result.rowcount > 0
+        return result.rowcount > 0  # pyright: ignore[reportAttributeAccessIssue]
+
     async def list_jobs(
         self,
         status: str | None = None,
@@ -360,13 +379,16 @@ class JobRepository:
         query = query.order_by(Job.created_at.desc()).limit(limit).offset(offset)
         result = await self.session.execute(query)
         return list(result.scalars().all())
+
     async def get_job_counts_by_status_simple(self) -> dict[str, int]:
         """Get count of jobs by status (simple version without caching)"""
         from sqlalchemy import func
+
         result = await self.session.execute(
             select(Job.status, func.count(Job.id)).group_by(Job.status)
         )
         return {status: count for status, count in result.all()}
+
     async def cleanup_old_jobs(self, older_than_hours: int = 24) -> int:
         """
         Clean up old completed/failed jobs.
@@ -376,6 +398,7 @@ class JobRepository:
             Number of jobs removed
         """
         from sqlalchemy import delete
+
         cutoff_time = datetime.utcnow() - timedelta(hours=older_than_hours)
         result = await self.session.execute(
             delete(Job).where(
@@ -390,4 +413,4 @@ class JobRepository:
             )
         )
         await self.session.commit()
-        return result.rowcount
+        return result.rowcount  # pyright: ignore[reportAttributeAccessIssue]

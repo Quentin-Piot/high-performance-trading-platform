@@ -3,7 +3,9 @@ Database utilities for connection management, retry logic, and performance monit
 This module provides utilities to handle database connection timeouts, implement
 retry logic, and monitor database performance for the trading platform.
 """
+
 import asyncio
+import builtins
 import logging
 import time
 from collections.abc import Awaitable, Callable
@@ -26,15 +28,26 @@ DEFAULT_BACKOFF_MULTIPLIER = 2.0
 DEFAULT_MAX_DELAY = 30.0
 SLOW_QUERY_THRESHOLD = 1.0
 VERY_SLOW_QUERY_THRESHOLD = 5.0
+
+
 class DatabaseError(Exception):
     """Custom database error for better error handling"""
+
     pass
+
+
 class DatabaseTimeoutError(DatabaseError):
     """Raised when database operations timeout"""
+
     pass
+
+
 class DatabaseConnectionError(DatabaseError):
     """Raised when database connection fails"""
+
     pass
+
+
 def is_retryable_error(error: Exception) -> bool:
     """
     Determine if a database error is retryable.
@@ -63,12 +76,14 @@ def is_retryable_error(error: Exception) -> bool:
     return isinstance(error, retryable_errors) or any(
         msg in error_message for msg in retryable_messages
     )
+
+
 def db_retry(
     max_retries: int = DEFAULT_MAX_RETRIES,
     delay: float = DEFAULT_RETRY_DELAY,
     backoff: float = DEFAULT_BACKOFF_MULTIPLIER,
     max_delay: float = DEFAULT_MAX_DELAY,
-    exceptions: tuple = None,
+    exceptions: tuple = None,  # pyright: ignore[reportArgumentType]
 ):
     """
     Decorator for database operations with retry logic.
@@ -83,6 +98,7 @@ def db_retry(
     """
     if exceptions is None:
         exceptions = (DatabaseError, DisconnectionError, TimeoutError, OperationalError)
+
     def decorator(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
         @wraps(func)
         async def wrapper(*args, **kwargs) -> T:
@@ -130,9 +146,13 @@ def db_retry(
                     )
                     await asyncio.sleep(current_delay)
                     current_delay = min(current_delay * backoff, max_delay)
-            raise last_exception
+            raise last_exception  # pyright: ignore[reportGeneralTypeIssues]
+
         return wrapper
+
     return decorator
+
+
 @asynccontextmanager
 async def db_operation_monitor(operation_name: str, session: AsyncSession):
     """
@@ -177,7 +197,9 @@ async def db_operation_monitor(operation_name: str, session: AsyncSession):
             logger.info("Slow database operation detected", extra=metrics)
         else:
             logger.debug("Database operation completed", extra=metrics)
-async def execute_with_timeout(
+
+
+async def execute_with_timeout[T](
     session: AsyncSession,
     operation: Callable[[], Awaitable[T]],
     timeout: float = 30.0,
@@ -198,7 +220,7 @@ async def execute_with_timeout(
     """
     try:
         return await asyncio.wait_for(operation(), timeout=timeout)
-    except asyncio.TimeoutError:
+    except builtins.TimeoutError:
         logger.error(
             "Database operation timed out",
             extra={"operation": operation_name, "timeout": timeout},
@@ -226,15 +248,20 @@ async def execute_with_timeout(
             },
         )
         raise DatabaseError(f"Operation '{operation_name}' failed: {str(e)}") from e
+
+
 class BatchOperationManager:
     """Manager for batch database operations to reduce round trips"""
+
     def __init__(self, session: AsyncSession, batch_size: int = 100):
         self.session = session
         self.batch_size = batch_size
         self.pending_operations: list[dict[str, Any]] = []
+
     def add_operation(self, operation_type: str, **kwargs):
         """Add an operation to the batch"""
         self.pending_operations.append({"type": operation_type, "data": kwargs})
+
     async def execute_batch(self) -> dict[str, int]:
         """
         Execute all pending operations in batches.
@@ -257,6 +284,7 @@ class BatchOperationManager:
                 await self._execute_batch_by_type(op_type, batch)
         self.pending_operations.clear()
         return results
+
     async def _execute_batch_by_type(
         self, operation_type: str, batch: list[dict[str, Any]]
     ):
@@ -278,11 +306,13 @@ class BatchOperationManager:
                 },
             )
             raise
+
     async def _batch_update_job_status(self, batch: list[dict[str, Any]]):
         """Execute batch job status updates"""
         from sqlalchemy import update
 
         from infrastructure.models import Job
+
         for job_data in batch:
             await self.session.execute(
                 update(Job)
@@ -298,11 +328,13 @@ class BatchOperationManager:
                 )
             )
         await self.session.commit()
+
     async def _batch_update_job_progress(self, batch: list[dict[str, Any]]):
         """Execute batch job progress updates"""
         from sqlalchemy import update
 
         from infrastructure.models import Job
+
         for job_data in batch:
             await self.session.execute(
                 update(Job)
@@ -314,6 +346,8 @@ class BatchOperationManager:
                 )
             )
         await self.session.commit()
+
+
 async def check_connection_health(session: AsyncSession) -> bool:
     """
     Check if database connection is healthy.
@@ -323,7 +357,7 @@ async def check_connection_health(session: AsyncSession) -> bool:
         True if connection is healthy, False otherwise
     """
     try:
-        await session.execute("SELECT 1")
+        await session.execute("SELECT 1")  # pyright: ignore[reportCallIssue, reportArgumentType]
         return True
     except Exception as e:
         logger.warning(

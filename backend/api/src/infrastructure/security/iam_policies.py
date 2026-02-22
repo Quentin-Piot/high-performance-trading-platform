@@ -3,6 +3,7 @@ IAM Policy definitions for least-privilege access to AWS services.
 This module provides IAM policy templates for different components of the system,
 following the principle of least privilege for security best practices.
 """
+
 import json
 from dataclasses import dataclass
 from typing import Any
@@ -11,21 +12,28 @@ from typing import Any
 @dataclass
 class IAMPolicy:
     """IAM Policy representation"""
+
     version: str = "2012-10-17"
     statements: list[dict[str, Any]] = None
+
     def __post_init__(self):
         if self.statements is None:
             self.statements = []
+
     def to_json(self) -> str:
         """Convert policy to JSON string"""
         return json.dumps(
             {"Version": self.version, "Statement": self.statements}, indent=2
         )
+
     def to_dict(self) -> dict[str, Any]:
         """Convert policy to dictionary"""
         return {"Version": self.version, "Statement": self.statements}
+
+
 class IAMPolicyBuilder:
     """Builder for creating IAM policies with least-privilege principles"""
+
     @staticmethod
     def monte_carlo_worker_policy(
         sqs_queue_arn: str,
@@ -90,6 +98,7 @@ class IAMPolicyBuilder:
                 }
             )
         return IAMPolicy(statements=statements)
+
     @staticmethod
     def api_server_policy(
         sqs_queue_arn: str,
@@ -138,6 +147,7 @@ class IAMPolicyBuilder:
                 }
             )
         return IAMPolicy(statements=statements)
+
     @staticmethod
     def monitoring_policy(
         cloudwatch_namespace: str = "TradingPlatform/MonteCarloJobs",
@@ -171,6 +181,8 @@ class IAMPolicyBuilder:
             },
         ]
         return IAMPolicy(statements=statements)
+
+
 def generate_terraform_policies(
     sqs_queue_arn: str, s3_bucket_arn: str, cloudwatch_log_group_arn: str | None = None
 ) -> dict[str, str]:
@@ -193,6 +205,8 @@ def generate_terraform_policies(
         ).to_json(),
         "monitoring_policy": builder.monitoring_policy().to_json(),
     }
+
+
 def validate_policy_permissions(policy: IAMPolicy, required_actions: list[str]) -> bool:
     """
     Validate that a policy contains all required actions.

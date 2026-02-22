@@ -3,6 +3,7 @@ S3 adapter for artifact storage.
 This module provides S3 storage functionality for Monte Carlo job artifacts,
 including result files, charts, and reports with lifecycle management.
 """
+
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
@@ -14,8 +15,11 @@ import boto3
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
+
+
 class S3StorageAdapter:
     """S3 implementation for artifact storage"""
+
     def __init__(
         self,
         bucket_name: str,
@@ -60,6 +64,7 @@ class S3StorageAdapter:
             max_workers=5, thread_name_prefix="s3-adapter"
         )
         logger.info(f"Initialized S3 adapter for bucket: {bucket_name}")
+
     async def upload_artifact(
         self,
         job_id: str,
@@ -111,6 +116,7 @@ class S3StorageAdapter:
                 f"Failed to upload artifact {artifact_name} for job {job_id}: {str(e)}"
             )
             raise
+
     async def download_artifact(self, job_id: str, artifact_name: str) -> bytes | None:
         """
         Download an artifact from S3.
@@ -135,6 +141,7 @@ class S3StorageAdapter:
                 f"Failed to download artifact {artifact_name} for job {job_id}: {str(e)}"
             )
             raise
+
     async def delete_artifact(self, job_id: str, artifact_name: str) -> bool:
         """
         Delete an artifact from S3.
@@ -159,6 +166,7 @@ class S3StorageAdapter:
                 f"Failed to delete artifact {artifact_name} for job {job_id}: {str(e)}"
             )
             raise
+
     async def list_job_artifacts(self, job_id: str) -> list[dict[str, Any]]:
         """
         List all artifacts for a job.
@@ -177,6 +185,7 @@ class S3StorageAdapter:
         except Exception as e:
             logger.error(f"Failed to list artifacts for job {job_id}: {str(e)}")
             raise
+
     async def setup_lifecycle_policy(self) -> bool:
         """
         Set up S3 lifecycle policy for automatic artifact management.
@@ -212,6 +221,7 @@ class S3StorageAdapter:
         except Exception as e:
             logger.error(f"Failed to set up lifecycle policy: {str(e)}")
             return False
+
     def _upload_object_sync(
         self, key: str, content: bytes, content_type: str, metadata: dict[str, str]
     ) -> None:
@@ -223,13 +233,16 @@ class S3StorageAdapter:
             ContentType=content_type,
             Metadata=metadata,
         )
+
     def _download_object_sync(self, key: str) -> bytes:
         """Synchronous S3 object download"""
         response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
         return response["Body"].read()
+
     def _delete_object_sync(self, key: str) -> None:
         """Synchronous S3 object deletion"""
         self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
+
     def _list_objects_sync(self, prefix: str, job_id: str) -> list[dict[str, Any]]:
         """Synchronous S3 object listing"""
         artifacts = []
@@ -251,6 +264,7 @@ class S3StorageAdapter:
                         }
                     )
         return artifacts
+
     def _put_lifecycle_configuration_sync(
         self, lifecycle_config: dict[str, Any]
     ) -> None:
@@ -258,6 +272,7 @@ class S3StorageAdapter:
         self.s3_client.put_bucket_lifecycle_configuration(
             Bucket=self.bucket_name, LifecycleConfiguration=lifecycle_config
         )
+
     async def _find_artifact_key(self, job_id: str, artifact_name: str) -> str | None:
         """Find the S3 key for an artifact by searching through date prefixes"""
         try:
@@ -275,6 +290,7 @@ class S3StorageAdapter:
         except Exception as e:
             logger.error(f"Error finding artifact key: {str(e)}")
             return None
+
     def _object_exists_sync(self, key: str) -> bool:
         """Check if S3 object exists synchronously"""
         try:
@@ -284,6 +300,7 @@ class S3StorageAdapter:
             if e.response["Error"]["Code"] == "404":
                 return False
             raise
+
     async def cleanup(self) -> None:
         """Clean up resources"""
         if hasattr(self, "executor"):

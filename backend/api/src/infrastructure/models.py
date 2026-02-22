@@ -22,9 +22,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-    hashed_password: Mapped[str] = mapped_column(
-        String(255), nullable=True
-    )
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=True)
     cognito_sub: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=True
     )
@@ -39,6 +37,8 @@ class User(Base):
     backtest_histories: Mapped[list["BacktestHistory"]] = relationship(
         back_populates="user"
     )
+
+
 class Strategy(Base):
     __tablename__ = "strategies"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -48,6 +48,8 @@ class Strategy(Base):
     params: Mapped[str] = mapped_column(String(1000), nullable=True)
     owner: Mapped[User] = relationship(back_populates="strategies")
     backtests: Mapped[list["Backtest"]] = relationship(back_populates="strategy")
+
+
 class Backtest(Base):
     __tablename__ = "backtests"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -63,6 +65,8 @@ class Backtest(Base):
         DateTime, default=datetime.utcnow, nullable=False
     )
     strategy: Mapped[Strategy] = relationship(back_populates="backtests")
+
+
 class Job(Base):
     __tablename__ = "jobs"
     __table_args__ = (UniqueConstraint("dedup_key", name="uq_job_dedup_key"),)
@@ -88,6 +92,8 @@ class Job(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+
+
 class BacktestHistory(Base):
     __tablename__ = "backtest_history"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

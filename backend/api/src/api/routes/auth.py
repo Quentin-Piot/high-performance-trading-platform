@@ -15,13 +15,19 @@ from infrastructure.repositories.users import get_user_by_email
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async for session in get_session():
         yield session
+
+
 def generate_temporary_password(length: int = 12) -> str:
     """Generate a secure temporary password for Cognito user creation."""
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
     return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
 @router.post("/register", response_model=Token)
 async def register(
     payload: UserCreate,
@@ -48,6 +54,7 @@ async def register(
                 detail="Erreur lors de la configuration du mot de passe",
             )
         from core.cognito import CognitoUser
+
         cognito_user = CognitoUser(
             sub=cognito_username,
             email=payload.email,
@@ -64,15 +71,14 @@ async def register(
         raise
     except ValueError as e:
         logger.warning(f"Password validation failed for {payload.email}: {str(e)}")
-        raise HTTPException(
-            status_code=422,
-            detail=str(e)
-        ) from e
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Registration failed for {payload.email}: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Erreur interne lors de l'inscription"
         ) from e
+
+
 @router.post("/login", response_model=Token)
 async def login(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, payload.email)

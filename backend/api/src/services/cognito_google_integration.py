@@ -1,6 +1,7 @@
 """
 Service for integrating Google OAuth with AWS Cognito Identity Provider.
 """
+
 import logging
 import uuid
 from typing import Any
@@ -18,18 +19,18 @@ class CognitoGoogleIntegrationService:
     """Service for managing Google OAuth integration with Cognito."""
 
     def __init__(
-            self,
-            cognito_idp_client: Any | None = None,
-            cognito_identity_client: Any | None = None,
+        self,
+        cognito_idp_client: Any | None = None,
+        cognito_identity_client: Any | None = None,
     ):
         self.settings = get_settings()
         self.region = self.settings.cognito_region
         self.user_pool_id = self.settings.cognito_user_pool_id
         self.identity_pool_id = self.settings.cognito_identity_pool_id
         self.is_development = (
-                self.settings.env == "development"
-                and hasattr(self.settings, "aws_endpoint_url")
-                and self.settings.aws_endpoint_url == "http://localhost:4566"
+            self.settings.env == "development"
+            and hasattr(self.settings, "aws_endpoint_url")
+            and self.settings.aws_endpoint_url == "http://localhost:4566"
         )
 
         if self.is_development:
@@ -51,7 +52,7 @@ class CognitoGoogleIntegrationService:
             self.cognito_identity = None
 
     async def create_federated_user(
-            self, google_user_info: dict[str, Any]
+        self, google_user_info: dict[str, Any]
     ) -> CognitoUser | None:
         """
         Create or link a federated user in Cognito using Google identity.
@@ -91,8 +92,13 @@ class CognitoGoogleIntegrationService:
                     }
 
                     try:
-                        current_google_sub = user_attributes.get("custom:google_sub", "")
-                        if not current_google_sub or current_google_sub != google_user_info["sub"]:
+                        current_google_sub = user_attributes.get(
+                            "custom:google_sub", ""
+                        )
+                        if (
+                            not current_google_sub
+                            or current_google_sub != google_user_info["sub"]
+                        ):
                             await self._link_google_identity(
                                 user["Username"], google_user_info
                             )
@@ -111,7 +117,7 @@ class CognitoGoogleIntegrationService:
                         email_verified=user_attributes.get(
                             "email_verified", "false"
                         ).lower()
-                                       == "true",
+                        == "true",
                         cognito_username=user["Username"],
                     )
             except ClientError as e:
@@ -124,7 +130,7 @@ class CognitoGoogleIntegrationService:
             return None
 
     async def _create_federated_user(
-            self, user_info: dict[str, Any]
+        self, user_info: dict[str, Any]
     ) -> CognitoUser | None:
         """
         Create federated user in Cognito using Google identity.
@@ -203,18 +209,20 @@ class CognitoGoogleIntegrationService:
 
             logger.error(
                 f"ClientError creating federated user: {error_code} - {error_message}",
-                exc_info=True
+                exc_info=True,
             )
 
             if error_code == "UsernameExistsException":
                 try:
                     response = self.cognito_idp.list_users(
                         UserPoolId=self.user_pool_id,
-                        Filter=f'email = "{user_info["email"]}"'
+                        Filter=f'email = "{user_info["email"]}"',
                     )
                     if response["Users"]:
                         user = response["Users"][0]
-                        logger.info(f"User already exists, returning it: {user_info['email']}")
+                        logger.info(
+                            f"User already exists, returning it: {user_info['email']}"
+                        )
                         return CognitoUser(
                             sub=f"google_{user_info['sub']}",
                             email=user_info["email"],
@@ -234,7 +242,7 @@ class CognitoGoogleIntegrationService:
             return None
 
     async def _link_google_identity(
-            self, username: str, google_user_info: dict[str, Any]
+        self, username: str, google_user_info: dict[str, Any]
     ) -> bool:
         """Link Google identity to existing Cognito user."""
         try:
@@ -246,9 +254,7 @@ class CognitoGoogleIntegrationService:
                     {"Name": "custom:provider", "Value": "google"},
                 ],
             )
-            logger.info(
-                f"Linked Google identity for user: {username}"
-            )
+            logger.info(f"Linked Google identity for user: {username}")
             return True
         except ClientError as e:
             logger.warning(f"Error linking Google identity (non-critical): {e}")

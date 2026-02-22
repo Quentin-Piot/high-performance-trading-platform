@@ -3,6 +3,7 @@ Database management utilities for the trading platform.
 This module contains database connection, validation, and repair logic
 extracted from bootstrap.py to improve separation of concerns.
 """
+
 from __future__ import annotations
 
 import sys
@@ -13,6 +14,7 @@ import psycopg
 
 class DatabaseManager:
     """Handles database operations and validation."""
+
     @staticmethod
     def to_psycopg_dsn(dsn: str) -> str:
         """Convert SQLAlchemy DSN to psycopg-compatible DSN."""
@@ -21,6 +23,7 @@ class DatabaseManager:
                 "postgresql+asyncpg", "postgresql"
             )
         return dsn
+
     @staticmethod
     def table_exists(dsn: str, table_name: str, schema: str = "public") -> bool:
         """Check if a table exists in the database."""
@@ -41,6 +44,7 @@ class DatabaseManager:
                     return bool(row and row[0])
         except Exception:
             return False
+
     @staticmethod
     def get_alembic_version(dsn: str) -> str | None:
         """Get the current Alembic version from the database."""
@@ -56,7 +60,7 @@ class DatabaseManager:
                         )
                         """
                     )
-                    exists = bool(cur.fetchone()[0])
+                    exists = bool(cur.fetchone()[0])  # pyright: ignore[reportOptionalSubscript]
                     if not exists:
                         return None
                     cur.execute("SELECT version_num FROM alembic_version LIMIT 1")
@@ -64,6 +68,7 @@ class DatabaseManager:
                     return row[0] if row else None
         except Exception:
             return None
+
     @staticmethod
     def repair_jobs_table_if_corrupted(dsn: str) -> bool:
         """
@@ -82,7 +87,7 @@ class DatabaseManager:
                         )
                         """
                     )
-                    exists = bool(cur.fetchone()[0])
+                    exists = bool(cur.fetchone()[0])  # pyright: ignore[reportOptionalSubscript]
                     if not exists:
                         return False
                     cur.execute(
@@ -119,7 +124,7 @@ class DatabaseManager:
                             WHERE attrelid = 'jobs'::regclass AND attnum > 0
                             """
                         )
-                        attcount = int(cur.fetchone()[0])
+                        attcount = int(cur.fetchone()[0])  # pyright: ignore[reportOptionalSubscript]
                         if attcount < len(expected_core):
                             print(
                                 "Detected inconsistent pg_attribute for 'jobs'; dropping table to recover..."
@@ -136,6 +141,7 @@ class DatabaseManager:
         except Exception as e:
             print(f"Failed to inspect/repair jobs table: {e}", file=sys.stderr)
             return False
+
     @staticmethod
     def parse_database_url(dsn: str) -> dict[str, str | int]:
         """Parse database URL into components."""

@@ -3,6 +3,7 @@ Revision ID: 0004
 Revises: 0003
 Create Date: 2025-10-21 12:55:00.000000
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -10,6 +11,8 @@ revision = "0004"
 down_revision = "0003"
 branch_labels = None
 depends_on = None
+
+
 def upgrade() -> None:
     op.create_table(
         "backtest_history",
@@ -50,6 +53,8 @@ def upgrade() -> None:
         ["user_id"],
         unique=False,
     )
+
+
 def downgrade() -> None:
     op.drop_index(op.f("ix_backtest_history_user_id"), table_name="backtest_history")
     op.drop_index(op.f("ix_backtest_history_id"), table_name="backtest_history")

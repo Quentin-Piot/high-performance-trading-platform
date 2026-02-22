@@ -1,6 +1,7 @@
 """
 Repository for user management with Cognito integration.
 """
+
 import logging
 
 from sqlalchemy import select
@@ -11,24 +12,31 @@ from core.cognito import CognitoUser
 from infrastructure.models import User
 
 logger = logging.getLogger(__name__)
+
+
 class UserRepository:
     """Repository for user operations."""
+
     def __init__(self, session: AsyncSession):
         self.session = session
+
     async def get_by_cognito_sub(self, cognito_sub: str) -> User | None:
         """Get user by Cognito sub (user ID)."""
         result = await self.session.execute(
             select(User).where(User.cognito_sub == cognito_sub)
         )
         return result.scalar_one_or_none()
+
     async def get_by_email(self, email: str) -> User | None:
         """Get user by email."""
         result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
+
     async def get_by_id(self, user_id: int) -> User | None:
         """Get user by ID."""
         result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
+
     async def create_from_cognito(self, cognito_user: CognitoUser) -> User:
         """Create a new user from Cognito user data."""
         try:
@@ -71,13 +79,15 @@ class UserRepository:
             )
             await self.session.rollback()
             raise
+
     async def update_user_info(self, user: User, cognito_user: CognitoUser) -> User:
         """Update user information from Cognito."""
         user.email = cognito_user.email
-        user.name = cognito_user.name
+        user.name = cognito_user.name  # pyright: ignore[reportAttributeAccessIssue]
         await self.session.commit()
         await self.session.refresh(user)
         return user
+
     async def get_or_create_from_cognito(self, cognito_user: CognitoUser) -> User:
         """Get existing user or create new one from Cognito user."""
         try:
@@ -97,10 +107,8 @@ class UserRepository:
                         f"Found existing user by email without cognito_sub, linking to Cognito: {user.id}"
                     )
                     user.cognito_sub = cognito_user.sub
-                    user.name = cognito_user.name
-                    user.auth_method = (
-                        "mixed"
-                    )
+                    user.name = cognito_user.name  # pyright: ignore[reportAttributeAccessIssue]
+                    user.auth_method = "mixed"
                     await self.session.commit()
                     await self.session.refresh(user)
                     return user

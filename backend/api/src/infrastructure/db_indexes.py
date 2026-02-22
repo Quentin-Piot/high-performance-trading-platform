@@ -3,6 +3,7 @@ Database index optimization utilities.
 This module provides utilities for creating and managing database indexes
 to improve query performance for the trading platform.
 """
+
 import logging
 from typing import Any
 
@@ -10,10 +11,14 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+
 class IndexManager:
     """Manages database indexes for performance optimization"""
+
     def __init__(self, session: AsyncSession):
         self.session = session
+
     async def create_performance_indexes(self) -> dict[str, bool]:
         """
         Create performance-optimized indexes for frequently queried columns.
@@ -110,6 +115,7 @@ class IndexManager:
                     extra={"index_name": index_config["name"], "error": str(e)},
                 )
         return results
+
     async def analyze_table_statistics(self, table_name: str) -> dict[str, Any]:
         """
         Analyze table statistics for query optimization.
@@ -119,9 +125,11 @@ class IndexManager:
             Dictionary containing table statistics
         """
         try:
-            if not table_name.replace('_', '').isalnum():
+            if not table_name.replace("_", "").isalnum():
                 raise ValueError(f"Invalid table name: {table_name}")
-            await self.session.execute(text("ANALYZE :table_name").bindparam(table_name=table_name))
+            await self.session.execute(
+                text("ANALYZE :table_name").bindparam(table_name=table_name)  # pyright: ignore[reportAttributeAccessIssue]
+            )
             stats_query = text("""
                 SELECT
                     schemaname,
@@ -144,7 +152,9 @@ class IndexManager:
                 SELECT count(*) as row_count
                 FROM {table_name}
             """)
-            size_result = await self.session.execute(size_query, {"table_name": table_name})
+            size_result = await self.session.execute(
+                size_query, {"table_name": table_name}
+            )
             count_result = await self.session.execute(count_query)
             size_info = size_result.fetchone()
             count_info = count_result.fetchone()
@@ -168,6 +178,7 @@ class IndexManager:
                 extra={"table_name": table_name, "error": str(e)},
             )
             return {"error": str(e)}
+
     async def get_slow_queries(self, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get slow queries from pg_stat_statements (if available).
@@ -218,6 +229,7 @@ class IndexManager:
         except Exception as e:
             logger.error("Failed to get slow queries", extra={"error": str(e)})
             return []
+
     async def optimize_table(self, table_name: str) -> dict[str, Any]:
         """
         Optimize a table by running VACUUM and ANALYZE.
@@ -227,7 +239,7 @@ class IndexManager:
             Dictionary containing optimization results
         """
         try:
-            if not table_name.replace('_', '').isalnum():
+            if not table_name.replace("_", "").isalnum():
                 raise ValueError(f"Invalid table name: {table_name}")
             vacuum_query = text(f"VACUUM ANALYZE {table_name}")
             await self.session.execute(vacuum_query)
@@ -248,6 +260,7 @@ class IndexManager:
                 extra={"table_name": table_name, "error": str(e)},
             )
             return {"success": False, "table_name": table_name, "error": str(e)}
+
     async def get_index_usage_stats(self) -> list[dict[str, Any]]:
         """
         Get index usage statistics.
@@ -288,6 +301,8 @@ class IndexManager:
                 "Failed to get index usage statistics", extra={"error": str(e)}
             )
             return []
+
+
 async def create_optimized_indexes(session: AsyncSession) -> dict[str, bool]:
     """
     Convenience function to create all performance indexes.
@@ -298,6 +313,8 @@ async def create_optimized_indexes(session: AsyncSession) -> dict[str, bool]:
     """
     index_manager = IndexManager(session)
     return await index_manager.create_performance_indexes()
+
+
 async def analyze_database_performance(session: AsyncSession) -> dict[str, Any]:
     """
     Analyze comprehensive database performance metrics.

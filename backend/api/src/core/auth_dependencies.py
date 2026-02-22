@@ -1,12 +1,15 @@
 """
 Authentication dependencies for FastAPI routes.
 """
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.cognito import CognitoService, CognitoUser, get_cognito_service
 
 security = HTTPBearer()
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     cognito_service: CognitoService = Depends(get_cognito_service),
@@ -35,6 +38,8 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
 async def get_current_user_optional(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     cognito_service: CognitoService = Depends(get_cognito_service),
@@ -50,6 +55,8 @@ async def get_current_user_optional(
     if not credentials or not credentials.credentials:
         return None
     return cognito_service.verify_token(credentials.credentials)
+
+
 async def require_verified_email(
     current_user: CognitoUser = Depends(get_current_user),
 ) -> CognitoUser:

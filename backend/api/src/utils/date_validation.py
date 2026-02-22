@@ -1,6 +1,7 @@
 """
 Utilities for validating date ranges against available CSV data.
 """
+
 import io
 import os
 from datetime import datetime
@@ -34,6 +35,8 @@ def get_csv_date_range(csv_file_path: str) -> tuple[datetime, datetime]:
     min_date = df["date"].min().to_pydatetime()
     max_date = df["date"].max().to_pydatetime()
     return min_date, max_date
+
+
 def get_csv_date_range_from_bytes(csv_bytes: bytes) -> tuple[datetime, datetime]:
     """
     Get the date range from CSV bytes.
@@ -55,11 +58,13 @@ def get_csv_date_range_from_bytes(csv_bytes: bytes) -> tuple[datetime, datetime]
     min_date = df["date"].min().to_pydatetime()
     max_date = df["date"].max().to_pydatetime()
     return min_date, max_date
+
+
 def validate_date_range_for_csv_bytes(
     csv_bytes: bytes,
     start_date: datetime,
     end_date: datetime,
-) -> dict[str, any]:
+) -> dict[str, any]:  # pyright: ignore[reportGeneralTypeIssues]
     """
     Validate requested date range against the available dates in uploaded CSV bytes.
     Returns structure similar to validate_date_range_for_symbol with filtered CSV data.
@@ -118,12 +123,14 @@ def validate_date_range_for_csv_bytes(
         "suggested_range": None,
         "filtered_csv": filtered_csv_bytes,
     }
+
+
 def validate_date_range_for_symbol(
     symbol: str,
     start_date: datetime,
     end_date: datetime,
-    datasets_path: str = None,
-) -> dict[str, any]:
+    datasets_path: str = None,  # pyright: ignore[reportArgumentType]
+) -> dict[str, any]:  # pyright: ignore[reportGeneralTypeIssues]
     """
     Validate if the requested date range is available for a given symbol.
     Args:
@@ -196,8 +203,10 @@ def validate_date_range_for_symbol(
         "available_range": available_range,
         "suggested_range": None,
     }
+
+
 def get_all_symbols_date_ranges(
-    datasets_path: str = None,
+    datasets_path: str = None,  # pyright: ignore[reportArgumentType]
 ) -> dict[str, dict[str, datetime]]:
     """
     Get date ranges for all available symbols.

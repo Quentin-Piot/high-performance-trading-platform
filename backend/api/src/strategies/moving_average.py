@@ -13,15 +13,19 @@ class MovingAverageParams(StrategyParams):
     short_window: int = Field(20, gt=0)
     long_window: int = Field(50, gt=0)
     annualization: int = Field(252, gt=0)
+
     @model_validator(mode="after")
     def validate_windows(self):
         if self.short_window >= self.long_window:
             raise ValueError("short_window must be less than long_window")
         return self
+
+
 class MovingAverageStrategy(Strategy):
     ParamsModel = MovingAverageParams
     name = "moving-average-crossover"
-    def run(self, df: pd.DataFrame, params: MovingAverageParams) -> BacktestResult:
+
+    def run(self, df: pd.DataFrame, params: MovingAverageParams) -> BacktestResult:  # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Vectorized moving average crossover backtest.
         Assumptions:
@@ -34,9 +38,11 @@ class MovingAverageStrategy(Strategy):
         short_ma = close.rolling(window=params.short_window, min_periods=1).mean()
         long_ma = close.rolling(window=params.long_window, min_periods=1).mean()
         raw_signal = (short_ma > long_ma).astype(int)
-        position = raw_signal.shift(1).fillna(0).astype(int) * params.position_size
+        position = raw_signal.shift(1).fillna(0).astype(int) * params.position_size  # pyright: ignore[reportAttributeAccessIssue]
         strategy_returns, _ = DataProcessor.calculate_returns_and_costs(
-            position, close, params.commission
+            position,
+            close,  # pyright: ignore[reportArgumentType]
+            params.commission,
         )
         equity = DataProcessor.calculate_equity_curve(
             strategy_returns, params.initial_capital, close.index
@@ -46,7 +52,7 @@ class MovingAverageStrategy(Strategy):
             .with_equity(equity)
             .with_returns(strategy_returns)
             .with_position(position)
-            .with_close_prices(close)
+            .with_close_prices(close)  # pyright: ignore[reportArgumentType]
             .with_annualization(params.annualization)
             .build()
         )

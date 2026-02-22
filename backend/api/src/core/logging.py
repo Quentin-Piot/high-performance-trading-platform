@@ -29,6 +29,8 @@ DEFAULT_LOG_RECORD_ATTRS = {
     "process",
     "taskName",
 }
+
+
 class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         display_logger = "uvicorn" if record.name == "uvicorn.error" else record.name
@@ -52,8 +54,10 @@ class JSONFormatter(logging.Formatter):
             except Exception:
                 context[key] = str(value)
         if context:
-            payload["context"] = context
+            payload["context"] = context  # pyright: ignore[reportArgumentType]
         return json.dumps(payload, ensure_ascii=False)
+
+
 class ConsoleFormatter(logging.Formatter):
     LEVEL_COLORS = {
         "DEBUG": "\x1b[36m",
@@ -63,6 +67,7 @@ class ConsoleFormatter(logging.Formatter):
         "CRITICAL": "\x1b[35m",
     }
     RESET = "\x1b[0m"
+
     def format(self, record: logging.LogRecord) -> str:
         ts = (
             datetime.fromtimestamp(record.created, UTC)
@@ -88,15 +93,21 @@ class ConsoleFormatter(logging.Formatter):
             extras.append(f"{key}={val}")
         suffix = f" {' '.join(extras)}" if extras else ""
         return f"{prefix}{message}{suffix}"
+
+
 REQUEST_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "request_id", default=None
 )
+
+
 class RequestIdFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         rid = REQUEST_ID.get()
         if rid:
             record.request_id = rid
         return True
+
+
 SENSITIVE_KEYS = {
     "authorization",
     "password",
@@ -130,6 +141,8 @@ SENSITIVE_PATTERNS = {
     "arn:aws:iam::",
     "-----BEGIN",
 }
+
+
 def _redact(value):
     """
     Recursively redact sensitive information from log data.
@@ -157,6 +170,8 @@ def _redact(value):
             return "[REDACTED]"
         return value
     return value
+
+
 class SecretsFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if os.getenv("DISABLE_LOG_REDACTION", "false").lower() == "true":
@@ -172,6 +187,8 @@ class SecretsFilter(logging.Filter):
                 except Exception:
                     setattr(record, key, str(val))
         return True
+
+
 def setup_logging():
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)

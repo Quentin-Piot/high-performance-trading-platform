@@ -11,15 +11,19 @@ Variables d'environnement requises:
     AWS_ACCESS_KEY_ID: Clé d'accès AWS (ou utiliser IAM roles)
     AWS_SECRET_ACCESS_KEY: Clé secrète AWS (ou utiliser IAM roles)
 """
+
 import logging
 import os
 
 try:
     import boto3
     from watchtower import CloudWatchLogsHandler
+
     CLOUDWATCH_AVAILABLE = True
 except ImportError:
     CLOUDWATCH_AVAILABLE = False
+
+
 def setup_cloudwatch_logging(
     log_group: str | None = None,
     log_stream: str | None = None,
@@ -67,6 +71,7 @@ def setup_cloudwatch_logging(
         )
         handler.setLevel(level)
         from core.logging import JSONFormatter
+
         handler.setFormatter(JSONFormatter())
         logging.getLogger("cloudwatch").info(
             "CloudWatch logging configured",
@@ -78,6 +83,8 @@ def setup_cloudwatch_logging(
             "Failed to configure CloudWatch logging", extra={"error": str(e)}
         )
         return None
+
+
 def add_cloudwatch_to_logger(logger_name: str = None) -> bool:
     """
     Ajoute CloudWatch handler à un logger existant.
@@ -92,12 +99,15 @@ def add_cloudwatch_to_logger(logger_name: str = None) -> bool:
     logger = logging.getLogger(logger_name)
     logger.addHandler(handler)
     return True
+
+
 def setup_enhanced_logging_with_cloudwatch():
     """
     Configuration complète du logging avec CloudWatch optionnel.
     Cette fonction combine la configuration locale existante avec CloudWatch.
     """
     from core.logging import setup_logging
+
     setup_logging()
     if os.getenv("ENABLE_CLOUDWATCH_LOGGING", "false").lower() == "true":
         cloudwatch_handler = setup_cloudwatch_logging()
@@ -105,6 +115,7 @@ def setup_enhanced_logging_with_cloudwatch():
             root_logger = logging.getLogger()
             root_logger.addHandler(cloudwatch_handler)
             from core.logging import RequestIdFilter, SecretsFilter
+
             cloudwatch_handler.addFilter(RequestIdFilter())
             cloudwatch_handler.addFilter(SecretsFilter())
             logging.getLogger("app").info("Enhanced logging with CloudWatch enabled")

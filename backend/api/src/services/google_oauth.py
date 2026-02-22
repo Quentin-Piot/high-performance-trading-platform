@@ -1,6 +1,7 @@
 """
 Google OAuth service for authentication integration.
 """
+
 import logging
 from typing import Any
 from urllib.parse import urlencode
@@ -12,8 +13,11 @@ from google.oauth2 import id_token
 from core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
 class GoogleOAuthService:
     """Service for handling Google OAuth authentication."""
+
     def __init__(self):
         self.settings = get_settings()
         self.client_id = self.settings.google_client_id
@@ -27,14 +31,14 @@ class GoogleOAuthService:
             self.settings.env == "development"
             and hasattr(self.settings, "aws_endpoint_url")
             and self.settings.aws_endpoint_url == "http://localhost:4566"
-            and
-            (not self.client_id or not self.client_secret)
+            and (not self.client_id or not self.client_secret)
         )
         logger.info(
             f"GoogleOAuthService initialized - Environment: {self.settings.env}, "
             f"AWS Endpoint: {getattr(self.settings, 'aws_endpoint_url', 'None')}, "
             f"Is Development: {self.is_development}"
         )
+
     def get_authorization_url(self, state: str | None = None) -> str:
         """
         Generate Google OAuth authorization URL.
@@ -54,6 +58,7 @@ class GoogleOAuthService:
         if state:
             params["state"] = state
         return f"{self.auth_url}?{urlencode(params)}"
+
     async def exchange_code_for_tokens(self, code: str) -> dict[str, Any]:
         """
         Exchange authorization code for access and ID tokens.
@@ -120,6 +125,7 @@ class GoogleOAuthService:
             except ValueError as e:
                 logger.error(f"ID token verification failed: {e}")
                 raise Exception(f"Invalid ID token: {e}") from e
+
     async def _get_user_info(self, access_token: str) -> dict[str, Any]:
         """
         Get user information from Google API.
@@ -143,6 +149,7 @@ class GoogleOAuthService:
                 logger.error(f"Failed to get user info: {response.text}")
                 raise Exception(f"Failed to get user info: {response.text}")
             return response.json()
+
     async def refresh_access_token(self, refresh_token: str) -> dict[str, Any] | None:
         """
         Refresh access token using refresh token.
@@ -164,6 +171,7 @@ class GoogleOAuthService:
             else:
                 logger.error(f"Token refresh failed: {response.text}")
                 return None
+
     def verify_id_token(self, id_token_str: str) -> dict[str, Any] | None:
         """
         Verify Google ID token.
@@ -180,7 +188,11 @@ class GoogleOAuthService:
         except ValueError as e:
             logger.error(f"ID token verification failed: {e}")
             return None
+
+
 _google_oauth_service: GoogleOAuthService | None = None
+
+
 def get_google_oauth_service() -> GoogleOAuthService:
     """Get Google OAuth service instance."""
     global _google_oauth_service

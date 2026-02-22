@@ -4,6 +4,7 @@ Revision ID: 0002_add_jobs_table
 Revises: 0001_initial
 Create Date: 2024-01-01 00:00:00.000000
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -11,6 +12,8 @@ revision = "0002_add_jobs_table"
 down_revision = "0001_initial"
 branch_labels = None
 depends_on = None
+
+
 def upgrade() -> None:
     """
     Idempotent upgrade: create the jobs table only if it does not exist,
@@ -66,6 +69,8 @@ def upgrade() -> None:
         }
         if "uq_job_dedup_key" not in existing_uniques:
             op.create_unique_constraint("uq_job_dedup_key", "jobs", ["dedup_key"])
+
+
 def downgrade() -> None:
     op.drop_constraint("uq_job_dedup_key", "jobs", type_="unique")
     op.drop_index("ix_jobs_worker_id", table_name="jobs")

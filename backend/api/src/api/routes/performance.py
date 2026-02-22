@@ -3,6 +3,7 @@ Performance monitoring API endpoints.
 This module provides endpoints for monitoring database performance,
 cache statistics, and system metrics.
 """
+
 import logging
 from typing import Any
 
@@ -15,14 +16,20 @@ from infrastructure.db_indexes import IndexManager, analyze_database_performance
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/performance", tags=["performance"])
+
+
 class DatabaseStatsResponse(BaseModel):
     """Response model for database statistics"""
+
     connection_pool: dict[str, Any]
     table_statistics: dict[str, Any]
     slow_queries: list[dict[str, Any]]
     index_usage: list[dict[str, Any]]
+
+
 class CacheStatsResponse(BaseModel):
     """Response model for cache statistics"""
+
     enabled: bool
     connected_clients: int = 0
     used_memory: int = 0
@@ -32,11 +39,16 @@ class CacheStatsResponse(BaseModel):
     total_commands_processed: int = 0
     uptime_in_seconds: int = 0
     hit_ratio: float = 0.0
+
+
 class PerformanceMetricsResponse(BaseModel):
     """Response model for comprehensive performance metrics"""
+
     database: DatabaseStatsResponse
     cache: CacheStatsResponse
     timestamp: str
+
+
 @router.get("/database", response_model=DatabaseStatsResponse)
 async def get_database_performance(
     session: AsyncSession = Depends(get_session),
@@ -64,6 +76,8 @@ async def get_database_performance(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve database performance metrics",
         ) from e
+
+
 @router.get("/cache", response_model=CacheStatsResponse)
 async def get_cache_performance() -> CacheStatsResponse:
     """
@@ -82,6 +96,8 @@ async def get_cache_performance() -> CacheStatsResponse:
         uptime_in_seconds=0,
         hit_ratio=0.0,
     )
+
+
 @router.get("/metrics", response_model=PerformanceMetricsResponse)
 async def get_performance_metrics(
     session: AsyncSession = Depends(get_session),
@@ -94,6 +110,7 @@ async def get_performance_metrics(
     try:
         import asyncio
         from datetime import datetime
+
         db_task = get_database_performance(session)
         cache_task = get_cache_performance()
         db_stats, cache_stats = await asyncio.gather(db_task, cache_task)
@@ -108,6 +125,8 @@ async def get_performance_metrics(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve performance metrics",
         ) from e
+
+
 @router.post("/database/optimize/{table_name}")
 async def optimize_table(
     table_name: str, session: AsyncSession = Depends(get_session)
@@ -144,6 +163,8 @@ async def optimize_table(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to optimize table '{table_name}'",
         ) from e
+
+
 @router.post("/database/create-indexes")
 async def create_performance_indexes(
     session: AsyncSession = Depends(get_session),
@@ -177,6 +198,8 @@ async def create_performance_indexes(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create performance indexes",
         ) from e
+
+
 @router.delete("/cache/clear")
 async def clear_cache() -> dict[str, Any]:
     """
@@ -185,6 +208,8 @@ async def clear_cache() -> dict[str, Any]:
         Cache clearing results (disabled - no cache system)
     """
     return {"success": False, "message": "Cache system is disabled"}
+
+
 @router.delete("/cache/pattern/{pattern}")
 async def clear_cache_pattern(pattern: str) -> dict[str, Any]:
     """

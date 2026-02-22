@@ -12,6 +12,7 @@ class StrategyParams(BaseModel):
     Base Pydantic model for strategy parameters.
     All strategies should extend this.
     """
+
     model_config = {"arbitrary_types_allowed": True}
     initial_capital: float = 10_000.0
     commission: float = 0.0
@@ -20,6 +21,8 @@ class StrategyParams(BaseModel):
     start_date: datetime | None = None
     end_date: datetime | None = None
     timeframe: str = "1d"
+
+
 class Strategy(ABC):
     """
     Abstract strategy interface.
@@ -27,8 +30,10 @@ class Strategy(ABC):
     - provide a Params model (pydantic)
     - implement run(df, params) -> BacktestResult
     """
+
     ParamsModel: type[StrategyParams] = StrategyParams
     name: str = "base-strategy"
+
     @abstractmethod
     def run(self, df: pd.DataFrame, params: StrategyParams):
         """Execute strategy on df (must contain 'close' column)."""

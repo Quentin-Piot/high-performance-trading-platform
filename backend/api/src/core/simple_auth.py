@@ -1,6 +1,7 @@
 """
 Simple JWT authentication system for local development.
 """
+
 import logging
 from typing import Any
 
@@ -18,15 +19,22 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 security = HTTPBearer()
 optional_security = HTTPBearer(auto_error=False)
+
+
 class SimpleUser(BaseModel):
     """Simple user information extracted from JWT token."""
+
     id: int
     email: str
     sub: str
+
+
 class SimpleAuthService:
     """Service for simple JWT authentication."""
+
     def __init__(self):
         self.settings = get_settings()
+
     def verify_token(self, token: str) -> dict[str, Any] | None:
         """Verify and decode JWT token."""
         try:
@@ -39,10 +47,16 @@ class SimpleAuthService:
         except JWTError as e:
             logger.warning(f"JWT verification failed: {e}")
             return None
+
+
 simple_auth_service = SimpleAuthService()
+
+
 def get_simple_auth_service() -> SimpleAuthService:
     """Dependency to get simple auth service."""
     return simple_auth_service
+
+
 async def get_current_user_simple(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     auth_service: SimpleAuthService = Depends(get_simple_auth_service),
@@ -87,6 +101,8 @@ async def get_current_user_simple(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return SimpleUser(id=user.id, email=user.email, sub=str(user.id))
+
+
 async def get_current_user_simple_optional(
     credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
     auth_service: SimpleAuthService = Depends(get_simple_auth_service),

@@ -3,6 +3,7 @@ Credential management utilities for secure handling of sensitive configuration.
 This module provides utilities for managing AWS credentials, database connections,
 and other sensitive configuration data with security best practices.
 """
+
 import logging
 import os
 from dataclasses import dataclass
@@ -10,16 +11,22 @@ from enum import Enum
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
 class CredentialSource(Enum):
     """Sources for credential resolution"""
+
     ENVIRONMENT = "environment"
     IAM_ROLE = "iam_role"
     AWS_PROFILE = "aws_profile"
     INSTANCE_METADATA = "instance_metadata"
     CONTAINER_METADATA = "container_metadata"
+
+
 @dataclass
 class AWSCredentials:
     """AWS credential configuration"""
+
     access_key_id: str | None = None
     secret_access_key: str | None = None
     session_token: str | None = None
@@ -27,6 +34,7 @@ class AWSCredentials:
     profile: str | None = None
     role_arn: str | None = None
     source: CredentialSource = CredentialSource.ENVIRONMENT
+
     def is_valid(self) -> bool:
         """Check if credentials are valid for authentication"""
         if self.source == CredentialSource.IAM_ROLE:
@@ -37,6 +45,7 @@ class AWSCredentials:
             return self.access_key_id is not None and self.secret_access_key is not None
         else:
             return True
+
     def to_boto3_config(self) -> dict[str, Any]:
         """Convert to boto3 session configuration"""
         config = {"region_name": self.region}
@@ -52,6 +61,7 @@ class AWSCredentials:
         elif self.source == CredentialSource.AWS_PROFILE and self.profile:
             config["profile_name"] = self.profile
         return config
+
     def mask_sensitive_data(self) -> dict[str, Any]:
         """Return credential info with sensitive data masked"""
         return {
@@ -63,8 +73,11 @@ class AWSCredentials:
             "has_secret_key": bool(self.secret_access_key),
             "has_session_token": bool(self.session_token),
         }
+
+
 class CredentialManager:
     """Secure credential management with fallback strategies"""
+
     @staticmethod
     def resolve_aws_credentials(
         environment: str = "development", prefer_iam_role: bool = True
@@ -145,6 +158,7 @@ class CredentialManager:
             },
         )
         return AWSCredentials(region=region)
+
     @staticmethod
     def validate_credentials(credentials: AWSCredentials) -> bool:
         """
@@ -185,6 +199,7 @@ class CredentialManager:
             extra={"credential_info": credentials.mask_sensitive_data()},
         )
         return True
+
     @staticmethod
     def get_database_url(mask_in_logs: bool = True) -> str | None:
         """
@@ -203,6 +218,7 @@ class CredentialManager:
         elif not db_url:
             logger.warning("No database URL configured")
         return db_url
+
     @staticmethod
     def mask_url(url: str) -> str:
         """
@@ -220,6 +236,7 @@ class CredentialManager:
                 credentials, host_part = rest.split("@", 1)
                 return f"{scheme}://[REDACTED]@{host_part}"
         return url
+
     @staticmethod
     def get_secure_config() -> dict[str, Any]:
         """

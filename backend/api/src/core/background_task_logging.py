@@ -4,6 +4,7 @@ This module provides specialized logging decorators and utilities for tracking
 background tasks, WebSocket connections, and async operations with proper
 error handling and structured logging.
 """
+
 import asyncio
 import contextvars
 import functools
@@ -26,13 +27,18 @@ JOB_ID: contextvars.ContextVar[str] = contextvars.ContextVar(
 )
 F = TypeVar("F", bound=Callable[..., Any])
 logger = logging.getLogger(__name__)
+
+
 class BackgroundTaskFilter(logging.Filter):
     """Filter to add background task context to log records"""
+
     def filter(self, record: logging.LogRecord) -> bool:
         record.task_id = TASK_ID.get("unknown")
         record.websocket_id = WEBSOCKET_ID.get("unknown")
         record.job_id = JOB_ID.get("unknown")
         return True
+
+
 def log_background_task(
     task_name: str,
     include_args: bool = False,
@@ -47,6 +53,7 @@ def log_background_task(
         include_result: Whether to log function result
         log_level: Logging level for success messages
     """
+
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -63,9 +70,7 @@ def log_background_task(
             }
             if include_args and (args or kwargs):
                 log_data["args"] = {
-                    "positional": [
-                        str(arg)[:100] for arg in args
-                    ],
+                    "positional": [str(arg)[:100] for arg in args],
                     "keyword": {k: str(v)[:100] for k, v in kwargs.items()},
                 }
             logger.log(
@@ -80,9 +85,7 @@ def log_background_task(
                     "status": "completed",
                 }
                 if include_result and result is not None:
-                    completion_data["result"] = str(result)[
-                        :200
-                    ]
+                    completion_data["result"] = str(result)[:200]
                 logger.log(
                     log_level,
                     f"Background task completed: {task_name}",
@@ -114,6 +117,7 @@ def log_background_task(
                 raise
             finally:
                 TASK_ID.reset(token)
+
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
             task_id = f"{task_name}_{int(time.time() * 1000)}"
@@ -161,17 +165,22 @@ def log_background_task(
                 raise
             finally:
                 TASK_ID.reset(token)
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper
+
     return decorator
+
+
 def log_websocket_connection(connection_name: str):
     """
     Decorator for logging WebSocket connection lifecycle.
     Args:
         connection_name: Name of the WebSocket connection for logging
     """
+
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -231,8 +240,12 @@ def log_websocket_connection(connection_name: str):
             finally:
                 WEBSOCKET_ID.reset(ws_token)
                 JOB_ID.reset(job_token)
+
         return wrapper
+
     return decorator
+
+
 @asynccontextmanager
 async def log_async_operation(
     operation_name: str,
@@ -248,6 +261,7 @@ async def log_async_operation(
     """
     if logger_name is None:
         import inspect
+
         frame = inspect.currentframe().f_back
         logger_name = frame.f_globals.get("__name__", "unknown")
     logger = logging.getLogger(logger_name)
@@ -286,6 +300,8 @@ async def log_async_operation(
             },
         )
         raise
+
+
 def setup_background_task_logging():
     """
     Setup enhanced logging for background tasks.
@@ -301,6 +317,8 @@ def setup_background_task_logging():
     for handler in root_logger.handlers:
         handler.addFilter(task_filter)
     logger.info("Background task logging setup completed")
+
+
 def create_safe_background_task(
     coro, name: str | None = None, logger_name: str | None = None
 ) -> asyncio.Task:
@@ -315,9 +333,11 @@ def create_safe_background_task(
     """
     if logger_name is None:
         import inspect
+
         frame = inspect.currentframe().f_back
         logger_name = frame.f_globals.get("__name__", "background_task")
     task_logger = logging.getLogger(logger_name)
+
     async def safe_wrapper():
         try:
             return await coro
@@ -333,6 +353,7 @@ def create_safe_background_task(
                     "traceback": traceback.format_exc(),
                 },
             )
+
     task = asyncio.create_task(safe_wrapper())
     if name:
         task.set_name(name)

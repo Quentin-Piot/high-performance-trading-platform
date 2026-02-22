@@ -1,6 +1,7 @@
 """
 Repository for backtest history management.
 """
+
 from datetime import datetime
 from typing import Any
 
@@ -12,8 +13,10 @@ from infrastructure.models import BacktestHistory
 
 class BacktestHistoryRepository:
     """Repository for backtest history operations."""
+
     def __init__(self, session: AsyncSession):
         self.session = session
+
     async def create_history_entry(
         self,
         user_id: int,
@@ -49,6 +52,7 @@ class BacktestHistoryRepository:
         await self.session.commit()
         await self.session.refresh(history)
         return history
+
     async def update_results(
         self,
         history_id: int,
@@ -82,12 +86,13 @@ class BacktestHistoryRepository:
             history.execution_time_seconds = execution_time_seconds
         history.status = status
         if error_message:
-            history.error_message = error_message
+            history.error_message = error_message  # pyright: ignore[reportAttributeAccessIssue]
         if status == "completed":
             history.completed_at = datetime.utcnow()
         await self.session.commit()
         await self.session.refresh(history)
         return history
+
     async def get_user_history(
         self,
         user_id: int,
@@ -104,6 +109,7 @@ class BacktestHistoryRepository:
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
+
     async def get_by_id(
         self, history_id: int, user_id: int | None = None
     ) -> BacktestHistory | None:
@@ -113,6 +119,7 @@ class BacktestHistoryRepository:
             query = query.where(BacktestHistory.user_id == user_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
     async def get_user_stats(self, user_id: int) -> dict[str, Any]:
         """Get user's backtest statistics."""
         result = await self.session.execute(
@@ -147,6 +154,7 @@ class BacktestHistoryRepository:
             "avg_sharpe": sum(sharpes) / len(sharpes) if sharpes else None,
             "total_monte_carlo_runs": total_mc_runs,
         }
+
     async def delete_history(self, history_id: int, user_id: int) -> bool:
         """Delete a backtest history entry (user can only delete their own)."""
         result = await self.session.execute(

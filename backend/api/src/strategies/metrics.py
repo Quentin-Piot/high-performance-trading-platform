@@ -10,14 +10,20 @@ def sharpe_ratio(returns: pd.Series, annualization: int = 252) -> float:
     if std == 0 or np.isnan(std) or np.isnan(mean):
         return 0.0
     return float((mean / std) * (annualization**0.5))
+
+
 def max_drawdown(equity: pd.Series) -> float:
     roll_max = equity.cummax()
     drawdown = equity / roll_max - 1.0
     return float(drawdown.min())
+
+
 def total_return(equity: pd.Series) -> float:
     if equity.empty:
         return 0.0
     return float(equity.iloc[-1] / equity.iloc[0] - 1.0)
+
+
 def trade_summary_from_positions(
     positions: pd.Series, price: pd.Series
 ) -> pd.DataFrame:
@@ -27,8 +33,8 @@ def trade_summary_from_positions(
     """
     positions = positions.fillna(0).astype(int)
     diffs = positions.diff().fillna(0).astype(int)
-    entries = diffs[diffs == 1].index.tolist()
-    exits = diffs[diffs == -1].index.tolist()
+    entries = diffs[diffs == 1].index.tolist()  # pyright: ignore[reportAttributeAccessIssue]
+    exits = diffs[diffs == -1].index.tolist()  # pyright: ignore[reportAttributeAccessIssue]
     trades = []
     i_e = 0
     i_x = 0
@@ -38,9 +44,9 @@ def trade_summary_from_positions(
         if i_x < len(exits):
             exit_candidate = exits[i_x]
             if hasattr(exit_candidate, "item"):
-                exit_candidate = exit_candidate.item()
+                exit_candidate = exit_candidate.item()  # pyright: ignore[reportAttributeAccessIssue]
             if hasattr(entry_date, "item"):
-                entry_date_scalar = entry_date.item()
+                entry_date_scalar = entry_date.item()  # pyright: ignore[reportAttributeAccessIssue]
             else:
                 entry_date_scalar = entry_date
             if exit_candidate > entry_date_scalar:
@@ -64,4 +70,5 @@ def trade_summary_from_positions(
             }
         )
     import pandas as pd
+
     return pd.DataFrame(trades)

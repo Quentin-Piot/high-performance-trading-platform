@@ -3,6 +3,7 @@ Data processing utilities for trading strategies.
 This module contains common data preparation and validation logic
 shared across different trading strategies.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -12,6 +13,7 @@ import pandas as pd
 
 class DataProcessor:
     """Handles common data preparation tasks for trading strategies."""
+
     @staticmethod
     def prepare_dataframe(
         df: pd.DataFrame,
@@ -45,6 +47,7 @@ class DataProcessor:
         if "close" not in data.columns:
             raise ValueError("DataFrame must contain 'close' column")
         return data
+
     @staticmethod
     def calculate_returns_and_costs(
         position: pd.Series,
@@ -65,6 +68,7 @@ class DataProcessor:
         trade_costs = trade_events * commission
         strategy_returns = position * returns - trade_costs
         return strategy_returns, trade_costs
+
     @staticmethod
     def calculate_equity_curve(
         strategy_returns: pd.Series,

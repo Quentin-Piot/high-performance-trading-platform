@@ -1,6 +1,7 @@
 """
 AWS Cognito integration for authentication and JWT token validation.
 """
+
 import json
 import logging
 from typing import Any
@@ -15,15 +16,21 @@ from core.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
 class CognitoUser(BaseModel):
     """Cognito user information extracted from JWT token."""
+
     sub: str
     email: str
     name: str | None = None
     email_verified: bool = False
     cognito_username: str
+
+
 class CognitoService:
     """Service for AWS Cognito operations."""
+
     def __init__(self):
         self.region = settings.cognito_region
         self.user_pool_id = settings.cognito_user_pool_id
@@ -45,6 +52,7 @@ class CognitoService:
                 "Cognito configuration incomplete, some features may not work"
             )
         self._jwks = None
+
     def get_jwks(self) -> dict[str, Any]:
         """Get JSON Web Key Set from Cognito."""
         if not self.user_pool_id:
@@ -63,6 +71,7 @@ class CognitoService:
                 logger.error(f"Failed to fetch JWKS from {jwks_url}: {e}")
                 raise
         return self._jwks
+
     def get_public_key(self, token_header: dict[str, str]) -> str | None:
         """Get the public key for JWT verification."""
         jwks = self.get_jwks()
@@ -71,6 +80,7 @@ class CognitoService:
             if key.get("kid") == kid:
                 return key
         return None
+
     def verify_token(self, token: str) -> CognitoUser | None:
         """Verify and decode JWT token from Cognito."""
         try:
@@ -110,6 +120,7 @@ class CognitoService:
         except Exception as e:
             logger.error(f"Token verification error: {e}")
             return None
+
     def get_user_info(self, access_token: str) -> dict[str, Any] | None:
         """Get user information from Cognito using access token."""
         if settings.env == "development":
@@ -139,6 +150,7 @@ class CognitoService:
         except ClientError as e:
             logger.warning(f"Failed to get user info: {e}")
             return None
+
     def create_user(self, email: str, temporary_password: str) -> str | None:
         """Create a new user in Cognito (admin operation)."""
         if not self.cognito_client:
@@ -146,6 +158,7 @@ class CognitoService:
             return None
         try:
             import uuid
+
             username = str(uuid.uuid4())
             response = self.cognito_client.admin_create_user(
                 UserPoolId=self.user_pool_id,
@@ -161,6 +174,7 @@ class CognitoService:
         except ClientError as e:
             logger.error(f"Failed to create user: {e}")
             return None
+
     def delete_user(self, username: str) -> bool:
         """Delete a user from Cognito (admin operation)."""
         if not self.cognito_client:
@@ -174,6 +188,7 @@ class CognitoService:
         except ClientError as e:
             logger.error(f"Failed to delete user: {e}")
             return False
+
     def set_user_password(self, username: str, password: str) -> bool:
         """Set a permanent password for a user in Cognito (admin operation)."""
         if not self.cognito_client:
@@ -190,6 +205,7 @@ class CognitoService:
         except ClientError as e:
             logger.error(f"Failed to set user password: {e}")
             return False
+
     def create_federated_user(self, user_info: dict[str, Any]) -> str | None:
         """Create or get federated user in Cognito for Google OAuth."""
         if settings.env == "development":
@@ -212,6 +228,7 @@ class CognitoService:
             except ClientError as e:
                 logger.warning(f"Error searching for existing user: {e}")
             import uuid
+
             username = str(uuid.uuid4())
             response = self.cognito_client.admin_create_user(
                 UserPoolId=self.user_pool_id,
@@ -230,6 +247,7 @@ class CognitoService:
         except ClientError as e:
             logger.error(f"Failed to create federated user: {e}")
             return None
+
     def get_federated_credentials(self, id_token: str) -> dict[str, Any] | None:
         """Get federated credentials for identity pool."""
         if settings.env == "development":
@@ -269,7 +287,11 @@ class CognitoService:
         except ClientError as e:
             logger.error(f"Failed to get federated credentials: {e}")
             return None
+
+
 cognito_service = CognitoService()
+
+
 def get_cognito_service() -> CognitoService:
     """Dependency to get Cognito service."""
     return cognito_service

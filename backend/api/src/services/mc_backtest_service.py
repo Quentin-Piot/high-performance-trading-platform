@@ -3,6 +3,7 @@ Monte Carlo Backtesting Service
 Provides data perturbation methods and orchestration for running multiple
 backtest simulations with statistical analysis.
 """
+
 from __future__ import annotations
 
 import logging
@@ -27,24 +28,34 @@ from services.backtest_service import (
 logger = logging.getLogger("services.mc_backtest")
 MAX_MONTE_CARLO_RUNS = int(os.getenv("MAX_MONTE_CARLO_RUNS", "20000"))
 DEFAULT_PARALLEL_WORKERS = os.cpu_count() or 1
+
+
 @dataclass
 class MonteCarloResult:
     """Results from a single Monte Carlo run"""
+
     pnl: float
     sharpe: float
     drawdown: float
     equity_curve: pd.Series | None = None
+
+
 @dataclass
 class MonteCarloSummary:
     """Summary of Monte Carlo simulation results"""
+
     filename: str
     method: str
     runs: int
     successful_runs: int
     metrics_distribution: dict[str, MetricsDistribution]
     equity_envelope: EquityEnvelope | None = None
+
+
 def bootstrap_returns_to_prices(
-    prices: pd.Series, sample_fraction: float = 1.0, rng: Generator = None
+    prices: pd.Series,
+    sample_fraction: float = 1.0,
+    rng: Generator = None,  # pyright: ignore[reportArgumentType]
 ) -> pd.Series:
     """
     Bootstrap method: resample returns with replacement and reconstruct prices.
@@ -59,7 +70,7 @@ def bootstrap_returns_to_prices(
         rng = default_rng()
     returns = prices.pct_change(fill_method=None).dropna()
     n_samples = int(len(returns) * sample_fraction)
-    sampled_returns = rng.choice(returns.values, size=n_samples, replace=True)
+    sampled_returns = rng.choice(returns.values, size=n_samples, replace=True)  # pyright: ignore[reportCallIssue, reportArgumentType]
     synthetic_prices = [prices.iloc[0]]
     for ret in sampled_returns:
         synthetic_prices.append(synthetic_prices[-1] * (1 + ret))
@@ -67,8 +78,12 @@ def bootstrap_returns_to_prices(
         return pd.Series(synthetic_prices, index=prices.index)
     else:
         return pd.Series(synthetic_prices)
+
+
 def gaussian_noise_returns_to_prices(
-    prices: pd.Series, scale: float = 1.0, rng: Generator = None
+    prices: pd.Series,
+    scale: float = 1.0,
+    rng: Generator = None,  # pyright: ignore[reportArgumentType]
 ) -> pd.Series:
     """
     Gaussian noise method: add noise to returns and reconstruct prices.
@@ -84,11 +99,13 @@ def gaussian_noise_returns_to_prices(
     returns = prices.pct_change(fill_method=None).dropna()
     returns_std = returns.std()
     noise = rng.normal(0, returns_std * scale, size=len(returns))
-    noisy_returns = returns.values + noise
+    noisy_returns = returns.values + noise  # pyright: ignore[reportOperatorIssue]
     synthetic_prices = [prices.iloc[0]]
     for ret in noisy_returns:
         synthetic_prices.append(synthetic_prices[-1] * (1 + ret))
     return pd.Series(synthetic_prices, index=prices.index)
+
+
 def monte_carlo_worker(args) -> MonteCarloResult | None:
     """
     Worker function for Monte Carlo simulation.
@@ -139,7 +156,7 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
         if df is not None:
             original_prices = df["close"]
         else:
-            source = CsvBytesPriceSeriesSource(csv_data, price_type)
+            source = CsvBytesPriceSeriesSource(csv_data, price_type)  # pyright: ignore[reportArgumentType]
             original_prices = source.get_prices()
         if method == "bootstrap":
             synthetic_prices = bootstrap_returns_to_prices(
@@ -194,9 +211,9 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
                 sharpe=0.0,
                 drawdown=0.0,
                 equity=pd.Series([1.0]),
-                trades=[],
-                metrics={},
-                plot_html=None,
+                trades=[],  # pyright: ignore[reportCallIssue]
+                metrics={},  # pyright: ignore[reportCallIssue]
+                plot_html=None,  # pyright: ignore[reportCallIssue]
             )
         else:
             raise ValueError(f"Unknown strategy: {strategy_name}")
@@ -210,8 +227,11 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
         logger.error(f"Monte Carlo worker failed: {str(e)}", exc_info=True)
         print(f"DEBUG: Monte Carlo worker exception: {str(e)}")
         import traceback
+
         print(f"DEBUG: Full traceback: {traceback.format_exc()}")
         return None
+
+
 def compute_equity_envelope(
     equity_curves: list[pd.Series], timestamps: list[str]
 ) -> EquityEnvelope:
@@ -238,6 +258,8 @@ def compute_equity_envelope(
         p75=np.percentile(equity_matrix, 75, axis=0).tolist(),
         p95=np.percentile(equity_matrix, 95, axis=0).tolist(),
     )
+
+
 def run_monte_carlo_on_df(
     csv_data: bytes,
     filename: str,
@@ -282,10 +304,12 @@ def run_monte_carlo_on_df(
     successful_runs = 0
     import threading
     import time
+
     progress_lock = threading.Lock()
     completed_runs = 0
     last_progress_time = time.time()
     last_reported_progress = 0
+
     def update_progress():
         """Thread-safe progress update with more frequent reporting"""
         nonlocal completed_runs, last_progress_time, last_reported_progress
@@ -296,14 +320,13 @@ def run_monte_carlo_on_df(
             time_elapsed = current_time - last_progress_time
             progress_delta = current_progress - last_reported_progress
             should_update = (
-                time_elapsed >= 0.5
-                or progress_delta >= 0.05
-                or completed_runs == runs
+                time_elapsed >= 0.5 or progress_delta >= 0.05 or completed_runs == runs
             )
             if should_update and progress_callback:
                 progress_callback(completed_runs, runs)
                 last_progress_time = current_time
                 last_reported_progress = current_progress
+
     if use_parallel:
         logger.info(f"Using {parallel_workers} parallel workers")
         try:
@@ -336,6 +359,7 @@ def run_monte_carlo_on_df(
     pnl_values = [r.pnl for r in results]
     sharpe_values = [r.sharpe for r in results]
     drawdown_values = [r.drawdown for r in results]
+
     def create_metrics_distribution(values: list[float]) -> MetricsDistribution:
         """Create MetricsDistribution from list of values"""
         arr = np.array(values)
@@ -348,6 +372,7 @@ def run_monte_carlo_on_df(
             p75=float(np.percentile(arr, 75)),
             p95=float(np.percentile(arr, 95)),
         )
+
     metrics_distribution = {
         "pnl": create_metrics_distribution(pnl_values),
         "sharpe": create_metrics_distribution(sharpe_values),
@@ -371,16 +396,21 @@ def run_monte_carlo_on_df(
         metrics_distribution=metrics_distribution,
         equity_envelope=equity_envelope,
     )
+
+
 class ProgressPublisher:
     """Simple progress publisher for logging or future SSE integration"""
+
     def __init__(self, logger_name: str = "mc_progress"):
         self.logger = logging.getLogger(logger_name)
+
     def publish_progress(self, processed: int, total: int, filename: str = ""):
         """Publish progress update"""
         percentage = (processed / total) * 100 if total > 0 else 0
         self.logger.info(
             f"Progress {filename}: {processed}/{total} ({percentage:.1f}%)"
         )
+
     def publish_completion(self, summary: MonteCarloSummary):
         """Publish completion summary"""
         self.logger.info(
