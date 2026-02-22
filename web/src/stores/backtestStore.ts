@@ -194,11 +194,11 @@ export const useBacktestStore = defineStore("backtest", {
       this.monteCarloResults = [];
       this.metricsDistribution = null;
       this.equityEnvelope = null;
+      let disconnect: (() => void) | null = null;
       try {
         const submission = await submitMonteCarloAsync(files, req, selectedDatasets);
         this.mcJobId = submission.job_id;
         this.mcStatus = submission.status as MonteCarloJobStatus;
-        let disconnect: (() => void) | null = null;
         if (this.mcJobId) {
           const conn = connectMonteCarloProgress(this.mcJobId, {
             onUpdate: (msg: MonteCarloWsMessage) => {
@@ -228,7 +228,6 @@ export const useBacktestStore = defineStore("backtest", {
           }
           await new Promise(res => setTimeout(res, 1000));
         }
-        if (disconnect) disconnect();
         if (!final || final.status !== "completed" || !final.result) {
           throw new Error("Monte Carlo job did not complete successfully");
         }
@@ -307,6 +306,8 @@ export const useBacktestStore = defineStore("backtest", {
         this.errorMessage = msg;
         useErrorStore().log(code, msg, req);
         this.status = "error";
+      } finally {
+        if (disconnect) disconnect();
       }
     },
     async retryLast() {
