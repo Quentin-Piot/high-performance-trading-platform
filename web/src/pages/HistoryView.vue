@@ -648,9 +648,7 @@ const loadStats = async () => {
     try {
         const response = await fetchJson<any>("/history/stats");
         stats.value = response;
-    } catch (err: any) {
-        console.error("Error loading stats:", err);
-    }
+    } catch {}
 };
 const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();

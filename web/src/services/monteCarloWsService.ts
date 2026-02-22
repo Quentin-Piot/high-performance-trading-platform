@@ -46,7 +46,6 @@ export function connectMonteCarloProgress(
   socket.addEventListener("message", (event) => {
     try {
       const data = JSON.parse(event.data) as MonteCarloWsMessage;
-      // Normalize progress bounds
       let progress = data.progress;
       if (typeof progress === "number") {
         if (progress < 0) progress = 0;
@@ -54,11 +53,10 @@ export function connectMonteCarloProgress(
       }
       const normalized: MonteCarloWsMessage = { ...data, progress };
       opts.onUpdate?.(normalized);
-      // Auto-close safety if server signals terminal state and still keeps ws alive
       if (["completed", "failed", "cancelled", "not_found"].includes(normalized.status)) {
         try {
           socket.close();
-        } catch {/* noop */}
+        } catch {}
       }
     } catch (e) {
       opts.onError?.(e as Error);
@@ -78,12 +76,10 @@ export function connectMonteCarloProgress(
     disconnect: () => {
       try {
         socket.close();
-      } catch {/* noop */}
+      } catch {}
     },
   };
 }
-
-// Convenience helper: await completion and resolve with last message
 export async function waitForMonteCarloCompletion(
   jobId: string,
   opts: Omit<ConnectOptions, "onUpdate"> = {},

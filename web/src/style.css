@@ -233,7 +233,7 @@
   --sidebar-border: oklch(0.88 0.01 240);
   --sidebar-ring: oklch(0.55 0.18 260);
   
-  /* Palette de couleurs vibrantes pour TradingView style */
+  
   --trading-green: oklch(0.7 0.25 140);
   --trading-red: oklch(0.65 0.25 15);
   --trading-blue: oklch(0.6 0.22 240);
@@ -241,25 +241,25 @@
   --trading-orange: oklch(0.7 0.2 50);
   --trading-cyan: oklch(0.7 0.18 200);
   
-  /* Dégradés modernes */
+  
   --gradient-primary: linear-gradient(135deg, oklch(0.55 0.18 260) 0%, oklch(0.65 0.2 300) 100%);
   --gradient-secondary: linear-gradient(135deg, oklch(0.7 0.25 140) 0%, oklch(0.7 0.18 200) 100%);
   --gradient-accent: linear-gradient(135deg, oklch(0.7 0.2 50) 0%, oklch(0.65 0.25 15) 100%);
   --gradient-hero: linear-gradient(135deg, oklch(0.55 0.18 260 / 0.1) 0%, oklch(0.7 0.25 140 / 0.1) 50%, oklch(0.65 0.2 300 / 0.1) 100%);
   
-  /* Ombres et effets */
+  
   --shadow-soft: 0 2px 8px oklch(0.55 0.18 260 / 0.08);
   --shadow-medium: 0 4px 16px oklch(0.55 0.18 260 / 0.12);
   --shadow-strong: 0 8px 32px oklch(0.55 0.18 260 / 0.16);
   --shadow-glow: 0 0 20px oklch(0.55 0.18 260 / 0.3);
   
-  /* Animations */
+  
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .dark {
-  /* TradingView-inspired dark theme - Near-black backgrounds for professional look */
+  
   --background: oklch(0.11 0.008 240);
   --foreground: oklch(0.96 0.005 240);
   --card: oklch(0.15 0.01 240);
@@ -293,7 +293,7 @@
   --sidebar-border: oklch(0.22 0.012 240);
   --sidebar-ring: oklch(0.60 0.20 255);
 
-  /* TradingView-style vibrant chart colors for dark theme */
+  
   --trading-green: oklch(0.72 0.26 145);
   --trading-red: oklch(0.65 0.26 20);
   --trading-blue: oklch(0.62 0.22 245);
@@ -301,13 +301,13 @@
   --trading-orange: oklch(0.72 0.22 50);
   --trading-cyan: oklch(0.72 0.20 200);
 
-  /* Professional gradients for dark theme */
+  
   --gradient-primary: linear-gradient(135deg, oklch(0.60 0.20 255) 0%, oklch(0.68 0.22 280) 100%);
   --gradient-secondary: linear-gradient(135deg, oklch(0.72 0.26 145) 0%, oklch(0.72 0.20 200) 100%);
   --gradient-accent: linear-gradient(135deg, oklch(0.72 0.22 50) 0%, oklch(0.65 0.26 20) 100%);
   --gradient-hero: linear-gradient(135deg, oklch(0.60 0.20 255 / 0.12) 0%, oklch(0.72 0.26 145 / 0.12) 50%, oklch(0.68 0.22 280 / 0.12) 100%);
 
-  /* Enhanced shadows with subtle glow for depth */
+  
   --shadow-soft: 0 2px 8px oklch(0 0 0 / 0.4);
   --shadow-medium: 0 4px 16px oklch(0 0 0 / 0.5);
   --shadow-strong: 0 8px 32px oklch(0 0 0 / 0.6);
@@ -324,8 +324,7 @@
   }
 }
 
-/* Keyframes définis au niveau global (en dehors de @theme) pour garantir
-   leur disponibilité dans le navigateur sans dépendance au préprocesseur. */
+
 @keyframes accordion-down {
   from { height: 0; }
   to { height: var(--reka-accordion-content-height); }
@@ -419,7 +418,7 @@
 
 
 
-/* Classes utilitaires pour les effets visuels modernes */
+
 @layer utilities {
   .gradient-primary {
     background: var(--gradient-primary);
@@ -509,7 +508,7 @@
     background-color: var(--trading-cyan);
   }
   
-  /* Animations personnalisées */
+  
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -567,7 +566,7 @@
     animation: heartbeat 1.5s ease-in-out infinite;
   }
   
-  /* Hover effects */
+  
   .hover-lift {
     transition: var(--transition-smooth);
   }
@@ -609,7 +608,7 @@
     transform: perspective(1000px) rotateX(10deg) rotateY(10deg);
   }
   
-  /* Interactive micro-animations */
+  
   .interactive-button {
     position: relative;
     overflow: hidden;
@@ -641,7 +640,7 @@
     box-shadow: var(--shadow-soft);
   }
   
-  /* Card hover effects */
+  
   .interactive-card {
     position: relative;
     transition: var(--transition-smooth);
@@ -671,7 +670,7 @@
     box-shadow: var(--shadow-strong);
   }
   
-  /* Loading animations */
+  
   .loading-skeleton {
     background: linear-gradient(90deg, 
       oklch(var(--muted) / 0.3) 25%, 
@@ -687,7 +686,7 @@
     animation: loading-dots 1.5s infinite;
   }
   
-  /* Focus states */
+  
   .focus-ring {
     transition: var(--transition-smooth);
   }
@@ -697,13 +696,13 @@
     box-shadow: 0 0 0 3px oklch(var(--trading-blue) / 0.3);
   }
   
-  /* Stagger animations */
+  
   .stagger-children > * {
     animation-delay: calc(var(--stagger-delay, 0.1s) * var(--index, 0));
   }
 }
 
-/* Keyframes supplémentaires pour les animations */
+
 @keyframes loading-dots {
   0%, 20% { content: '.'; }
   40% { content: '..'; }
@@ -712,7 +711,7 @@
 
 
 
-/* Custom scrollbar - TradingView style */
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -738,7 +737,7 @@
   background: oklch(0.50 0.020 250);
 }
 
-/* Selection styling - High contrast for readability */
+
 ::selection {
   background: oklch(0.60 0.20 255 / 0.35);
   color: oklch(0.98 0.005 240);

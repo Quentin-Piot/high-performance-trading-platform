@@ -27,15 +27,12 @@ const loading = computed(() => store.status === "loading");
 const { t } = useI18n();
 const selectedResolution = ref<"1m" | "5m" | "1h" | "1d">("1d");
 const activeRange = ref<"1W" | "1M" | "YTD" | "All">("All");
-// Monte Carlo WS progress (optional: activated when query param mcJobId is present)
 const mcProgress = ref<number | null>(null);
 const mcStatus = ref<MonteCarloWsMessage["status"] | "idle">("idle");
 let mcDisconnect: (() => void) | null = null;
-// Prefer store-based progress if available, else fallback to local WS progress
 const uiProgress = computed<number | null>(() => {
   return (typeof store.mcProgress === 'number' ? store.mcProgress : null) ?? mcProgress.value;
 });
-// Monte Carlo async loading state: show only the progress bar (no spinner)
 const isMcLoading = computed(() => {
   const hasMcActivity = store.mcStatus !== "idle" || mcStatus.value !== "idle" || uiProgress.value !== null;
   return loading.value && hasMcActivity;
@@ -184,7 +181,6 @@ onMounted(async () => {
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
     }
-    // Optional: allow monitoring a Monte Carlo async job directly via ?mcJobId=...
     const mcJobId = urlParams.get("mcJobId");
     if (mcJobId) {
         const { disconnect } = connectMonteCarloProgress(mcJobId, {
@@ -196,7 +192,6 @@ onMounted(async () => {
                 mcStatus.value = "failed";
             },
             onClose: () => {
-                // leave last known state
             },
         });
         mcDisconnect = disconnect;

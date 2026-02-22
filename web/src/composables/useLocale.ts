@@ -16,9 +16,7 @@ export function useLocale() {
   const saveLocale = (newLocale: SupportedLocale) => {
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, newLocale)
-    } catch (error) {
-      console.warn('Failed to save locale to localStorage:', error)
-    }
+    } catch {}
   }
   const selectedLocale = ref<SupportedLocale>(getStoredLocale())
   if (localeRef && localeRef.value !== selectedLocale.value) {

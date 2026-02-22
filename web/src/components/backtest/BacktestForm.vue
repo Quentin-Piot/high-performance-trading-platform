@@ -93,9 +93,7 @@ watch(startDate, (value) => {
             ) {
                 startDateValue.value = new CalendarDate(year, month, day);
             }
-        } catch (error) {
-            console.warn("Failed to parse start date:", error);
-        }
+        } catch {}
     } else if (!value) {
         startDateValue.value = undefined;
     }
@@ -115,9 +113,7 @@ watch(endDate, (value) => {
             ) {
                 endDateValue.value = new CalendarDate(year, month, day);
             }
-        } catch (error) {
-            console.warn("Failed to parse end date:", error);
-        }
+        } catch {}
     } else if (!value) {
         endDateValue.value = undefined;
     }
@@ -215,14 +211,7 @@ onMounted(async () => {
             if (canSubmit.value) {
                 await onSubmit();
             } else {
-                console.warn("Cannot auto-run backtest: validation failed", {
-                    canSubmit: canSubmit.value,
-                    validParams: validParams.value,
-                    hasData:
-                        selectedFiles.value.length > 0 ||
-                        selectedDatasets.value.length > 0,
-                    dateValidationError: dateValidationError.value,
-                });
+                return;
             }
         }, 500);
     }

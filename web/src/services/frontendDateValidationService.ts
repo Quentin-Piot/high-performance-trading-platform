@@ -147,8 +147,7 @@ export async function analyzeCsvDateRange(file: File): Promise<DateRange | null>
       minDate: formatDateISO(dates[0]!),
       maxDate: formatDateISO(dates[dates.length - 1]!)
     }
-  } catch (error) {
-    console.error('Erreur lors de l\'analyse du CSV:', error)
+  } catch {
     return null
   }
 }

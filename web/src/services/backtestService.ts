@@ -344,7 +344,6 @@ export async function runBacktestUnified(files: File[], req: BacktestRequest, se
   }
 }
 
-// --- Async Monte Carlo helpers ---
 export type MonteCarloAsyncSubmissionResponse = {
   job_id: string
   status: 'submitted' | 'processing' | 'failed'
@@ -356,15 +355,12 @@ export type MonteCarloAsyncJobStatus = {
   result?: MonteCarloResponse | unknown
 }
 export async function submitMonteCarloAsync(files: File[], req: BacktestRequest, selectedDatasets?: string[]): Promise<MonteCarloAsyncSubmissionResponse> {
-  // Build query params according to backend expectations
   const params = new URLSearchParams()
-  // Prefer dataset symbol when provided
   if (selectedDatasets && selectedDatasets.length > 0) {
     params.set('symbol', selectedDatasets[0]!)
     if (req.dates?.startDate) params.set('start_date', req.dates.startDate)
     if (req.dates?.endDate) params.set('end_date', req.dates.endDate)
   }
-  // Monte Carlo specifics
   params.set('num_runs', String(req.monte_carlo_runs ?? 1))
   params.set('initial_capital', '10000')
   params.set('strategy', req.strategy)
@@ -379,11 +375,9 @@ export async function submitMonteCarloAsync(files: File[], req: BacktestRequest,
 
   const url = `${BASE_URL}/monte-carlo/async?${params.toString()}`
   let body: FormData | undefined
-  // If files provided and no dataset selection, upload first file (backend supports single UploadFile)
   if (files.length > 0 && (!selectedDatasets || selectedDatasets.length === 0)) {
     validateCsvFiles(files)
     body = new FormData()
-    // Backend expects key 'file' (not 'csv') for Monte Carlo endpoints
     files.forEach(file => body!.append('file', file))
   }
   const response = await fetch(url, { method: 'POST', body })

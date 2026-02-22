@@ -4,8 +4,8 @@ export interface Dataset {
   filename: string;
   description?: string;
   dateRange: {
-    minDate: string; // Format ISO: YYYY-MM-DD
-    maxDate: string; // Format ISO: YYYY-MM-DD
+    minDate: string;
+    maxDate: string;
   };
 }
 

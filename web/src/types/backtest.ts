@@ -7,7 +7,6 @@ export interface BacktestResponse {
 }
 
 export interface EquityPoint {
-  time: number // UTCTimestamp seconds
+  time: number
   value: number
 }
-

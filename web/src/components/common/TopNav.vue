@@ -433,7 +433,7 @@ async function handleLogout() {
     </nav>
 </template>
 <style scoped>
-/* Navigation Container - TradingView minimalist style */
+
 .nav-container {
     position: absolute;
     inset: 0;
@@ -460,7 +460,7 @@ async function handleLogout() {
     pointer-events: none;
 }
 
-/* Gradient Text - Clean and modern */
+
 .gradient-text {
     background: linear-gradient(
         135deg,
@@ -482,7 +482,7 @@ async function handleLogout() {
     transform: scale(1.02);
 }
 
-/* Mobile Menu Transitions */
+
 .mobile-menu-enter-active,
 .mobile-menu-leave-active {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

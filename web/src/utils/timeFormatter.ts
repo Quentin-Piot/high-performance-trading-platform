@@ -1,15 +1,10 @@
-/**
- * Formate le temps de traitement de manière intelligente
- * @param processingTime - Le temps au format "X.XXs" du backend
- * @returns Le temps formaté avec l'unité appropriée (ms ou s)
- */
 export function formatProcessingTime(
   processingTime: string | null,
 ): string | null {
   if (!processingTime) return null;
 
   const match = processingTime.match(/^(\d+(?:\.\d+)?)s?$/);
-  if (!match) return processingTime; // Retourner tel quel si format inattendu
+  if (!match) return processingTime;
 
   const seconds = parseFloat(match[1]);
 

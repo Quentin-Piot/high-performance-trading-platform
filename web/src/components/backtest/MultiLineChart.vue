@@ -119,9 +119,7 @@ function updateChartSeries() {
     seriesMap.forEach((series) => {
         try {
             (chart as any)?.removeSeries(series);
-        } catch (error) {
-            console.warn("Error removing series:", error);
-        }
+        } catch {}
     });
     seriesMap.clear();
     visibleSeries.value.forEach((series) => {

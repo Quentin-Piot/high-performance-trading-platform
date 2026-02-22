@@ -172,7 +172,7 @@ const architectureCards = [
     </div>
 </template>
 <style scoped>
-/* Hero Container - TradingView minimalist style */
+
 .hero-container {
     position: relative;
     border: 1px solid rgba(96, 165, 250, 0.15);
@@ -209,7 +209,7 @@ const architectureCards = [
     pointer-events: none;
 }
 
-/* Footer Container - Clean and minimal */
+
 .footer-container {
     position: relative;
     border-top: 1px solid rgba(96, 165, 250, 0.1);
@@ -222,7 +222,7 @@ const architectureCards = [
     background: rgba(26, 29, 40, 0.95);
 }
 
-/* Gradient Text - Subtle and professional */
+
 .gradient-text {
     background: linear-gradient(
         135deg,
