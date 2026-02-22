@@ -1,14 +1,16 @@
 """
 Pydantic schemas for backtest history.
 """
+
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BacktestHistoryCreate(BaseModel):
-    """Schema for creating a backtest history entry."""
+    model_config = ConfigDict(extra="forbid")
+
     strategy: str = Field(..., description="Strategy name")
     strategy_params: dict[str, Any] = Field(..., description="Strategy parameters")
     start_date: str | None = Field(None, description="Backtest start date")
@@ -24,8 +26,11 @@ class BacktestHistoryCreate(BaseModel):
         None, description="List of dataset IDs used"
     )
     price_type: str = Field("close", description="Price type used")
+
+
 class BacktestHistoryUpdate(BaseModel):
-    """Schema for updating backtest results."""
+    model_config = ConfigDict(extra="forbid")
+
     total_return: float | None = Field(None, description="Total return percentage")
     sharpe_ratio: float | None = Field(None, description="Sharpe ratio")
     max_drawdown: float | None = Field(None, description="Maximum drawdown percentage")
@@ -36,8 +41,11 @@ class BacktestHistoryUpdate(BaseModel):
     )
     status: str = Field("completed", description="Backtest status")
     error_message: str | None = Field(None, description="Error message if failed")
+
+
 class BacktestHistoryResponse(BaseModel):
-    """Schema for backtest history response."""
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
+
     id: int
     user_id: int
     strategy: str
@@ -60,18 +68,22 @@ class BacktestHistoryResponse(BaseModel):
     status: str
     created_at: datetime
     completed_at: datetime | None
-    class Config:
-        from_attributes = True
+
+
 class BacktestHistoryList(BaseModel):
-    """Schema for paginated backtest history list."""
+    model_config = ConfigDict(extra="forbid")
+
     items: list[BacktestHistoryResponse]
     total: int
     page: int
     per_page: int
     has_next: bool
     has_prev: bool
+
+
 class UserStatsResponse(BaseModel):
-    """Schema for user backtest statistics."""
+    model_config = ConfigDict(extra="forbid")
+
     total_backtests: int
     strategies_used: list[str]
     avg_return: float | None
@@ -79,16 +91,22 @@ class UserStatsResponse(BaseModel):
     worst_return: float | None
     avg_sharpe: float | None
     total_monte_carlo_runs: int
+
+
 class BacktestRerunRequest(BaseModel):
-    """Schema for rerunning a backtest from history."""
+    model_config = ConfigDict(extra="forbid")
+
     history_id: int
     override_params: dict[str, Any] | None = Field(
         None, description="Parameters to override"
     )
     new_datasets: list[str] | None = Field(None, description="New datasets to use")
     new_date_range: dict[str, str] | None = Field(None, description="New date range")
+
+
 class BacktestFavoriteCreate(BaseModel):
-    """Schema for creating a favorite backtest configuration."""
+    model_config = ConfigDict(extra="forbid")
+
     name: str = Field(
         ..., max_length=255, description="Name for the favorite configuration"
     )
@@ -98,8 +116,11 @@ class BacktestFavoriteCreate(BaseModel):
     history_id: int = Field(
         ..., description="ID of the backtest history to save as favorite"
     )
+
+
 class BacktestFavoriteResponse(BaseModel):
-    """Schema for favorite backtest configuration response."""
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
+
     id: int
     name: str
     description: str | None
@@ -116,5 +137,3 @@ class BacktestFavoriteResponse(BaseModel):
     price_type: str
     created_at: datetime
     updated_at: datetime
-    class Config:
-        from_attributes = True

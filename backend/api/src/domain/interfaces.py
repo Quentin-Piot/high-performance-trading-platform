@@ -11,13 +11,17 @@ from domain.backtest import BacktestParams, BacktestResult
 class PriceSeriesSource(Protocol):
     def get_prices(
         self,
-    ) -> pd.Series:
-        ...
+    ) -> pd.Series: ...
+
+    def to_dataframe(self) -> pd.DataFrame: ...
+
+
 class StrategyInterface(ABC):
     """
     Interface pour toutes les stratégies de backtest.
     Chaque stratégie doit implémenter la méthode run().
     """
+
     @abstractmethod
     def run(self, source: PriceSeriesSource, params: BacktestParams) -> BacktestResult:
         """

@@ -12,12 +12,13 @@ class BacktestParams:
     """
     Paramètres passés à une stratégie pour un backtest.
     """
+
     start_date: datetime
     end_date: datetime
-    strategy_params: dict[
-        str, Any
-    ]
+    strategy_params: dict[str, Any]
     symbol: str
+
+
 @dataclass
 class BacktestResult:
     """
@@ -33,6 +34,7 @@ class BacktestResult:
     - signals: Série de positions/allocations au fil du temps
     - trades: DataFrame de synthèse des trades
     """
+
     equity: pd.Series
     pnl: float
     max_drawdown: float
