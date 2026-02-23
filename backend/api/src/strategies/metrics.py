@@ -31,10 +31,12 @@ def trade_summary_from_positions(
     Build trades table from position series (0/1) representing full allocation.
     Returns DataFrame with columns: entry_date, exit_date, entry_price, exit_price, pnl_pct.
     """
-    positions = positions.fillna(0).astype(int)
+    positions = (positions.fillna(0) > 0).astype(int)
     diffs = positions.diff().fillna(0).astype(int)
     entries = diffs[diffs == 1].index.tolist()  # pyright: ignore[reportAttributeAccessIssue]
     exits = diffs[diffs == -1].index.tolist()  # pyright: ignore[reportAttributeAccessIssue]
+    if len(positions) > 0 and int(positions.iloc[0]) == 1:
+        entries = [positions.index[0], *entries]
     trades = []
     i_e = 0
     i_x = 0
@@ -69,6 +71,4 @@ def trade_summary_from_positions(
                 "pnl_pct": pnl_pct,
             }
         )
-    import pandas as pd
-
     return pd.DataFrame(trades)

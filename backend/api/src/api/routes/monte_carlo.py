@@ -66,6 +66,13 @@ async def run_monte_carlo_sync(
     initial_capital: float = Query(
         ..., gt=0, description="Initial capital for simulation"
     ),
+    method: str = Query("bootstrap", description="Monte Carlo method"),
+    sample_fraction: float = Query(
+        1.0, gt=0, le=5.0, description="Bootstrap sample fraction"
+    ),
+    gaussian_scale: float = Query(
+        1.0, gt=0, le=10.0, description="Gaussian noise scale"
+    ),
     strategy: str = Query(
         "sma_crossover", description="Strategy name (e.g., sma_crossover, rsi)"
     ),
@@ -80,6 +87,9 @@ async def run_monte_carlo_sync(
     ),
     normalize: bool = Query(
         False, description="Normalize equity curves to start at 1.0"
+    ),
+    price_type: str = Query(
+        "close", description="Price type to use: 'close' or 'adj_close'"
     ),
     file: UploadFile | None = File(None),
     current_user: SimpleUser | None = Depends(get_current_user_simple_optional),
@@ -122,7 +132,12 @@ async def run_monte_carlo_sync(
             "period": period,
             "overbought": overbought,
             "oversold": oversold,
+            "initial_capital": initial_capital,
         }
+        if method not in {"bootstrap", "gaussian"}:
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported Monte Carlo method: {method}"
+            )
         if end_date <= start_date:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -186,7 +201,12 @@ async def run_monte_carlo_sync(
             strategy_name=strategy_name,  # pyright: ignore[reportArgumentType]
             strategy_params=strategy_params_dict,
             runs=num_runs,
-            method="bootstrap",
+            method=method,
+            method_params={
+                "sample_fraction": sample_fraction,
+                "gaussian_scale": gaussian_scale,
+            },
+            price_type=price_type,
             parallel_workers=1,
         )
         from domain.schemas.backtest import MonteCarloBacktestResult, MonteCarloResponse
@@ -262,9 +282,9 @@ async def run_monte_carlo_sync(
                         end_date=end_date.strftime("%Y-%m-%d"),
                         initial_capital=initial_capital,
                         monte_carlo_runs=num_runs,
-                        monte_carlo_method="bootstrap",
+                        monte_carlo_method=method,
                         datasets_used=datasets_used,
-                        price_type="close",
+                        price_type=price_type,
                     )
                     if total_return is not None:
                         await history_repo.update_results(
@@ -306,6 +326,13 @@ async def submit_async_job(
     initial_capital: float = Query(
         ..., gt=0, description="Initial capital for simulation"
     ),
+    method: str = Query("bootstrap", description="Monte Carlo method"),
+    sample_fraction: float = Query(
+        1.0, gt=0, le=5.0, description="Bootstrap sample fraction"
+    ),
+    gaussian_scale: float = Query(
+        1.0, gt=0, le=10.0, description="Gaussian noise scale"
+    ),
     strategy: str = Query(
         "sma_crossover", description="Strategy name (e.g., sma_crossover, rsi)"
     ),
@@ -320,6 +347,9 @@ async def submit_async_job(
     ),
     normalize: bool = Query(
         False, description="Normalize equity curves to start at 1.0"
+    ),
+    price_type: str = Query(
+        "close", description="Price type to use: 'close' or 'adj_close'"
     ),
     file: UploadFile | None = File(None),
 ) -> dict[str, Any]:
@@ -354,7 +384,12 @@ async def submit_async_job(
             "period": period,
             "overbought": overbought,
             "oversold": oversold,
+            "initial_capital": initial_capital,
         }
+        if method not in {"bootstrap", "gaussian"}:
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported Monte Carlo method: {method}"
+            )
         if end_date <= start_date:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -424,6 +459,13 @@ async def submit_async_job(
             strategy_name=strategy,
             strategy_params=strategy_params_dict,
             runs=num_runs,
+            method=method,
+            method_params={
+                "sample_fraction": sample_fraction,
+                "gaussian_scale": gaussian_scale,
+            },
+            price_type=price_type,
+            normalize=normalize,
         )
         return {
             "job_id": job_id,

@@ -3,6 +3,25 @@
 .vscode/
 .zed/
 
+# --- Package manager local store ---
+.pnpm-store/
+
+# --- Python caches / envs ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+
+# --- Node build artifacts ---
+node_modules/
+dist/
 
 # Logs ou fichiers temporaires
 *.log

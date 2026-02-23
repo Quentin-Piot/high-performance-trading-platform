@@ -55,3 +55,13 @@ def test_trade_summary_from_positions_pairs_entries_exits():
     assert t2.entry_price == 106.0
     assert t2.exit_price == 106.0
     assert t2.pnl_pct == 0.0
+
+
+def test_trade_summary_handles_series_starting_in_position():
+    dates = pd.date_range("2023-01-01", periods=4, freq="D")
+    price = pd.Series([100, 101, 102, 103], index=dates)
+    positions = pd.Series([1, 1, 0, 0], index=dates)
+    trades = trade_summary_from_positions(positions, price)
+    assert len(trades) == 1
+    assert trades.iloc[0].entry_date == dates[0]
+    assert trades.iloc[0].exit_date == dates[2]

@@ -35,8 +35,12 @@ class MovingAverageStrategy(Strategy):
         """
         data = DataProcessor.prepare_dataframe(df, params.start_date, params.end_date)
         close = data["close"].astype(float)
-        short_ma = close.rolling(window=params.short_window, min_periods=1).mean()
-        long_ma = close.rolling(window=params.long_window, min_periods=1).mean()
+        short_ma = close.rolling(
+            window=params.short_window, min_periods=params.short_window
+        ).mean()
+        long_ma = close.rolling(
+            window=params.long_window, min_periods=params.long_window
+        ).mean()
         raw_signal = (short_ma > long_ma).astype(int)
         position = raw_signal.shift(1).fillna(0).astype(int) * params.position_size  # pyright: ignore[reportAttributeAccessIssue]
         strategy_returns, _ = DataProcessor.calculate_returns_and_costs(
