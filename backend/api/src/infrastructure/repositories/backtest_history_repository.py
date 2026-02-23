@@ -5,7 +5,7 @@ Repository for backtest history management.
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import and_, desc, select
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.models import BacktestHistory
@@ -109,6 +109,19 @@ class BacktestHistoryRepository:
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
+
+    async def count_user_history(
+        self,
+        user_id: int,
+        strategy_filter: str | None = None,
+    ) -> int:
+        query = select(func.count()).select_from(BacktestHistory).where(
+            BacktestHistory.user_id == user_id
+        )
+        if strategy_filter:
+            query = query.where(BacktestHistory.strategy == strategy_filter)
+        result = await self.session.execute(query)
+        return int(result.scalar_one() or 0)
 
     async def get_by_id(
         self, history_id: int, user_id: int | None = None

@@ -50,6 +50,10 @@ async def get_user_history(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
     offset = (page - 1) * per_page
+    total = await history_repo.count_user_history(
+        user_id=user.id,
+        strategy_filter=strategy,
+    )
     items = await history_repo.get_user_history(
         user_id=user.id,
         limit=per_page + 1,
@@ -63,7 +67,7 @@ async def get_user_history(
     response_items = [BacktestHistoryResponse.model_validate(item) for item in items]
     return BacktestHistoryList(
         items=response_items,
-        total=len(response_items),
+        total=total,
         page=page,
         per_page=per_page,
         has_next=has_next,

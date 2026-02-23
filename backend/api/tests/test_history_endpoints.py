@@ -35,6 +35,7 @@ class TestHistoryEndpoints:
 
         # Mock history repository
         mock_history_repo = Mock()
+        mock_history_repo.count_user_history = AsyncMock(return_value=1)
         mock_history_repo.get_user_history = AsyncMock(
             return_value=[mock_history_entry]
         )

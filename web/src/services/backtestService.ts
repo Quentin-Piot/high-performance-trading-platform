@@ -3,6 +3,7 @@ import {
 	type StrategyId,
 } from "@/config/backtestStrategies";
 import { postFormData, BASE_URL } from "@/services/apiClient";
+import { useAuthStore } from "@/stores/authStore";
 export type DateRange = { startDate?: string; endDate?: string };
 export type BacktestRequest = {
 	strategy: StrategyId;
@@ -144,6 +145,22 @@ export class BacktestValidationError extends Error {
 		this.code = code;
 		this.name = "BacktestValidationError";
 	}
+}
+
+function authHeaders(headers?: HeadersInit): HeadersInit {
+	const token = useAuthStore().token;
+	if (!token) return headers ?? {};
+	return {
+		...(headers ?? {}),
+		Authorization: `Bearer ${token}`,
+	};
+}
+
+async function fetchApi(path: string, init: RequestInit = {}): Promise<Response> {
+	return fetch(`${BASE_URL}${path}`, {
+		...init,
+		headers: authHeaders(init.headers),
+	});
 }
 export function validateCsvFile(file: File): void {
 	const isCsv =
@@ -367,13 +384,13 @@ export async function runBacktestUnified(
 			});
 		}
 		const url = `/monte-carlo/run?${params.toString()}`;
-		const response = await fetch(`${BASE_URL}${url}`, {
+		const response = await fetchApi(url, {
 			method: "POST",
 			body:
 				files.length > 0 && (!selectedDatasets || selectedDatasets.length === 0)
-					? formData
-					: undefined,
-		});
+						? formData
+						: undefined,
+			});
 		if (!response.ok) {
 			const errorData = await response
 				.json()
@@ -403,7 +420,7 @@ export async function runBacktestUnified(
 			params.set("include_aggregated", "true");
 		}
 		const url = `/backtest?${params.toString()}`;
-		const response = await fetch(`${BASE_URL}${url}`, {
+		const response = await fetchApi(url, {
 			method: "POST",
 		});
 		if (!response.ok) {
@@ -475,7 +492,6 @@ export async function submitMonteCarloAsync(
 	if (req.price_type) params.set("price_type", req.price_type);
 	if (req.normalize) params.set("normalize", req.normalize.toString());
 
-	const url = `${BASE_URL}/monte-carlo/async?${params.toString()}`;
 	let body: FormData | undefined;
 	if (
 		files.length > 0 &&
@@ -485,7 +501,10 @@ export async function submitMonteCarloAsync(
 		body = new FormData();
 		files.forEach((file) => body!.append("file", file));
 	}
-	const response = await fetch(url, { method: "POST", body });
+	const response = await fetchApi(`/monte-carlo/async?${params.toString()}`, {
+		method: "POST",
+		body,
+	});
 	if (!response.ok) {
 		const errorData = await response
 			.json()
@@ -499,8 +518,8 @@ export async function submitMonteCarloAsync(
 export async function getMonteCarloAsyncStatus(
 	jobId: string,
 ): Promise<MonteCarloAsyncJobStatus> {
-	const response = await fetch(
-		`${BASE_URL}/monte-carlo/async/${encodeURIComponent(jobId)}`,
+	const response = await fetchApi(
+		`/monte-carlo/async/${encodeURIComponent(jobId)}`,
 		{ method: "GET" },
 	);
 	if (!response.ok) {

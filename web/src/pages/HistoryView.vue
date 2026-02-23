@@ -679,11 +679,11 @@ const loadHistory = async (page = 1) => {
 		);
 		history.value = response.items || [];
 		pagination.value = {
-			page: response.page || pagination.value.page,
-			per_page: response.per_page || pagination.value.per_page,
-			total: response.total || pagination.value.total,
-			has_prev: response.has_prev || pagination.value.has_prev,
-			has_next: response.has_next || pagination.value.has_next,
+			page: response.page ?? pagination.value.page,
+			per_page: response.per_page ?? pagination.value.per_page,
+			total: response.total ?? pagination.value.total,
+			has_prev: response.has_prev ?? pagination.value.has_prev,
+			has_next: response.has_next ?? pagination.value.has_next,
 		};
 	} catch (err: unknown) {
 		error.value = getErrorMessage(err) || t("history.error_loading");
