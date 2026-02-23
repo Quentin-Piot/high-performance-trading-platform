@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         description="JWT secret key - should be set via environment variable in production",
     )
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 10080
+    access_token_expire_minutes: int = 43200
 
     @field_validator("jwt_secret")
     @classmethod

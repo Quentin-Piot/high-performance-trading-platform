@@ -82,7 +82,7 @@ resource "aws_ecs_task_definition" "backend_task" {
         { name = "FRONTEND_URL", value = var.frontend_url },
         { name = "JWT_SECRET", value = var.jwt },
         { name = "JWT_ALGORITHM", value = "HS256" },
-        { name = "ACCESS_TOKEN_EXPIRE_MINUTES", value = "10080" },
+        { name = "ACCESS_TOKEN_EXPIRE_MINUTES", value = "43200" },
 
         # Database URL construction
         { name = "DATABASE_URL", value = "postgresql+psycopg://postgres:postgres@localhost:5432/trading_db" },
