@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from core.logging import JOB_ID
 from services.mc_backtest_service import run_monte_carlo_on_df
 
 logger = logging.getLogger(__name__)
@@ -210,6 +211,7 @@ class SimpleMonteCarloWorker:
 
     def _execute_job(self, job: SimpleMonteCarloJob) -> None:
         """Execute a Monte Carlo job in a thread."""
+        token = JOB_ID.set(job.job_id)
         try:
             with self._lock:
                 job.status = "running"
@@ -286,6 +288,8 @@ class SimpleMonteCarloWorker:
                     logger.warning(
                         f"Error callback failed for job {job.job_id}: {callback_error}"
                     )
+        finally:
+            JOB_ID.reset(token)
 
     def shutdown(self):
         """Shutdown the worker and cleanup resources."""

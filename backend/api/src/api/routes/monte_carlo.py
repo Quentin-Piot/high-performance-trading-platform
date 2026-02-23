@@ -21,6 +21,7 @@ from fastapi import (
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logging import JOB_ID
 from core.simple_auth import SimpleUser, get_current_user_simple_optional
 from infrastructure.db import get_session
 from infrastructure.repositories.backtest_history_repository import (
@@ -487,6 +488,7 @@ async def submit_async_job(
 @router.get("/async/{job_id}")
 async def get_async_job_status(job_id: str) -> dict[str, Any]:
     """Get status of an asynchronous job."""
+    token = JOB_ID.set(job_id)
     try:
         from workers.simple_worker import get_simple_worker
 
@@ -507,11 +509,14 @@ async def get_async_job_status(job_id: str) -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get job status: {str(e)}",
         ) from e
+    finally:
+        JOB_ID.reset(token)
 
 
 @router.delete("/async/{job_id}")
 async def cancel_async_job(job_id: str) -> dict[str, Any]:
     """Cancel an asynchronous job."""
+    token = JOB_ID.set(job_id)
     try:
         from workers.simple_worker import get_simple_worker
 
@@ -535,6 +540,8 @@ async def cancel_async_job(job_id: str) -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel job: {str(e)}",
         ) from e
+    finally:
+        JOB_ID.reset(token)
 
 
 @router.get("/async")
@@ -587,6 +594,7 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
     This endpoint provides real-time updates for asynchronous jobs.
     """
     await websocket.accept()
+    token = JOB_ID.set(job_id)
     try:
         from workers.simple_worker import get_simple_worker
 
@@ -630,3 +638,4 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
             await websocket.close()
         except Exception:
             pass
+        JOB_ID.reset(token)
