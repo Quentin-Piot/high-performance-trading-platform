@@ -56,7 +56,7 @@ jobs:
 
       - name: 🧹 Lint
         working-directory: ./web
-        run: pnpm exec eslint "src/**/*.{ts,vue}" --max-warnings=0
+        run: pnpm lint
 
   frontend-build:
     name: 🌐 Frontend - Build
@@ -148,19 +148,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: ⚡ Cache Poetry
-        uses: actions/cache@v4
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
         with:
-          path: ~/.cache/pypoetry
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: poetry-${{ runner.os }}-
+          python-version: "3.12"
 
-      - name: 🧪 Run Tests
+      - name: ⚡ Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: 📦 Install Dependencies
+        working-directory: ./backend/api
+        run: uv sync --dev --frozen
+
+      - name: 🧪 Run Checks
         working-directory: ./backend/api
         run: |
-          pip install poetry
-          poetry install --no-interaction --no-root
-          poetry run pytest tests/ -v --tb=short --maxfail=1 --disable-warnings
+          make lint
+          make typecheck
+          make test
 
   backend-build:
     name: 🐍 Backend - Build
