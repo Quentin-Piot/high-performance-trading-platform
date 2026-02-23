@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Build-time API base URL (used by Vite)
-ARG VITE_API_BASE_URL=/api
+ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 # Build the application with memory optimization
