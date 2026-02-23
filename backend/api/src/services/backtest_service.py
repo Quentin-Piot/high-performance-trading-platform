@@ -40,11 +40,19 @@ def _read_csv_to_series(
     price_col = _resolve_price_column(df, price_type)
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df[price_col] = pd.to_numeric(df[price_col], errors="coerce")
+        df = df.dropna(subset=["date", price_col])
         df = df.sort_values("date")
+        if df.empty:
+            raise ValueError("CSV does not contain valid dated price rows")
         series = pd.Series(df.set_index("date")[price_col].astype(float))
         series.index = pd.DatetimeIndex(series.index)
         return series
-    return pd.Series(df[price_col].astype(float).values, dtype=float)
+    df[price_col] = pd.to_numeric(df[price_col], errors="coerce")
+    df = df.dropna(subset=[price_col])
+    if df.empty:
+        raise ValueError("CSV does not contain valid price values")
+    return pd.Series(df[price_col].astype(float).to_numpy(), dtype=float)
 
 
 class CsvBytesPriceSeriesSource(PriceSeriesSource):
@@ -66,12 +74,17 @@ class CsvBytesPriceSeriesSource(PriceSeriesSource):
         price_col = _resolve_price_column(df, self._price_type)
         if "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df = df.dropna(subset=["date"])
             df = df.sort_values("date")
             df = df.set_index("date")
         if price_col != "close":
             if "close" in df.columns:
                 df = df.drop(columns=["close"])
             df = df.rename(columns={price_col: "close"})
+        df["close"] = pd.to_numeric(df["close"], errors="coerce")
+        df = df.dropna(subset=["close"])
+        if df.empty:
+            raise ValueError("CSV does not contain valid close prices")
         df["close"] = df["close"].astype(float)
         return df
 
@@ -85,14 +98,17 @@ class ServiceBacktestResult:
 
 
 def run_sma_crossover(
-    source: PriceSeriesSource, sma_short: int, sma_long: int
+    source: PriceSeriesSource,
+    sma_short: int,
+    sma_long: int,
+    initial_capital: float = 1.0,
 ) -> ServiceBacktestResult:
     df = source.to_dataframe()
     params = MovingAverageParams(  # pyright: ignore[reportCallIssue]
         short_window=sma_short,
         long_window=sma_long,
         position_size=1.0,
-        initial_capital=1.0,
+        initial_capital=initial_capital,
         commission=0.0,
     )
     strategy = MovingAverageStrategy()
@@ -106,7 +122,11 @@ def run_sma_crossover(
 
 
 def run_rsi(
-    source: PriceSeriesSource, period: int, overbought: float, oversold: float
+    source: PriceSeriesSource,
+    period: int,
+    overbought: float,
+    oversold: float,
+    initial_capital: float = 1.0,
 ) -> ServiceBacktestResult:
     df = source.to_dataframe()
     params = RSIParams(  # pyright: ignore[reportCallIssue]
@@ -114,7 +134,7 @@ def run_rsi(
         rsi_low=oversold,
         rsi_high=overbought,
         position_size=1.0,
-        initial_capital=1.0,
+        initial_capital=initial_capital,
         commission=0.0,
     )
     strategy = RSIReversionStrategy()

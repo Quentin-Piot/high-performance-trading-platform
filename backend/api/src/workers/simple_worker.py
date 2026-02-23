@@ -29,6 +29,15 @@ def _serialize_metric(dist) -> dict:
     }
 
 
+def _normalize_envelope(envelope: object) -> None:
+    for key in ["p5", "p25", "median", "p75", "p95"]:
+        series = getattr(envelope, key, None)
+        if not series or series[0] == 0:
+            continue
+        first_value = series[0]
+        setattr(envelope, key, [value / first_value for value in series])
+
+
 class SimpleMonteCarloJob:
     """Simple job representation for the sideloaded worker."""
 
@@ -42,6 +51,8 @@ class SimpleMonteCarloJob:
         runs: int,
         method: str = "bootstrap",
         method_params: dict | None = None,
+        price_type: str = "close",
+        normalize: bool = False,
         callback: Callable[[str, dict], None] | None = None,
     ):
         self.job_id = job_id
@@ -52,6 +63,8 @@ class SimpleMonteCarloJob:
         self.runs = runs
         self.method = method
         self.method_params = method_params or {}
+        self.price_type = price_type
+        self.normalize = normalize
         self.callback = callback
         self.status: str = "pending"
         self.progress: float = 0.0
@@ -80,6 +93,8 @@ class SimpleMonteCarloWorker:
         runs: int,
         method: str = "bootstrap",
         method_params: dict | None = None,
+        price_type: str = "close",
+        normalize: bool = False,
         callback: Callable[[str, dict], None] | None = None,
     ) -> str:
         """Submit a new Monte Carlo job for asynchronous execution."""
@@ -93,6 +108,8 @@ class SimpleMonteCarloWorker:
             runs=runs,
             method=method,
             method_params=method_params,
+            price_type=price_type,
+            normalize=normalize,
             callback=callback,
         )
         with self._lock:
@@ -213,11 +230,14 @@ class SimpleMonteCarloWorker:
                 runs=job.runs,
                 method=job.method,
                 method_params=job.method_params,
+                price_type=job.price_type,
                 parallel_workers=1,
                 seed=None,
                 include_equity_envelope=True,
                 progress_callback=progress_callback,
             )
+            if job.normalize and result.equity_envelope:
+                _normalize_envelope(result.equity_envelope)
             result_dict = {
                 "filename": result.filename,
                 "method": result.method,

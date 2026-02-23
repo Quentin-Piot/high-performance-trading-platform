@@ -69,15 +69,15 @@ def bootstrap_returns_to_prices(
     if rng is None:
         rng = default_rng()
     returns = prices.pct_change(fill_method=None).dropna()
-    n_samples = int(len(returns) * sample_fraction)
-    sampled_returns = rng.choice(returns.values, size=n_samples, replace=True)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    if returns.empty:
+        return pd.Series([float(prices.iloc[0])], index=prices.index[:1])
+    pool_size = max(1, int(round(len(returns) * sample_fraction)))
+    sampled_pool = rng.choice(returns.values, size=pool_size, replace=True)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    sampled_returns = rng.choice(sampled_pool, size=len(returns), replace=True)  # pyright: ignore[reportCallIssue, reportArgumentType]
     synthetic_prices = [prices.iloc[0]]
     for ret in sampled_returns:
         synthetic_prices.append(synthetic_prices[-1] * (1 + ret))
-    if len(synthetic_prices) == len(prices):
-        return pd.Series(synthetic_prices, index=prices.index)
-    else:
-        return pd.Series(synthetic_prices)
+    return pd.Series(synthetic_prices, index=prices.index)
 
 
 def gaussian_noise_returns_to_prices(
@@ -186,7 +186,8 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
             )
         csv_buffer = synthetic_df.to_csv(index=False).encode()
         synthetic_source = CsvBytesPriceSeriesSource(csv_buffer, price_type)
-        if strategy_name == "sma_crossover":
+        initial_capital = float(strategy_params.get("initial_capital", 1.0))
+        if strategy_name in {"sma_crossover", "sma"}:
             sma_short = strategy_params.get("sma_short") or strategy_params.get(
                 "short_window"
             )
@@ -197,13 +198,19 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
                 raise ValueError(
                     f"Missing SMA parameters. Expected 'sma_short'/'sma_long' or 'short_window'/'long_window', got: {list(strategy_params.keys())}"
                 )
-            result = run_sma_crossover(synthetic_source, sma_short, sma_long)
-        elif strategy_name == "rsi":
+            result = run_sma_crossover(
+                synthetic_source,
+                sma_short,
+                sma_long,
+                initial_capital=initial_capital,
+            )
+        elif strategy_name in {"rsi", "rsi_reversion"}:
             result = run_rsi(
                 synthetic_source,
                 strategy_params["period"],
                 strategy_params["overbought"],
                 strategy_params["oversold"],
+                initial_capital=initial_capital,
             )
         elif strategy_name == "dummy":
             result = ServiceBacktestResult(
@@ -246,6 +253,26 @@ def compute_equity_envelope(
     if not equity_curves:
         return EquityEnvelope(
             timestamps=timestamps, p5=[], p25=[], median=[], p75=[], p95=[]
+        )
+    cleaned_curves = [curve.dropna() for curve in equity_curves if curve is not None]
+    cleaned_curves = [curve for curve in cleaned_curves if not curve.empty]
+    if cleaned_curves:
+        aligned = pd.concat(cleaned_curves, axis=1, join="inner").dropna()
+    else:
+        aligned = pd.DataFrame()
+    if not aligned.empty:
+        equity_matrix = aligned.to_numpy(dtype=float)
+        if hasattr(aligned.index, "strftime"):
+            envelope_timestamps = [t.strftime("%Y-%m-%d") for t in aligned.index]
+        else:
+            envelope_timestamps = [str(t) for t in aligned.index]
+        return EquityEnvelope(
+            timestamps=envelope_timestamps,
+            p5=np.percentile(equity_matrix, 5, axis=1).tolist(),
+            p25=np.percentile(equity_matrix, 25, axis=1).tolist(),
+            median=np.percentile(equity_matrix, 50, axis=1).tolist(),
+            p75=np.percentile(equity_matrix, 75, axis=1).tolist(),
+            p95=np.percentile(equity_matrix, 95, axis=1).tolist(),
         )
     min_length = min(len(curve) for curve in equity_curves)
     aligned_curves = [curve.iloc[:min_length].values for curve in equity_curves]

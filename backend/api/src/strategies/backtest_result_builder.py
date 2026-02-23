@@ -71,12 +71,11 @@ class BacktestResultBuilder:
         total_ret = total_return(self._equity)
         sharpe_val = sharpe_ratio(self._returns, annualization=self._annualization)
         mdd_val = max_drawdown(self._equity)
-        trade_events = self._position.diff().abs().fillna(0)
+        trades = trade_summary_from_positions(self._position, self._close)
         metrics = {
             "total_return": total_ret,
-            "n_trades": int(trade_events.sum()),
+            "n_trades": int(len(trades)),
         }
-        trades = trade_summary_from_positions(self._position, self._close)
         return BacktestResult(
             equity=self._equity,
             pnl=total_ret,

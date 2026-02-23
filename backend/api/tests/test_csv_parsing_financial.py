@@ -38,3 +38,16 @@ def test_read_csv_without_date_column_returns_series():
     series = _read_csv_to_series(buf)
     assert isinstance(series, pd.Series)
     assert list(series.values) == [100.0, 101.0, 102.0]
+
+
+def test_read_csv_drops_invalid_rows_before_building_series():
+    csv = """date,close
+2023-01-01,100
+bad-date,101
+2023-01-03,not-a-number
+2023-01-02,102
+"""
+    buf = io.BytesIO(csv.encode("utf-8"))
+    series = _read_csv_to_series(buf)
+    assert list(series.index.astype(str)) == ["2023-01-01", "2023-01-02"]
+    assert list(series.values) == [100.0, 102.0]
