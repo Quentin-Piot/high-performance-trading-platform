@@ -98,6 +98,9 @@ class ConsoleFormatter(logging.Formatter):
 REQUEST_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "request_id", default=None
 )
+JOB_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "job_id", default=None
+)
 
 
 class RequestIdFilter(logging.Filter):
@@ -105,6 +108,14 @@ class RequestIdFilter(logging.Filter):
         rid = REQUEST_ID.get()
         if rid:
             record.request_id = rid
+        return True
+
+
+class JobIdFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        job_id = JOB_ID.get()
+        if job_id:
+            record.job_id = job_id
         return True
 
 
@@ -204,6 +215,7 @@ def setup_logging():
     else:
         handler.setFormatter(JSONFormatter())
     handler.addFilter(RequestIdFilter())
+    handler.addFilter(JobIdFilter())
     handler.addFilter(SecretsFilter())
     root.addHandler(handler)
     for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
@@ -223,6 +235,7 @@ def setup_logging():
         else:
             file_handler.setFormatter(JSONFormatter())
         file_handler.addFilter(RequestIdFilter())
+        file_handler.addFilter(JobIdFilter())
         file_handler.addFilter(SecretsFilter())
         root.addHandler(file_handler)
     logging.getLogger("app").info("Logging initialized", extra={"level": level_name})
