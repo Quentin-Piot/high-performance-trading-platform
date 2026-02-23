@@ -1,8 +1,3 @@
-# -------------------
-# Security Groups
-# -------------------
-
-# ALB SG: allow 80 from internet
 resource "aws_security_group" "alb_sg" {
   name        = "alb-sg"
   description = "Security group for Application Load Balancer"
@@ -11,6 +6,13 @@ resource "aws_security_group" "alb_sg" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -27,7 +29,6 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# ECS tasks SG: allow 8000 from ALB only; allow outbound to anywhere
 resource "aws_security_group" "ecs_sg" {
   name        = "${var.project_name}-ecs-sg"
   vpc_id      = aws_vpc.main.id
@@ -53,18 +54,17 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-# EFS SG: allow NFS from ECS tasks SG
-resource "aws_security_group" "efs_sg" {
-  name        = "${var.project_name}-efs-sg"
+resource "aws_security_group" "db_sg" {
+  name        = "${var.project_name}-db-sg"
   vpc_id      = aws_vpc.main.id
-  description = "EFS SG - allow NFS from ECS tasks"
+  description = "RDS SG - allow PostgreSQL from ECS tasks"
 
   ingress {
-    from_port       = 2049
-    to_port         = 2049
+    from_port       = 5432
+    to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs_sg.id]
-    description     = "Allow ECS to EFS"
+    description     = "Allow ECS to PostgreSQL"
   }
 
   egress {
@@ -75,6 +75,6 @@ resource "aws_security_group" "efs_sg" {
   }
 
   tags = {
-    Name = "${var.project_name}-efs-sg"
+    Name = "${var.project_name}-db-sg"
   }
 }

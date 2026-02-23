@@ -1,6 +1,3 @@
-# -------------------
-# EFS File System
-# -------------------
 
 resource "aws_efs_file_system" "postgres" {
   encrypted = true
@@ -9,8 +6,6 @@ resource "aws_efs_file_system" "postgres" {
     Name = "${var.project_name}-efs"
   }
 }
-
-# Mount targets across the public subnets
 resource "aws_efs_mount_target" "mt" {
   for_each = { for idx, s in aws_subnet.public : idx => s.id }
 

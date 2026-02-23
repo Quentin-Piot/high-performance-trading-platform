@@ -157,10 +157,15 @@ function authHeaders(headers?: HeadersInit): HeadersInit {
 }
 
 async function fetchApi(path: string, init: RequestInit = {}): Promise<Response> {
-	return fetch(`${BASE_URL}${path}`, {
+	const response = await fetch(`${BASE_URL}${path}`, {
 		...init,
 		headers: authHeaders(init.headers),
 	});
+	if (response.status === 401) {
+		const store = useAuthStore();
+		if (store.token) store.logout();
+	}
+	return response;
 }
 export function validateCsvFile(file: File): void {
 	const isCsv =

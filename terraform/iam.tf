@@ -1,7 +1,3 @@
-# -------------------
-# IAM Roles and Policies
-# -------------------
-
 data "aws_iam_policy_document" "ecs_task_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -13,7 +9,6 @@ data "aws_iam_policy_document" "ecs_task_assume_role" {
   }
 }
 
-# ECS Task Execution Role
 resource "aws_iam_role" "ecs_task_execution_role" {
   name               = "${var.project_name}-ecs-task-exec-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
@@ -23,24 +18,44 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   }
 }
 
-# Attach managed policies for task execution (ECR pull, logs)
 resource "aws_iam_role_policy_attachment" "exec_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Add ECR read and EFS client
 resource "aws_iam_role_policy_attachment" "ecr_read" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-resource "aws_iam_role_policy_attachment" "efs_client" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
+data "aws_iam_policy_document" "ecs_task_execution_secrets" {
+  statement {
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "ssm:GetParameters",
+      "ssm:GetParameter",
+      "kms:Decrypt"
+    ]
+
+    resources = compact([
+      aws_db_instance.postgres.master_user_secret[0].secret_arn,
+      var.jwt_secret_arn,
+      var.app_google_client_secret_arn,
+      "*"
+    ])
+  }
 }
 
-# IAM Task Role for application permissions
+resource "aws_iam_policy" "ecs_task_execution_secrets" {
+  name   = "${var.project_name}-ecs-task-exec-secrets"
+  policy = data.aws_iam_policy_document.ecs_task_execution_secrets.json
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_secrets" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = aws_iam_policy.ecs_task_execution_secrets.arn
+}
+
 resource "aws_iam_role" "ecs_task_role" {
   name               = "${var.project_name}-ecs-task-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
@@ -50,7 +65,6 @@ resource "aws_iam_role" "ecs_task_role" {
   }
 }
 
-# Custom policy for S3, CloudWatch, and Cognito access (SQS retiré)
 resource "aws_iam_policy" "app_permissions" {
   name        = "${var.project_name}-app-permissions"
   description = "Permissions for trading platform application"

@@ -43,6 +43,12 @@ async function buildHttpError(res: Response): Promise<Error> {
 	return new Error(message);
 }
 
+function handleUnauthorized(res: Response): void {
+	if (res.status !== 401) return;
+	const store = useAuthStore();
+	if (store.token) store.logout();
+}
+
 export async function fetchJson<T>(
 	path: string,
 	init: RequestInit = {},
@@ -55,6 +61,7 @@ export async function fetchJson<T>(
 		...authHeader(),
 	};
 	const res = await fetch(url, { ...init, headers });
+	handleUnauthorized(res);
 	if (!res.ok) throw await buildHttpError(res);
 	return res.json() as Promise<T>;
 }
@@ -76,6 +83,7 @@ export async function postFormData<T>(
 	const url = `${BASE_URL}${path}`;
 	const headers: HeadersInit = { ...authHeader() };
 	const res = await fetch(url, { method: "POST", headers, body: formData });
+	handleUnauthorized(res);
 	if (!res.ok) {
 		throw await buildHttpError(res);
 	}

@@ -25,6 +25,28 @@ const STORAGE_KEYS = {
 	USER: "hptp_user_data",
 	USER_EMAIL: "hptp_user_email",
 } as const;
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+	try {
+		const [, payload] = token.split(".");
+		if (!payload) return null;
+		const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+		const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+		const decoded = atob(padded);
+		return JSON.parse(decoded) as Record<string, unknown>;
+	} catch {
+		return null;
+	}
+}
+
+function isJwtExpired(token: string): boolean {
+	const payload = decodeJwtPayload(token);
+	if (!payload) return true;
+	const exp = payload.exp;
+	if (typeof exp !== "number") return false;
+	return Date.now() >= exp * 1000;
+}
+
 const secureStorage = {
 	setItem: (key: string, value: string) => {
 		try {
@@ -207,11 +229,11 @@ export const useAuthStore = defineStore("auth", {
 			this.googleAuthUrl = null;
 			secureStorage.clear();
 		},
-		rehydrate() {
-			this.loadPersistedData();
-			if (this.token && !this.user) {
-				this.logout();
-			}
-		},
+			rehydrate() {
+				this.loadPersistedData();
+				if ((this.token && !this.user) || (this.token && isJwtExpired(this.token))) {
+					this.logout();
+				}
+			},
 	},
 });

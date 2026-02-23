@@ -1,27 +1,20 @@
-# -------------------
-# S3 Buckets
-# -------------------
-
-# S3 bucket for frontend (private) + CloudFront OAI
 resource "aws_s3_bucket" "frontend_bucket" {
   bucket        = "${var.project_name}-frontend-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true # convenient for dev; remove for strict prod
+  force_destroy = contains(["dev", "development"], lower(var.env))
 
   tags = {
     Name = "${var.project_name}-frontend-bucket"
   }
 }
 
-# Enable ACLs for the bucket (required for aws_s3_bucket_acl)
 resource "aws_s3_bucket_ownership_controls" "frontend_bucket" {
   bucket = aws_s3_bucket.frontend_bucket.id
 
   rule {
-    object_ownership = "BucketOwnerPreferred"
+    object_ownership = "BucketOwnerEnforced"
   }
 }
 
-# Disable public access block to allow ACL configuration
 resource "aws_s3_bucket_public_access_block" "frontend_bucket" {
   bucket = aws_s3_bucket.frontend_bucket.id
 
@@ -31,18 +24,9 @@ resource "aws_s3_bucket_public_access_block" "frontend_bucket" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_acl" "frontend_bucket" {
-  depends_on = [
-    aws_s3_bucket_ownership_controls.frontend_bucket,
-    aws_s3_bucket_public_access_block.frontend_bucket,
-  ]
-
-  bucket = aws_s3_bucket.frontend_bucket.id
-  acl    = "private"
-}
-
 resource "aws_s3_bucket_versioning" "frontend_bucket" {
   bucket = aws_s3_bucket.frontend_bucket.id
+
   versioning_configuration {
     status = "Enabled"
   }
@@ -58,12 +42,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "frontend_bucket" 
   }
 }
 
-# CloudFront Origin Access Identity
-resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "OAI for ${aws_s3_bucket.frontend_bucket.id}"
+resource "aws_cloudfront_origin_access_control" "frontend" {
+  name                              = "${var.project_name}-frontend-oac"
+  description                       = "Origin access control for ${aws_s3_bucket.frontend_bucket.id}"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
-# S3 bucket policy to allow CloudFront OAI to GetObject
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend_bucket.id
 
@@ -74,18 +60,19 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Sid    = "AllowCloudFrontServicePrincipalReadOnly",
         Effect = "Allow",
         Principal = {
-          CanonicalUser = aws_cloudfront_origin_access_identity.oai.s3_canonical_user_id
+          Service = "cloudfront.amazonaws.com"
         },
         Action   = "s3:GetObject",
-        Resource = "${aws_s3_bucket.frontend_bucket.arn}/*"
+        Resource = "${aws_s3_bucket.frontend_bucket.arn}/*",
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.frontend.arn
+          }
+        }
       }
     ]
   })
 }
-
-# -------------------
-# S3 Bucket for Monte Carlo Artifacts
-# -------------------
 
 resource "aws_s3_bucket" "monte_carlo_artifacts" {
   bucket = "${var.project_name}-monte-carlo-artifacts-${random_string.bucket_suffix.result}"
@@ -98,6 +85,7 @@ resource "aws_s3_bucket" "monte_carlo_artifacts" {
 
 resource "aws_s3_bucket_versioning" "monte_carlo_artifacts" {
   bucket = aws_s3_bucket.monte_carlo_artifacts.id
+
   versioning_configuration {
     status = "Enabled"
   }
