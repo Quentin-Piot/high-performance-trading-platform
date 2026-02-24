@@ -22,8 +22,8 @@ Architecture, engineering, and infrastructure:
 
 ### Mayeul Saint Georges Chaumet
 
-Trading and strategy design:
+Product and domain feedback (finance-facing):
 
-- Trading research and strategy conceptualization
-- Backtesting logic specifications
-- Financial modeling and Monte Carlo methodology
+- Product feedback on finance-facing UX and framing
+- Domain-level feedback on financial concepts and terminology
+- Sanity-check feedback on standard financial metrics/calculations and their interpretation
