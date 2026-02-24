@@ -291,7 +291,10 @@ async def run_monte_carlo_sync(
                 detail="No data available for the specified date range",
             )
         csv_bytes = dataframe_to_csv_bytes(filtered_df)
-        from services.mc_backtest_service import run_monte_carlo_on_df
+        from services.mc_backtest_service import (
+            DEFAULT_PARALLEL_WORKERS,
+            run_monte_carlo_on_df,
+        )
 
         strategy_name = strategy_params_dict.get("strategy", "sma_crossover")
         result = run_monte_carlo_on_df(
@@ -306,7 +309,7 @@ async def run_monte_carlo_sync(
                 "gaussian_scale": gaussian_scale,
             },
             price_type=price_type,
-            parallel_workers=1,
+            parallel_workers=DEFAULT_PARALLEL_WORKERS,
         )
         from domain.schemas.backtest import MonteCarloBacktestResult, MonteCarloResponse
 
