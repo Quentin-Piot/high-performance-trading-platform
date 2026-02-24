@@ -115,6 +115,73 @@ pnpm lint
 pnpm build
 ```
 
+## RAG (Mistral SDK, CLI MVP)
+
+The repository includes a local CLI RAG tool for querying project docs with citations.
+
+Current RAG scope:
+- local corpus (`docs/*.md`, `README.md`)
+- fixed-size character chunking
+- Mistral embeddings (`mistral-embed`) for retrieval
+- Mistral generation (`mistral-small-latest` by default)
+- no frontend UI and no API route (CLI only)
+
+### 1) Configure backend env (`backend/api/.env`)
+
+Set at least:
+
+```env
+MISTRAL_API_KEY=your_mistral_api_key
+```
+
+Notes:
+- This MVP is intentionally local/CLI-first for demo usage.
+
+Optional overrides:
+
+```env
+RAG_INDEX_PATH=/absolute/or/project/path/to/.rag/index.json
+RAG_EMBEDDING_MODEL=mistral-embed
+RAG_MODEL=mistral-small-latest
+RAG_TOP_K_DEFAULT=5
+RAG_TOP_K_MAX=10
+```
+
+### 2) Build the local RAG index (embeddings)
+
+```bash
+cd backend/api
+uv run python scripts/rag_cli.py build
+```
+
+### 3) Query the local RAG tool (Mistral SDK generation + citations)
+
+Answer text only (default):
+
+```bash
+cd backend/api
+uv run python scripts/rag_cli.py query \
+  "Explain the difference between the thread worker and the process pool." \
+  --top-k 3 \
+  --topic workers
+```
+
+Full JSON response (including sources and timings):
+
+```bash
+cd backend/api
+uv run python scripts/rag_cli.py query \
+  "Explain the difference between the thread worker and the process pool." \
+  --top-k 3 \
+  --topic workers \
+  --json
+```
+
+Notes:
+- unchanged chunks reuse their existing embeddings via `chunk_id + content_sha256` matching
+- global overrides like `--output` and `--chunk-target-chars` must be passed before `build`/`query`
+- if docs and code disagree, code is the source of truth
+
 ## AWS / Terraform
 
 Infrastructure is defined in `terraform/` and targets an AWS deployment with ECS + CloudFront + Cognito.
@@ -132,9 +199,9 @@ Current Terraform intentionally favors cost/simplicity for demo usage: the backe
 
 ### Mayeul Saint Georges Chaumet
 
-- Trading research and strategy design
-- Backtesting logic specifications
-- Financial modeling and Monte Carlo methodology
+- Product feedback on finance-facing UX and framing
+- Domain-level feedback on financial concepts and terminology
+- Sanity-check feedback on standard financial metrics/calculations and their interpretation
 
 ## Notes
 
