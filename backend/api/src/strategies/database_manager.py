@@ -6,10 +6,12 @@ extracted from bootstrap.py to improve separation of concerns.
 
 from __future__ import annotations
 
-import sys
+import logging
 from urllib.parse import urlparse
 
 import psycopg
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
@@ -112,8 +114,8 @@ class DatabaseManager:
                         "updated_at",
                     }
                     if not expected_core.issubset(cols):
-                        print(
-                            "Detected corrupted 'jobs' table (missing core columns); dropping for clean migration..."
+                        logger.warning(
+                            "Detected corrupted 'jobs' table (missing core columns); dropping for clean migration"
                         )
                         cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                         return True
@@ -126,20 +128,20 @@ class DatabaseManager:
                         )
                         attcount = int(cur.fetchone()[0])  # pyright: ignore[reportOptionalSubscript]
                         if attcount < len(expected_core):
-                            print(
-                                "Detected inconsistent pg_attribute for 'jobs'; dropping table to recover..."
+                            logger.warning(
+                                "Detected inconsistent pg_attribute for 'jobs'; dropping table to recover"
                             )
                             cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                             return True
                     except Exception:
-                        print(
-                            "pg_attribute query failed for 'jobs'; dropping table to recover..."
+                        logger.warning(
+                            "pg_attribute query failed for 'jobs'; dropping table to recover"
                         )
                         cur.execute("DROP TABLE IF EXISTS jobs CASCADE")
                         return True
                     return False
-        except Exception as e:
-            print(f"Failed to inspect/repair jobs table: {e}", file=sys.stderr)
+        except Exception:
+            logger.error("Failed to inspect/repair jobs table", exc_info=True)
             return False
 
     @staticmethod

@@ -232,10 +232,6 @@ def monte_carlo_worker(args) -> MonteCarloResult | None:
         )
     except Exception as e:
         logger.error(f"Monte Carlo worker failed: {str(e)}", exc_info=True)
-        print(f"DEBUG: Monte Carlo worker exception: {str(e)}")
-        import traceback
-
-        print(f"DEBUG: Full traceback: {traceback.format_exc()}")
         return None
 
 

@@ -22,7 +22,7 @@ defineOptions({
 @keyframes blink-animation {
     0%,
     100% {
-        opacity: 1; /* Utiliser 1, pas la variable */
+        opacity: 1;
     }
     50% {
         opacity: 0;
@@ -53,11 +53,9 @@ body {
 
 @keyframes smoothBg {
     from {
-        transform: translateX(0%); /* Position de départ */
+        transform: translateX(0%);
     }
     to {
-        /* Déplacer l'élément de 100% à 200% de sa propre largeur */
-        /* Pour un effet de défilement continu sur le grand fond */
         transform: translateX(200%);
     }
 }
@@ -110,14 +108,9 @@ body {
     background-size: 200%, 100%;
     animation: smoothBg 60s linear infinite;
     mix-blend-mode: difference;
-    background-size: 200%, 100%; /* Taille du fond */
-
-    /* *NOUVEAU* : Ajustez la taille de l'élément pour qu'il puisse se déplacer */
+    background-size: 200%, 100%;
     width: 200%;
     left: 0;
-
-    /* *MISE À JOUR* : Appliquer la nouvelle animation */
-    animation: smoothBg 60s linear infinite;
 }
 
 :has(:checked) {

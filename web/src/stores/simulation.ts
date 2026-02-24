@@ -29,7 +29,7 @@ export const useSimulationStore = defineStore("simulation", {
 		openPositionQty: (s): number =>
 			Object.values(s.snapshot?.positions ?? {}).reduce((a, p) => a + p.qty, 0),
 		avgEntryPrice: (s): number => {
-			const pos = (s.snapshot?.positions ?? {})[s.params.symbol];
+			const pos = s.snapshot?.positions?.[s.params.symbol];
 			return pos?.avgPrice ?? 0;
 		},
 		unrealizedPnl: (s): number => s.snapshot?.pnl ?? 0,

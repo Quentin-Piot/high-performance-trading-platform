@@ -353,7 +353,6 @@ onUnmounted(() => {
                     </CardHeader>
                     <CardContent class="p-3 sm:p-4 relative">
                         <template v-if="loading">
-                            <!-- Monte Carlo async: only show a thick, elegant progress bar (no spinner) -->
                             <div v-if="isMcLoading" class="h-[300px] sm:h-[400px] w-full relative overflow-hidden">
                                 <div class="absolute inset-0 flex items-center justify-center">
                                     <div class="w-full max-w-md px-4">
@@ -370,7 +369,6 @@ onUnmounted(() => {
                                     </div>
                                 </div>
                             </div>
-                            <!-- Regular backtest loading: show spinner -->
                             <div v-else class="h-[300px] sm:h-[400px] w-full relative overflow-hidden flex items-center justify-center">
                                 <div class="flex flex-col items-center gap-3">
                                     <Spinner class="h-8 w-8 text-trading-blue" />

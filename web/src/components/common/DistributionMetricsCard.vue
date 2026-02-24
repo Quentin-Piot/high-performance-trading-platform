@@ -20,7 +20,7 @@ const formatValue = (value: number | null) => {
 	if (value === null || value === undefined) return "—";
 	const p = props.percentage ? value * 100 : value;
 	const s = p.toFixed(2) + (props.percentage ? "%" : "");
-	return s.startsWith("-") ? s : "+" + s;
+	return s.startsWith("-") ? s : `+${s}`;
 };
 const medianValue = computed(() => props.distribution?.median ?? null);
 const isPositive = computed(() => (medianValue.value ?? 0) >= 0);

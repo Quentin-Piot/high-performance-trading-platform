@@ -1,14 +1,15 @@
 import logging
-import os
 import time
 from collections.abc import Sequence
-from datetime import datetime
-from io import BytesIO
 
-import pandas as pd
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.routes._backtest_route_utils import (
+    dataframe_to_csv_bytes,
+    load_filtered_local_dataset_df,
+    validate_strategy_params,
+)
 from core.simple_auth import (
     SimpleUser,
     get_current_user_simple_optional,
@@ -32,16 +33,6 @@ from services.backtest_service import (
 )
 
 logger = logging.getLogger(__name__)
-
-SYMBOL_TO_FILE = {
-    "aapl": "AAPL.csv",
-    "amzn": "AMZN.csv",
-    "fb": "FB.csv",
-    "googl": "GOOGL.csv",
-    "msft": "MSFT.csv",
-    "nflx": "NFLX.csv",
-    "nvda": "NVDA.csv",
-}
 
 
 class LocalDatasetFile:
@@ -98,59 +89,20 @@ async def backtest_get(
     Supports both regular backtests and Monte Carlo simulations.
     """
     start_time = time.time()
-    symbol_lower = symbol.lower()
-    if symbol_lower not in SYMBOL_TO_FILE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Symbol {symbol} not supported. Available symbols: {list(SYMBOL_TO_FILE.keys())}",
-        )
-    current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    datasets_path = os.path.join(current_dir, "datasets")
-    csv_file_path = os.path.join(datasets_path, SYMBOL_TO_FILE[symbol_lower])
-    if not os.path.exists(csv_file_path):
-        raise HTTPException(
-            status_code=404, detail=f"Dataset file not found for symbol {symbol}"
-        )
-    df = pd.read_csv(csv_file_path)
-    df.columns = [str(c).strip().lower() for c in df.columns]
-    if "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
-        try:
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-        except ValueError as e:
-            raise HTTPException(
-                status_code=422, detail="Invalid date format. Use YYYY-MM-DD"
-            ) from e
-        mask = (df["date"] >= start_dt) & (df["date"] <= end_dt)
-        df = df.loc[mask]
-        if df.empty:
-            raise HTTPException(
-                status_code=400,
-                detail=f"No data available for {symbol} in the specified date range",
-            )
-    csv_buffer = BytesIO()
-    df.to_csv(csv_buffer, index=False)
-    csv_data = csv_buffer.getvalue()
+    df, _data_file = load_filtered_local_dataset_df(symbol, start_date, end_date)
+    csv_data = dataframe_to_csv_bytes(df)
     mock_file = LocalDatasetFile(
-        csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
+        csv_data, f"{symbol.lower()}_{start_date}_{end_date}.csv"
     )
     files = [mock_file]
-    strat = strategy.strip().lower()
-    if strat in {"sma_crossover", "sma"}:
-        if sma_short is None or sma_long is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Missing required parameters for SMA: sma_short and sma_long",
-            )
-    elif strat in {"rsi", "rsi_reversion"}:
-        if period is None or overbought is None or oversold is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Missing required parameters for RSI: period, overbought, oversold",
-            )
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
+    strat = validate_strategy_params(
+        strategy,
+        sma_short=sma_short,
+        sma_long=sma_long,
+        period=period,
+        overbought=overbought,
+        oversold=oversold,
+    )
     result = await run_regular_backtest(
         files=files,
         strategy=strat,
@@ -215,42 +167,10 @@ async def backtest_post(
     start_time = time.time()
     files = []
     if symbol and start_date and end_date:
-        symbol_lower = symbol.lower()
-        if symbol_lower not in SYMBOL_TO_FILE:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Symbol {symbol} not supported. Available symbols: {list(SYMBOL_TO_FILE.keys())}",
-            )
-        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        datasets_path = os.path.join(current_dir, "datasets")
-        csv_file_path = os.path.join(datasets_path, SYMBOL_TO_FILE[symbol_lower])
-        if not os.path.exists(csv_file_path):
-            raise HTTPException(
-                status_code=404, detail=f"Dataset file not found for symbol {symbol}"
-            )
-        df = pd.read_csv(csv_file_path)
-        df.columns = [str(c).strip().lower() for c in df.columns]
-        if "date" in df.columns:
-            df["date"] = pd.to_datetime(df["date"], errors="coerce")
-            try:
-                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-                end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-            except ValueError as e:
-                raise HTTPException(
-                    status_code=422, detail="Invalid date format. Use YYYY-MM-DD"
-                ) from e
-            mask = (df["date"] >= start_dt) & (df["date"] <= end_dt)
-            df = df.loc[mask]
-            if df.empty:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"No data available for {symbol} in the specified date range",
-                )
-        csv_buffer = BytesIO()
-        df.to_csv(csv_buffer, index=False)
-        csv_data = csv_buffer.getvalue()
+        df, _data_file = load_filtered_local_dataset_df(symbol, start_date, end_date)
+        csv_data = dataframe_to_csv_bytes(df)
         mock_file = LocalDatasetFile(
-            csv_data, f"{symbol_lower}_{start_date}_{end_date}.csv"
+            csv_data, f"{symbol.lower()}_{start_date}_{end_date}.csv"
         )
         files = [mock_file]
     elif csv and len(csv) > 0:
@@ -264,21 +184,14 @@ async def backtest_post(
         raise HTTPException(status_code=400, detail="Maximum of 10 CSV files allowed")
     if len(files) == 0:
         raise HTTPException(status_code=400, detail="At least one CSV file is required")
-    strat = strategy.strip().lower()
-    if strat in {"sma_crossover", "sma"}:
-        if sma_short is None or sma_long is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Missing required parameters for SMA: sma_short and sma_long",
-            )
-    elif strat in {"rsi", "rsi_reversion"}:
-        if period is None or overbought is None or oversold is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Missing required parameters for RSI: period, overbought, oversold",
-            )
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported strategy: {strategy}")
+    strat = validate_strategy_params(
+        strategy,
+        sma_short=sma_short,
+        sma_long=sma_long,
+        period=period,
+        overbought=overbought,
+        oversold=oversold,
+    )
     result = await run_regular_backtest(
         files=files,
         strategy=strat,
