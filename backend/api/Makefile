@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test run
+.PHONY: install lint format typecheck test run bench-mc-parallel
 
 install:
 	uv sync --dev
@@ -17,3 +17,6 @@ test:
 
 run:
 	uv run python scripts/bootstrap.py
+
+bench-mc-parallel:
+	uv run python scripts/benchmark_monte_carlo_parallelism.py

@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from core.logging import JOB_ID
-from services.mc_backtest_service import run_monte_carlo_on_df
+from services.mc_backtest_service import DEFAULT_PARALLEL_WORKERS, run_monte_carlo_on_df
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +233,7 @@ class SimpleMonteCarloWorker:
                 method=job.method,
                 method_params=job.method_params,
                 price_type=job.price_type,
-                parallel_workers=1,
+                parallel_workers=DEFAULT_PARALLEL_WORKERS,
                 seed=None,
                 include_equity_envelope=True,
                 progress_callback=progress_callback,

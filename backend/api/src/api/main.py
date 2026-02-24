@@ -22,6 +22,7 @@ from api.routes.performance import router as performance_router
 from core.logging import REQUEST_ID, setup_logging
 from infrastructure.db import engine, init_db
 from infrastructure.monitoring import monitoring_service
+from services.mc_backtest_service import DEFAULT_PARALLEL_WORKERS
 
 load_dotenv()
 setup_logging()
@@ -29,8 +30,16 @@ setup_logging()
 
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logging.getLogger("app").info("Startup")
+    app_logger = logging.getLogger("app")
+    app_logger.info("Startup")
     await init_db()
+    app_logger.info(
+        "Monte Carlo process pool worker default configured",
+        extra={
+            "mc_parallel_workers_default": DEFAULT_PARALLEL_WORKERS,
+            "source": "services.mc_backtest_service.DEFAULT_PARALLEL_WORKERS",
+        },
+    )
 
     def db_health_check() -> tuple[str, str, dict[str, Any]]:
         try:
@@ -46,7 +55,7 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     monitoring_service.register_health_check("database", db_health_check)
     yield
-    logging.getLogger("app").info("Shutdown")
+    app_logger.info("Shutdown")
 
 
 app = FastAPI(title="Trading Backtest API", version="0.1.0", lifespan=app_lifespan)
