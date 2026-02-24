@@ -28,9 +28,13 @@ dist/
 *.tmp
 terraform/.terraform/
 terraform/.terraform.lock.hcl
+terraform/.terraform.tfstate.lock.info
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
+terraform/*.tfstate*
 terraform/*.tfplan
+terraform/tfplan*
+terraform/tfout
 terraform/*.tfvars
 terraform/*.tfvars.json
 terraform/*.log

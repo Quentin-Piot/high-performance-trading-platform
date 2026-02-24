@@ -338,6 +338,29 @@ class JobRepository:
                 )
                 raise DatabaseError(f"Failed to update job status: {str(e)}") from e
 
+    async def merge_job_payload(self, job_id: str, payload_patch: dict[str, Any]) -> bool:
+        """
+        Merge a partial payload into the job payload JSON.
+        Returns True if job exists and was updated.
+        """
+        try:
+            result = await self.session.execute(select(Job).where(Job.id == job_id))
+            job = result.scalar_one_or_none()
+            if not job:
+                return False
+            payload = job.payload.copy() if isinstance(job.payload, dict) else {}
+            payload.update(payload_patch)
+            update_result = await self.session.execute(
+                update(Job)
+                .where(Job.id == job_id)
+                .values(payload=payload, updated_at=datetime.utcnow())
+            )
+            await self.session.commit()
+            return bool(update_result.rowcount)  # pyright: ignore[reportAttributeAccessIssue]
+        except Exception:
+            await self.session.rollback()
+            return False
+
     async def increment_attempts(self, job_id: str) -> bool:
         """
         Increment job attempt count.

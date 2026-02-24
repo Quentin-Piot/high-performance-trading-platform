@@ -10,7 +10,7 @@ const formattedValue = computed(() => {
 	if (props.value === null || props.value === undefined) return "—";
 	const p = props.percentage ? props.value * 100 : props.value;
 	const s = p.toFixed(2) + (props.percentage ? "%" : "");
-	return s.startsWith("-") ? s : "+" + s;
+	return s.startsWith("-") ? s : `+${s}`;
 });
 const isPositive = computed(() => (props.value ?? 0) >= 0);
 const isNeutral = computed(() => props.value === null || props.value === 0);

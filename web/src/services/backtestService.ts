@@ -156,7 +156,10 @@ function authHeaders(headers?: HeadersInit): HeadersInit {
 	};
 }
 
-async function fetchApi(path: string, init: RequestInit = {}): Promise<Response> {
+async function fetchApi(
+	path: string,
+	init: RequestInit = {},
+): Promise<Response> {
 	const response = await fetch(`${BASE_URL}${path}`, {
 		...init,
 		headers: authHeaders(init.headers),
@@ -393,9 +396,9 @@ export async function runBacktestUnified(
 			method: "POST",
 			body:
 				files.length > 0 && (!selectedDatasets || selectedDatasets.length === 0)
-						? formData
-						: undefined,
-			});
+					? formData
+					: undefined,
+		});
 		if (!response.ok) {
 			const errorData = await response
 				.json()
@@ -460,6 +463,15 @@ export type MonteCarloAsyncSubmissionResponse = {
 	job_id: string;
 	status: "submitted" | "processing" | "failed";
 };
+type RawMonteCarloAsyncJobStatusCode =
+	| "submitted"
+	| "pending"
+	| "processing"
+	| "running"
+	| "completed"
+	| "failed"
+	| "cancelled"
+	| "not_found";
 export type MonteCarloAsyncJobStatus = {
 	job_id: string;
 	status:
@@ -472,6 +484,14 @@ export type MonteCarloAsyncJobStatus = {
 	progress?: number | null;
 	result?: MonteCarloResponse | unknown;
 };
+
+function normalizeMonteCarloAsyncStatusCode(
+	status: RawMonteCarloAsyncJobStatusCode,
+): MonteCarloAsyncJobStatus["status"] {
+	if (status === "pending") return "submitted";
+	if (status === "running") return "processing";
+	return status;
+}
 export async function submitMonteCarloAsync(
 	files: File[],
 	req: BacktestRequest,
@@ -535,5 +555,11 @@ export async function getMonteCarloAsyncStatus(
 			`HTTP ${response.status}: ${errorData.detail || "Request failed"}`,
 		);
 	}
-	return response.json() as Promise<MonteCarloAsyncJobStatus>;
+	const raw = (await response.json()) as MonteCarloAsyncJobStatus & {
+		status: RawMonteCarloAsyncJobStatusCode;
+	};
+	return {
+		...raw,
+		status: normalizeMonteCarloAsyncStatusCode(raw.status),
+	};
 }

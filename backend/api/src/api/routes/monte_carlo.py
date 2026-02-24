@@ -21,12 +21,18 @@ from fastapi import (
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.routes._backtest_route_utils import (
+    dataframe_to_csv_bytes,
+    load_filtered_local_dataset_df,
+    validate_strategy_params,
+)
 from core.logging import JOB_ID
 from core.simple_auth import SimpleUser, get_current_user_simple_optional
 from infrastructure.db import get_session
 from infrastructure.repositories.backtest_history_repository import (
     BacktestHistoryRepository,
 )
+from infrastructure.repositories.jobs import JobRepository
 from infrastructure.repositories.user_repository import UserRepository
 from utils.date_validation import (
     get_all_symbols_date_ranges,
@@ -50,6 +56,130 @@ class AllSymbolsDateRangesResponse(BaseModel):
     """Response model for all symbols date ranges"""
 
     symbols: list[SymbolDateRangeResponse]
+
+
+def _db_status_from_runtime(status_value: str | None) -> str:
+    if status_value == "running":
+        return "processing"
+    if status_value == "submitted":
+        return "pending"
+    return status_value or "pending"
+
+
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except Exception:
+        return None
+
+
+async def _best_effort_create_async_job_record(
+    session: AsyncSession,
+    *,
+    job_id: str,
+    filename: str,
+    symbol: str,
+    strategy: str,
+    runs: int,
+    method: str,
+    price_type: str,
+    normalize: bool,
+) -> None:
+    try:
+        repo = JobRepository(session)
+        existing = await repo.get_job_by_id(job_id)
+        if existing:
+            return
+        await repo.create_job(
+            job_id=job_id,
+            status="pending",
+            payload={
+                "job_type": "monte_carlo_async",
+                "symbol": symbol,
+                "filename": filename,
+                "strategy": strategy,
+                "runs": runs,
+                "method": method,
+                "price_type": price_type,
+                "normalize": normalize,
+            },
+        )
+    except Exception as e:
+        logger.warning(
+            "Failed to persist async job creation",
+            extra={"job_id": job_id, "error": str(e)},
+        )
+
+
+async def _best_effort_mirror_runtime_job_status(
+    session: AsyncSession, job_status: dict[str, Any]
+) -> None:
+    job_id = str(job_status.get("job_id", ""))
+    if not job_id:
+        return
+    try:
+        repo = JobRepository(session)
+        existing = await repo.get_job_by_id(job_id)
+        payload_patch: dict[str, Any] = {
+            key: job_status[key]
+            for key in ("runs", "filename", "result")
+            if key in job_status and job_status[key] is not None
+        }
+        if not existing:
+            await repo.create_job(
+                job_id=job_id,
+                status=_db_status_from_runtime(job_status.get("status")),
+                payload={
+                    "job_type": "monte_carlo_async",
+                    **payload_patch,
+                },
+            )
+        elif payload_patch:
+            await repo.merge_job_payload(job_id, payload_patch)
+
+        started_at = _parse_iso_datetime(job_status.get("started_at"))
+        completed_at = _parse_iso_datetime(job_status.get("completed_at"))
+        progress = (
+            float(job_status["progress"])
+            if isinstance(job_status.get("progress"), (float, int))
+            else 0.0
+        )
+        await repo.update_job_progress(
+            job_id=job_id,
+            progress=progress,
+            started_at=started_at,
+            completed_at=completed_at,
+        )
+        await repo.update_job_status(
+            job_id=job_id,
+            status=_db_status_from_runtime(job_status.get("status")),
+            error=job_status.get("error"),
+            progress=progress,
+            completed_at=completed_at,
+        )
+    except Exception as e:
+        logger.warning(
+            "Failed to mirror runtime job status to database",
+            extra={"job_id": job_id, "error": str(e)},
+        )
+
+
+def _serialize_db_job(job: Any) -> dict[str, Any]:
+    payload = job.payload if isinstance(job.payload, dict) else {}
+    return {
+        "job_id": job.id,
+        "status": job.status,
+        "progress": job.progress,
+        "created_at": job.created_at.isoformat() if job.created_at else None,
+        "started_at": job.started_at.isoformat() if job.started_at else None,
+        "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        "result": payload.get("result"),
+        "error": job.error,
+        "runs": payload.get("runs"),
+        "filename": payload.get("filename"),
+    }
 
 
 @router.post("/run")
@@ -105,27 +235,18 @@ async def run_monte_carlo_sync(
     """
     start_time = time.time()
     try:
-        import os
         from io import BytesIO
 
         import pandas as pd
 
-        if strategy in {"sma_crossover", "sma"}:
-            if sma_short is None or sma_long is None:
-                raise HTTPException(
-                    status_code=422,
-                    detail="Missing required parameters for SMA: sma_short and sma_long",
-                )
-        elif strategy in {"rsi", "rsi_reversion"}:
-            if period is None or overbought is None or oversold is None:
-                raise HTTPException(
-                    status_code=422,
-                    detail="Missing required parameters for RSI: period, overbought, oversold",
-                )
-        else:
-            raise HTTPException(
-                status_code=400, detail=f"Unsupported strategy: {strategy}"
-            )
+        strategy = validate_strategy_params(
+            strategy,
+            sma_short=sma_short,
+            sma_long=sma_long,
+            period=period,
+            overbought=overbought,
+            oversold=oversold,
+        )
         strategy_params_dict = {
             "strategy": strategy,
             "sma_short": sma_short,
@@ -150,49 +271,26 @@ async def run_monte_carlo_sync(
             validate_date_range_for_csv_bytes(contents, start_date, end_date)
         else:
             validate_date_range_for_symbol(symbol, start_date, end_date)
-            symbol_to_file = {
-                "aapl": "AAPL.csv",
-                "amzn": "AMZN.csv",
-                "fb": "FB.csv",
-                "googl": "GOOGL.csv",
-                "msft": "MSFT.csv",
-                "nflx": "NFLX.csv",
-                "nvda": "NVDA.csv",
-            }
-            symbol_lower = symbol.lower()
-            if symbol_lower not in symbol_to_file:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
-                )
-            import os
-
-            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            datasets_path = os.path.join(current_dir, "datasets")
-            data_file = symbol_to_file[symbol_lower]
-            file_path = os.path.join(datasets_path, data_file)
-            if not os.path.exists(file_path):
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Data file not found: {data_file}",
-                )
-            df = pd.read_csv(file_path)
+            df, _data_file = load_filtered_local_dataset_df(symbol, start_date, end_date)
         date_column = "date" if "date" in df.columns else "Date"
         df[date_column] = pd.to_datetime(df[date_column])
         mask = (df[date_column] >= start_date) & (df[date_column] <= end_date)
         filtered_df = df.loc[mask]
-        print(f"Date column: {date_column}")
-        print(f"Filtered DataFrame head:\n{filtered_df.head()}")
-        print(f"Filtered DataFrame tail:\n{filtered_df.tail()}")
-        print(f"Filtered DataFrame empty: {filtered_df.empty}")
+        logger.debug(
+            "Filtered local or uploaded dataframe for Monte Carlo run",
+            extra={
+                "symbol": symbol,
+                "date_column": date_column,
+                "row_count": int(len(filtered_df)),
+                "is_empty": bool(filtered_df.empty),
+            },
+        )
         if filtered_df.empty:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No data available for the specified date range",
             )
-        csv_buffer = BytesIO()
-        filtered_df.to_csv(csv_buffer, index=False)
-        csv_bytes = csv_buffer.getvalue()
+        csv_bytes = dataframe_to_csv_bytes(filtered_df)
         from services.mc_backtest_service import run_monte_carlo_on_df
 
         strategy_name = strategy_params_dict.get("strategy", "sma_crossover")
@@ -353,6 +451,7 @@ async def submit_async_job(
         "close", description="Price type to use: 'close' or 'adj_close'"
     ),
     file: UploadFile | None = File(None),
+    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """
     Submit Monte Carlo simulation job for asynchronous processing.
@@ -362,22 +461,14 @@ async def submit_async_job(
         from workers.simple_worker import get_simple_worker
 
         worker = get_simple_worker()
-        if strategy in {"sma_crossover", "sma"}:
-            if sma_short is None or sma_long is None:
-                raise HTTPException(
-                    status_code=422,
-                    detail="Missing required parameters for SMA: sma_short and sma_long",
-                )
-        elif strategy in {"rsi", "rsi_reversion"}:
-            if period is None or overbought is None or oversold is None:
-                raise HTTPException(
-                    status_code=422,
-                    detail="Missing required parameters for RSI: period, overbought, oversold",
-                )
-        else:
-            raise HTTPException(
-                status_code=400, detail=f"Unsupported strategy: {strategy}"
-            )
+        strategy = validate_strategy_params(
+            strategy,
+            sma_short=sma_short,
+            sma_long=sma_long,
+            period=period,
+            overbought=overbought,
+            oversold=oversold,
+        )
         strategy_params_dict = {
             "strategy": strategy,
             "sma_short": sma_short,
@@ -400,10 +491,6 @@ async def submit_async_job(
         if file:
             csv_data = await file.read()
         else:
-            import os
-
-            import pandas as pd
-
             from utils.date_validation import validate_date_range_for_symbol
 
             validation_result = validate_date_range_for_symbol(
@@ -414,46 +501,10 @@ async def submit_async_job(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=validation_result["error_message"],
                 )
-            symbol_to_file = {
-                "aapl": "AAPL.csv",
-                "amzn": "AMZN.csv",
-                "fb": "FB.csv",
-                "googl": "GOOGL.csv",
-                "msft": "MSFT.csv",
-                "nflx": "NFLX.csv",
-                "nvda": "NVDA.csv",
-            }
-            symbol_lower = symbol.lower()
-            if symbol_lower not in symbol_to_file:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Symbol {symbol} not supported. Available symbols: {list(symbol_to_file.keys())}",
-                )
-            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            datasets_path = os.path.join(current_dir, "datasets")
-            csv_file_path = os.path.join(datasets_path, symbol_to_file[symbol_lower])
-            if not os.path.exists(csv_file_path):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Dataset file not found for symbol {symbol}",
-                )
-            df = pd.read_csv(csv_file_path)
-            df.columns = [str(c).strip().lower() for c in df.columns]
-            if "date" in df.columns:
-                df["date"] = pd.to_datetime(df["date"], errors="coerce")
-                mask = (df["date"] >= start_date) & (df["date"] <= end_date)
-                filtered_df = df.loc[mask]
-                if filtered_df.empty:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"No data available for symbol {symbol} in the specified date range",
-                    )
-                csv_data = filtered_df.to_csv(index=False).encode("utf-8")
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Dataset file for {symbol} does not contain a date column",
-                )
+            filtered_df, _data_file = load_filtered_local_dataset_df(
+                symbol, start_date, end_date
+            )
+            csv_data = filtered_df.to_csv(index=False).encode("utf-8")
         job_id = worker.submit_job(
             csv_data=csv_data,
             filename=file.filename if file else f"{symbol}_data.csv",  # pyright: ignore[reportArgumentType]
@@ -465,6 +516,17 @@ async def submit_async_job(
                 "sample_fraction": sample_fraction,
                 "gaussian_scale": gaussian_scale,
             },
+            price_type=price_type,
+            normalize=normalize,
+        )
+        await _best_effort_create_async_job_record(
+            session,
+            job_id=job_id,
+            filename=file.filename if file else f"{symbol}_data.csv",  # pyright: ignore[reportArgumentType]
+            symbol=symbol,
+            strategy=strategy,
+            runs=num_runs,
+            method=method,
             price_type=price_type,
             normalize=normalize,
         )
@@ -486,7 +548,10 @@ async def submit_async_job(
 
 
 @router.get("/async/{job_id}")
-async def get_async_job_status(job_id: str) -> dict[str, Any]:
+async def get_async_job_status(
+    job_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
     """Get status of an asynchronous job."""
     token = JOB_ID.set(job_id)
     try:
@@ -494,11 +559,15 @@ async def get_async_job_status(job_id: str) -> dict[str, Any]:
 
         worker = get_simple_worker()
         job_status = worker.get_job_status(job_id)
-        if not job_status:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
-            )
-        return job_status
+        if job_status:
+            await _best_effort_mirror_runtime_job_status(session, job_status)
+            return job_status
+
+        repo = JobRepository(session)
+        db_job = await repo.get_job_by_id(job_id)
+        if db_job:
+            return _serialize_db_job(db_job)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
     except HTTPException:
         raise
     except Exception as e:
@@ -514,7 +583,10 @@ async def get_async_job_status(job_id: str) -> dict[str, Any]:
 
 
 @router.delete("/async/{job_id}")
-async def cancel_async_job(job_id: str) -> dict[str, Any]:
+async def cancel_async_job(
+    job_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
     """Cancel an asynchronous job."""
     token = JOB_ID.set(job_id)
     try:
@@ -526,6 +598,14 @@ async def cancel_async_job(job_id: str) -> dict[str, Any]:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Job not found or cannot be cancelled",
+            )
+        try:
+            repo = JobRepository(session)
+            await repo.update_job_status(job_id=job_id, status="cancelled")
+        except Exception as e:
+            logger.warning(
+                "Failed to persist cancelled job status",
+                extra={"job_id": job_id, "error": str(e)},
             )
         return {
             "job_id": job_id,
@@ -545,13 +625,22 @@ async def cancel_async_job(job_id: str) -> dict[str, Any]:
 
 
 @router.get("/async")
-async def list_async_jobs() -> dict[str, Any]:
+async def list_async_jobs(session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
     """List all asynchronous jobs."""
     try:
         from workers.simple_worker import get_simple_worker
 
         worker = get_simple_worker()
         jobs = worker.list_jobs()
+        if jobs:
+            return {"jobs": jobs, "total": len(jobs)}
+        try:
+            repo = JobRepository(session)
+            db_jobs = await repo.list_jobs(limit=50)
+            serialized = [_serialize_db_job(job) for job in db_jobs]
+            return {"jobs": serialized, "total": len(serialized)}
+        except Exception as e:
+            logger.warning("Failed to list jobs from database", extra={"error": str(e)})
         return {"jobs": jobs, "total": len(jobs)}
     except Exception as e:
         logger.error("Failed to list jobs", extra={"error": str(e)})
