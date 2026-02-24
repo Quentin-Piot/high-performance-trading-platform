@@ -17,7 +17,7 @@ This repository is a portfolio/demo project designed to showcase full-stack engi
 - Runs backtests on uploaded CSVs or local datasets
 - Supports SMA crossover and RSI reversion strategies
 - Computes key metrics (PnL, drawdown, Sharpe)
-- Runs Monte Carlo simulations (sync + async job flow)
+- Runs Monte Carlo simulations (sync + async job flow with real progress updates)
 - Streams progress updates to the frontend
 - Stores authenticated users' run history
 
@@ -57,12 +57,16 @@ This repository is a portfolio/demo project designed to showcase full-stack engi
 - `strategies/`: SMA / RSI logic + metrics
 - `services/`: backtest orchestration + Monte Carlo engine
 - `api/routes/`: FastAPI endpoints (`/api/v1`)
-- `workers/`: in-process async Monte Carlo worker with job tracking
+- `workers/`: in-process async Monte Carlo worker (thread pool) with job tracking
 - `infrastructure/`: DB, repositories, auth integrations, storage
+
+Notes:
+- Async Monte Carlo jobs are currently executed by an in-process worker (no external queue yet).
+- Job status is tracked in-memory during execution, with best-effort DB persistence/fallback for retrieval.
 
 ### Frontend
 
-- `pages/`: `Simulate`, `History`, `Login`, `Register`
+- `pages/`: `Landing`, `Simulate`, `History`, `Login`, `Register`
 - `stores/`: auth + backtest state
 - `services/`: API calls, response normalization, WebSocket progress
 - `components/backtest/`: forms, charts, Monte Carlo visualization
@@ -72,6 +76,7 @@ This repository is a portfolio/demo project designed to showcase full-stack engi
 ### Backend
 
 ```bash
+docker compose -f docker-compose.db.yml up -d
 cd backend/api
 uv sync --dev
 cp .env.example .env
@@ -79,6 +84,7 @@ uv run python scripts/bootstrap.py
 ```
 
 API runs on `http://localhost:8000`.
+Local PostgreSQL is required for backend startup and authenticated history features.
 
 ### Frontend
 
@@ -113,7 +119,7 @@ pnpm build
 
 Infrastructure is defined in `terraform/` and targets an AWS deployment with ECS + CloudFront + Cognito.
 
-This setup is optimized for demo/portfolio usage and can be evolved toward a more production-grade architecture (managed DB/cache, horizontal workers, etc.).
+Current Terraform intentionally favors cost/simplicity for demo usage: the backend API and PostgreSQL run in the same ECS task (with EFS for Postgres data). This can be evolved toward a more production-grade architecture (managed DB/cache, separate worker service, horizontal workers, etc.).
 
 ## Contributions
 
