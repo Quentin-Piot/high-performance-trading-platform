@@ -1,12 +1,7 @@
-# --- IDE ---
 .idea/
 .vscode/
 .zed/
-
-# --- Package manager local store ---
 .pnpm-store/
-
-# --- Python caches / envs ---
 __pycache__/
 *.py[cod]
 *.pyo
@@ -18,12 +13,9 @@ __pycache__/
 .coverage.*
 htmlcov/
 .venv/
-
-# --- Node build artifacts ---
+backend/api/.rag/
 node_modules/
 dist/
-
-# Logs ou fichiers temporaires
 *.log
 *.tmp
 terraform/.terraform/
@@ -39,7 +31,5 @@ terraform/*.tfvars
 terraform/*.tfvars.json
 terraform/*.log
 terraform/*.tmp
-
-
-# macOS
 .DS_Store
+AGENTS.md
